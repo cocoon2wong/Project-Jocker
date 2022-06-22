@@ -4,8 +4,8 @@
 @LastEditors: Conghao Wong
 @LastEditTime: 2022-04-21 10:59:11
 @Description: file content
-@Github: https://github.com/conghaowoooong
-@Copyright 2021 Conghao Wong, All Rights Reserved.
+@Github: https://github.com/cocoon2wong
+@Copyright 2022 Conghao Wong, All Rights Reserved.
 @Part of modules come from https://tensorflow.google.cn/tutorials/text/transformer.
 """
 

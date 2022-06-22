@@ -4,8 +4,8 @@
 @LastEditors: Conghao Wong
 @LastEditTime: 2022-04-21 10:52:12
 @Description: file content
-@Github: https://github.com/conghaowoooong
-@Copyright 2021 Conghao Wong, All Rights Reserved.
+@Github: https://github.com/cocoon2wong
+@Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import tensorflow as tf

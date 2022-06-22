@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-22 15:00:05
+@LastEditTime: 2022-06-22 20:21:04
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -41,7 +41,7 @@ class Structure(BaseObject):
         self.set_loss_weights(1.0)
 
         self.set_metrics('ade', 'fde')
-        self.set_metrics(1.0, 0.0)
+        self.set_metrics_weights(1.0, 0.0)
 
     def set_inputs(self, *args):
         """

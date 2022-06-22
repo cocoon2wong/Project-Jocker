@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-22 09:39:29
+@LastEditTime: 2022-06-22 21:03:48
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -62,7 +62,7 @@ class Model(tf.keras.Model):
                  structure=None,
                  *args, **kwargs):
 
-        super().__init__(*args, **kwargs)
+        super().__init__()
         self.args = Args
         self.structure = structure
 

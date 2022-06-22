@@ -2,15 +2,15 @@
 @Author: Conghao Wong
 @Date: 2021-12-21 15:25:47
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-04-21 10:52:24
+@LastEditTime: 2022-06-22 16:19:56
 @Description: file content
-@Github: https://github.com/conghaowoooong
-@Copyright 2021 Conghao Wong, All Rights Reserved.
+@Github: https://github.com/cocoon2wong
+@Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import tensorflow as tf
 
-from .__fftlayers import FFTlayer
+from .__transformLayers import _BaseTransformLayer
 
 
 class TrajEncoding(tf.keras.layers.Layer):
@@ -20,23 +20,23 @@ class TrajEncoding(tf.keras.layers.Layer):
 
     def __init__(self, units: int = 64,
                  activation=None,
-                 useFFT=None,
+                 transform_layer: _BaseTransformLayer = None,
                  *args, **kwargs):
         """
         Init a trajectory encoding module
 
         :param units: feature dimension
         :param activation: activations used in the output layer
-        :param useFFT: controls if encode trajectories in `freq domain`
+        :param transform_layer: controls if encode trajectories \
+            with some transform methods (like FFTs)
         """
 
         super().__init__(*args, **kwargs)
 
-        self.useFFT = useFFT
+        self.Tlayer = None
 
-        if (self.useFFT):
-            self.fft = FFTlayer()
-            self.concat = tf.keras.layers.Concatenate()
+        if transform_layer:
+            self.Tlayer = transform_layer
             self.fc2 = tf.keras.layers.Dense(units, tf.nn.relu)
 
         self.fc1 = tf.keras.layers.Dense(units, activation)
@@ -48,12 +48,13 @@ class TrajEncoding(tf.keras.layers.Layer):
         :param trajs: trajs, shape = `(batch, N, 2)`
         :return features: features, shape = `(batch, N, units)`
         """
-        if self.useFFT:
-            t_r, t_i = self.fft.call(trajs)
-            concat = self.concat([t_r, t_i])
-            trajs = self.fc2(concat)
+        if self.Tlayer:
+            t = self.Tlayer(trajs)
+            fc2 = self.fc2(t)
+            return self.fc1(fc2)
 
-        return self.fc1(trajs)
+        else:
+            return self.fc1(trajs)
 
 
 class ContextEncoding(tf.keras.layers.Layer):
