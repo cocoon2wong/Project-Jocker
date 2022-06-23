@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 15:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-21 15:55:54
+@LastEditTime: 2022-06-23 15:33:19
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -20,6 +20,17 @@ from .__trajectory import Trajectory
 
 MASK = cv2.imread('./figures/mask_circle.png')[:, :, 0]/50
 MASKS = {}
+
+# context map parameters
+WINDOW_SIZE_EXPAND_METER = 10.0
+WINDOW_SIZE_GUIDANCE_MAP = 10.0
+
+# interaction parameters
+# Avoid size in grid cells when modeling social interaction
+AVOID_SIZE = 15 
+
+# Interest size in grid cells when modeling social interaction
+INTEREST_SIZE = 20
 
 
 class MapManager(BaseObject):
@@ -107,8 +118,8 @@ class MapManager(BaseObject):
         y_max = np.max(traj[:, 1])
         y_min = np.min(traj[:, 1])
 
-        a = self.args.window_size_guidance_map
-        e = self.args.window_size_expand_meter
+        a = WINDOW_SIZE_GUIDANCE_MAP
+        e = WINDOW_SIZE_EXPAND_METER
 
         guidance_map = np.zeros([int((x_max - x_min + 2 * e) * a) + 1,
                                  int((y_max - y_min + 2 * e) * a) + 1])
@@ -182,11 +193,11 @@ class MapManager(BaseObject):
         # Destination
         trajs.append(target_agent.pred_linear)
         amps.append(-2)
-        rads.append(self.args.interest_size)
+        rads.append(INTEREST_SIZE)
 
         # Interplay
         amp_neighbors = []
-        rads_neighbors = self.args.avoid_size * np.ones(len(traj_neighbors))
+        rads_neighbors = AVOID_SIZE * np.ones(len(traj_neighbors))
 
         vec_target = target_agent.pred_linear[-1] - target_agent.pred_linear[0]
         len_target = calculate_length(vec_target)

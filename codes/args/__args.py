@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-22 10:32:40
+@LastEditTime: 2022-06-23 15:36:22
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -311,60 +311,11 @@ class BaseArgTable():
         return self._get('test_mode', 'mix', argtype='dynamic')
 
     @property
-    def max_batch_size(self) -> int:
-        """
-        Maximun batch size.
-        """
-        return self._get('max_batch_size', 20000, argtype='dynamic')
-
-    @property
     def lr(self) -> float:
         """
         Learning rate.
         """
         return self._get('lr', 0.001, argtype='static')
-
-    @property
-    def init_position(self) -> int:
-        """
-        ***DO NOT CHANGE THIS***.
-        """
-        return self._get('init_position', 10000, argtype='static')
-
-    @property
-    def window_size_expand_meter(self) -> float:
-        """
-        ***DO NOT CHANGE THIS***.
-        """
-        return self._get('window_size_expand_meter', 10.0, argtype='static')
-
-    @property
-    def window_size_guidance_map(self) -> int:
-        """
-        Resolution of map (grids per meter).
-        """
-        return self._get('window_size_guidance_map', 10, argtype='static')
-
-    @property
-    def avoid_size(self) -> int:
-        """
-        Avoid size in grid cells when modeling social interaction.
-        """
-        return self._get('avoid_size', 15, argtype='static')
-
-    @property
-    def interest_size(self) -> int:
-        """
-        Interest size in grid cells when modeling social interaction.
-        """
-        return self._get('interest_size', 20, argtype='static')
-
-    @property
-    def map_half_size(self) -> int:
-        """
-        Local map's half size.
-        """
-        return self._get('map_half_size', 50, argtype='static')
 
     @property
     def K(self) -> int:
@@ -383,17 +334,10 @@ class BaseArgTable():
         return self._get('K_train', 10, argtype='static')
 
     @property
-    def sigma(self) -> float:
-        """
-        Sigma of noise.
-        This arg only works for `Generative Models`.
-        """
-        return self._get('sigma', 1.0, argtype='dynamic')
-
-    @property
     def use_maps(self) -> int:
         """
-        Controls if uses the trajectory maps or the social maps in the model.
+        Controls if uses the context maps to model social
+        and physical interactions in the model.
         """
         return self._get('use_maps', 1, argtype='static')
 
@@ -403,6 +347,6 @@ class BaseArgTable():
         Controls if uses the calculated trajectory maps or the given trajectory maps. 
         The model will load maps from `./dataset_npz/.../agent1_maps/trajMap.png`
         if set it to `0`, and load from `./dataset_npz/.../agent1_maps/trajMap_load.png` 
-        if set this item to `1`.
+        if set this argument to `1`.
         """
         return self._get('use_extra_maps', 0, argtype='dynamic')

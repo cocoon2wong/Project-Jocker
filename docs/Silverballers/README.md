@@ -50,9 +50,6 @@ Args with `changable=False` means that their values can not be changed once the 
 - `--K`, type=`int`, argtype=`'dynamic'`.
   Number of multiple generations when test. This arg only works for `Generative Models`.
   The default value is `20`.
-- `--avoid_size`, type=`int`, argtype=`'static'`.
-  Avoid size in grid cells when modeling social interaction.
-  The default value is `15`.
 - `--batch_size`, type=`int`, argtype=`'dynamic'`.
   Batch size when implementation.
   The default value is `5000`.
@@ -71,12 +68,6 @@ Args with `changable=False` means that their values can not be changed once the 
 - `--gpu`, type=`str`, argtype=`'dynamic'`.
   Speed up training or test if you have at least one nvidia GPU. If you have no GPUs or want to run the code on your CPU, please set it to `-1`.
   The default value is `'0'`.
-- `--init_position`, type=`int`, argtype=`'static'`.
-  ***DO NOT CHANGE THIS***.
-  The default value is `10000`.
-- `--interest_size`, type=`int`, argtype=`'static'`.
-  Interest size in grid cells when modeling social interaction.
-  The default value is `20`.
 - `--load`, type=`str`, argtype=`'dynamic'`.
   Folder to load model. If set to `null`, it will start training new models according to other args.
   The default value is `'null'`.
@@ -86,12 +77,6 @@ Args with `changable=False` means that their values can not be changed once the 
 - `--lr`, type=`float`, argtype=`'static'`.
   Learning rate.
   The default value is `0.001`.
-- `--map_half_size`, type=`int`, argtype=`'static'`.
-  Local map's half size.
-  The default value is `50`.
-- `--max_batch_size`, type=`int`, argtype=`'dynamic'`.
-  Maximun batch size.
-  The default value is `20000`.
 - `--model_name`, type=`str`, argtype=`'static'`.
   Customized model name.
   The default value is `'model'`.
@@ -113,9 +98,6 @@ Args with `changable=False` means that their values can not be changed once the 
 - `--save_model`, type=`int`, argtype=`'static'`.
   Controls if save the final model at the end of training.
   The default value is `1`.
-- `--sigma`, type=`float`, argtype=`'dynamic'`.
-  Sigma of noise. This arg only works for `Generative Models`.
-  The default value is `1.0`.
 - `--start_test_percent`, type=`float`, argtype=`'static'`.
   Set when to start validation during training. Range of this arg is `0 <= x <= 1`. Validation will start at `epoch = args.epochs * args.start_test_percent`.
   The default value is `0.0`.
@@ -132,17 +114,11 @@ Args with `changable=False` means that their values can not be changed once the 
   Epoch interval to run validation during training. """ return self._get('test_step', 3, argtype='static') """ Trajectory Prediction Args 
   The default value is `3`.
 - `--use_extra_maps`, type=`int`, argtype=`'dynamic'`.
-  Controls if uses the calculated trajectory maps or the given trajectory maps. The model will load maps from `./dataset_npz/.../agent1_maps/trajMap.png` if set it to `0`, and load from `./dataset_npz/.../agent1_maps/trajMap_load.png` if set this item to `1`.
+  Controls if uses the calculated trajectory maps or the given trajectory maps. The model will load maps from `./dataset_npz/.../agent1_maps/trajMap.png` if set it to `0`, and load from `./dataset_npz/.../agent1_maps/trajMap_load.png` if set this argument to `1`.
   The default value is `0`.
 - `--use_maps`, type=`int`, argtype=`'static'`.
-  Controls if uses the trajectory maps or the social maps in the model.
+  Controls if uses the context maps to model social and physical interactions in the model.
   The default value is `1`.
-- `--window_size_expand_meter`, type=`float`, argtype=`'static'`.
-  ***DO NOT CHANGE THIS***.
-  The default value is `10.0`.
-- `--window_size_guidance_map`, type=`int`, argtype=`'static'`.
-  Resolution of map (grids per meter).
-  The default value is `10`.
 
 ### Silverballers args
 
@@ -158,9 +134,15 @@ Args with `changable=False` means that their values can not be changed once the 
 - `--Kc`, type=`int`, argtype=`'static'`.
   Number of style channels in `Agent` model.
   The default value is `20`.
+- `--T`, type=`str`, argtype=`'static'`.
+  Type of transformations used when encoding or decoding trajectories. It could be: - `fft`: fast fourier transform - `haar`: haar wavelet transform - `db2`: DB2 wavelet transform 
+  The default value is `'fft'`.
 - `--depth`, type=`int`, argtype=`'static'`.
   Depth of the random contract id.
   The default value is `16`.
+- `--feature_dim`, type=`int`, argtype=`'static'`.
+  Feature dimension used in most layers.
+  The default value is `128`.
 - `--key_points`, type=`str`, argtype=`'static'`.
   A list of key-time-steps to be predicted in the agent model. For example, `'0_6_11'`.
   The default value is `'0_6_11'`.

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:38:13
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-21 21:26:39
+@LastEditTime: 2022-06-23 15:34:00
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -22,6 +22,8 @@ from .__dataset import Dataset, VideoClip
 from .__maps import MapManager
 from .__trajectory import Trajectory
 
+INIT_POSITION = 10000
+MAP_HALF_SIZE = 50  # Local map's half size
 
 class TrajMapNotFoundError(FileNotFoundError):
     def __init__(self, *args: object) -> None:
@@ -129,7 +131,7 @@ class VideoClipManager(BaseObject):
             frame_dict = dict(zip(frame_ids, np.arange(f)))
 
             # init the matrix
-            matrix = self.args.init_position * np.ones([f, p, 2])
+            matrix = INIT_POSITION * np.ones([f, p, 2])
 
             timebar = self.log_timebar(inputs=person_dict.items(),
                                        text='Processing dataset...',
@@ -142,7 +144,7 @@ class VideoClipManager(BaseObject):
                     = persons_appear[person_id][:, 1:]
 
             neighbors = np.array([
-                np.where(np.not_equal(data, self.args.init_position))[0]
+                np.where(np.not_equal(data, INIT_POSITION))[0]
                 for data in matrix[:, :, 0]], dtype=object)
 
             np.savez(npy_path,
@@ -170,7 +172,7 @@ class VideoClipManager(BaseObject):
                                     trajectory=self.matrix[:, person_index, :],
                                     neighbors=self.neighbors,
                                     frames=self.frames,
-                                    init_position=self.args.init_position))
+                                    init_position=INIT_POSITION))
 
         self.trajectories = trajs
         return self
@@ -269,7 +271,7 @@ class VideoClipManager(BaseObject):
         centers = map_manager.real2grid(centers)
         cuts = map_manager.cut_map(social_maps,
                                    centers,
-                                   self.args.map_half_size)
+                                   MAP_HALF_SIZE)
         paras = map_manager.real2grid_paras
 
         np.savetxt(os.path.join(base_path, save_centers_file), centers)
@@ -463,7 +465,7 @@ class DatasetManager(BaseObject):
         traj_map = np.repeat(traj_map[np.newaxis, :, :], batch_size, axis=0)
         traj_map_cut = MapManager.cut_map(traj_map,
                                           centers,
-                                          self.args.map_half_size)
+                                          MAP_HALF_SIZE)
 
         for agent, t_map, s_map in zip(agents, traj_map_cut, social_map):
             Agent.set_map(agent, 0.5*t_map + 0.5*s_map, para)

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-08-05 15:26:57
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-22 15:37:03
+@LastEditTime: 2022-06-23 15:18:15
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -73,7 +73,7 @@ def update(md_file, files: list[str], titles: list[str]):
 
 
 if __name__ == '__main__':
-    for model in ['Silverballers']:
+    for model in ['Vertical', 'Silverballers']:
         files = ['./codes/args/__args.py',
                  './{}/__args.py'.format(model)]
         titles = ['Basic args',
