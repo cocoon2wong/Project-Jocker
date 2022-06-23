@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-22 20:12:18
+@LastEditTime: 2022-06-23 11:19:05
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -31,9 +31,6 @@ class BurnwoodCModel(BaseHandlerModel):
                          *args, **kwargs)
 
         # Parameters
-        self.d = feature_dim
-        self.points = points
-        self.key_points = key_points
         self.steps = self.args.pred_frames
 
         # Layers

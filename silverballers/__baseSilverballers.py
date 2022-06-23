@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-22 14:47:41
+@LastEditTime: 2022-06-23 14:33:11
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -119,6 +119,7 @@ class BaseSilverballers(C.training.Structure):
             self.handler = self.handler_structure(
                 terminal_args + ['--load', self.args.loadb])
             self.handler.set_model_type(self.handler_model)
+            self.handler.args._set('key_points', self.agent.args.key_points)
             self.handler.load_best_model(self.args.loadb, asHandler=True)
 
         if self.args.batch_size > self.agent.args.batch_size:

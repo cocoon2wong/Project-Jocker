@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-22 14:49:01
+@LastEditTime: 2022-06-23 14:32:06
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -34,6 +34,9 @@ class BaseHandlerModel(C.basemodels.Model):
 
         # Parameters
         self.asHandler = asHandler
+        self.d = feature_dim
+        self.points = points
+        self.key_points = key_points
 
         if self.asHandler or key_points != 'null':
             pi = [int(i) for i in key_points.split('_')]
