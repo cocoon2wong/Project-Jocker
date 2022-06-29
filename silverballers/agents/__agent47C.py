@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:38
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-22 20:57:51
+@LastEditTime: 2022-06-29 10:42:57
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -47,8 +47,8 @@ class Agent47CModel(Model):
         self.Tlayer, self.ITlayer = get_transform_layers(self.args.T)
 
         # Transform layers
-        self.t1 = self.Tlayer(Oshape=(self.args.obs_frames, 2))
-        self.it1 = self.ITlayer(Oshape=(self.n_key, 2))
+        self.t1 = self.Tlayer(Oshape=(self.args.obs_frames, self.args.dim))
+        self.it1 = self.ITlayer(Oshape=(self.n_key, self.args.dim))
 
         # Trajectory encoding (with FFTs)
         self.te = layers.TrajEncoding(self.d//2, tf.nn.relu,
@@ -164,6 +164,20 @@ class Agent47C(BaseAgentStructure):
 
     def __init__(self, terminal_args: list[str]):
         super().__init__(terminal_args)
+
+        self.set_model_type(new_type=Agent47CModel)
+        self.important_args += ['T']
+
+
+class Agent47CExperimental(BaseAgentStructure):
+
+    def __init__(self, terminal_args: list[str]):
+
+        super().__init__(terminal_args)
+
+        # self.args._set('test_set', 'sdd_debug')
+        self.args._set('preprocess', '100')
+        self.args._set('dim', 4)
 
         self.set_model_type(new_type=Agent47CModel)
         self.important_args += ['T']

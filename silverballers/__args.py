@@ -61,7 +61,7 @@ class AgentArgs(C.args.BaseArgTable):
         Controls if using the trajectory maps and the social maps in the model.
         DO NOT change this arg manually.
         """
-        return self._get('use_maps', 1, argtype='static')
+        return self._get('use_maps', 0, argtype='static')
 
     @property
     def preprocess(self) -> str:

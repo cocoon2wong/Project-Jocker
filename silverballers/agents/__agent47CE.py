@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 20:00:17
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-22 21:04:52
+@LastEditTime: 2022-06-29 10:45:26
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -46,8 +46,8 @@ class Agent47CEModel(Model):
         self.Tlayer, self.ITlayer = get_transform_layers(self.args.T)
 
         # Transform layers
-        self.t1 = self.Tlayer((self.args.obs_frames, 2))
-        self.it1 = self.ITlayer((self.args.pred_frames, 2))
+        self.t1 = self.Tlayer((self.args.obs_frames, self.args.dim))
+        self.it1 = self.ITlayer((self.args.pred_frames, self.args.dim))
 
         # Trajectory encoding (with FFTs)
         self.te = layers.TrajEncoding(self.d//2, tf.nn.relu,
