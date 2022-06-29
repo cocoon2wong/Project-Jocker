@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-23 15:36:22
+@LastEditTime: 2022-06-28 19:43:39
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -350,3 +350,11 @@ class BaseArgTable():
         if set this argument to `1`.
         """
         return self._get('use_extra_maps', 0, argtype='dynamic')
+
+    @property
+    def dim(self) -> int:
+        """
+        Dimension of the `trajectory`.
+        For example, (x, y) -> `dim = 2`
+        """
+        return self._get('dim', 2, argtype='static')

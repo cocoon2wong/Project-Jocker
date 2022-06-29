@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:38:13
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-23 15:34:00
+@LastEditTime: 2022-06-29 15:20:05
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -24,6 +24,7 @@ from .__trajectory import Trajectory
 
 INIT_POSITION = 10000
 MAP_HALF_SIZE = 50  # Local map's half size
+
 
 class TrajMapNotFoundError(FileNotFoundError):
     def __init__(self, *args: object) -> None:
@@ -56,31 +57,31 @@ class VideoClipManager(BaseObject):
     """
 
     def __init__(self, args: Args, name: str,
-                 custom_list: list[np.ndarray] = []):
+                 custom_list: list[np.ndarray] = [],
+                 temp_dir='./dataset_npz'):
 
         super().__init__()
 
         self.args = args
         self.name = name
+        self.path = temp_dir
 
-        self.video_clip = VideoClip.get(name)
+        self.info = VideoClip.get(name)
         self.custom_list = custom_list
         self.agent_count = None
         self.trajectories: list[Trajectory] = None
 
-    def load_csv(self, name) -> tuple[dict[int, np.ndarray], list]:
+    def load_csv(self, file_name='true_pos_.csv') -> tuple[dict[int, np.ndarray], list]:
         """
-        Read trajectory data from csv file.
+        Load trajectory data from csv file.
 
-        :param name: name of the dataset. See Details in `datasetManager.py`
-        :return persons: data sorted by person ids. 
-            type = `dict[int, np.ndarray]`
+        :param file_name: name of the csv dataset file
+        :return persons: data sorted by person ids
         :return frames: a list of all frame indexs
         """
-        dataset_dir_current = self.video_clip.dataset_dir
-        order = self.video_clip.order
+        order = self.info.order
 
-        csv_file_path = os.path.join(dataset_dir_current, 'true_pos_.csv')
+        csv_file_path = os.path.join(self.info.dataset_dir, file_name)
         data = np.genfromtxt(csv_file_path, delimiter=',').T
 
         # Load data, and sort by person id
@@ -99,6 +100,39 @@ class VideoClipManager(BaseObject):
         self.log('Load dataset {} done.'.format(csv_file_path))
         return persons, frames
 
+    def load_dataset(self, file_name='ann.csv'):
+        """
+        Load trajectory data from the annotation txt file.
+        Data format of the `ann.txt`:
+        It is a matrix with the shape = `(N, M)`, where
+        - `N` is the number of records in the file;
+        - `M` is the length of each record.
+
+        A record may contains several items, where
+        - `item[0]`: frame name (or called the frame id);
+        - `item[1]`: agent name (or called the agent id);
+        - `item[2:M]`: dataset records, like coordinates, 
+            bounding boxes, and other type of trajectory series.
+
+        :param file_name: name of the annatation file
+        """
+
+        file_path = os.path.join(self.info.dataset_dir, file_name)
+        data = np.genfromtxt(file_path, dtype=np.str, delimiter=',')
+
+        agents = {}
+        agent_ids = np.unique(agent_order := data.T[1])
+
+        for id in agent_ids:
+            index = np.where(agent_order == id)[0]
+            agents[id] = np.delete(data[index], 1, axis=1)
+
+        frame_ids = list(set(data.T[0].astype(np.int32)))
+        frame_ids.sort()
+
+        self.log('Dataset file {} loaded.'.format(file_path))
+        return agents, frame_ids
+
     def process_metadata(self):
         """
         Process metadata of a video clip (like csv dataset 
@@ -106,7 +140,7 @@ class VideoClipManager(BaseObject):
         """
 
         # make directories
-        b = dir_check(os.path.join(dir_check('./dataset_npz'), self.name))
+        b = dir_check(os.path.join(dir_check(self.path), self.name))
         npy_path = os.path.join(b, 'data.npz')
 
         # load from saved files
@@ -118,7 +152,14 @@ class VideoClipManager(BaseObject):
 
         # or start processing and then saving
         else:
-            persons_appear, frame_ids = self.load_csv(self.name)
+            if self.args.dim == 2:
+                func = self.load_csv
+            elif self.args.dim > 2:
+                func = self.load_dataset
+            else:
+                raise ValueError
+
+            persons_appear, frame_ids = func()
             person_ids = list(persons_appear.keys())
 
             p = len(person_ids)
@@ -131,7 +172,8 @@ class VideoClipManager(BaseObject):
             frame_dict = dict(zip(frame_ids, np.arange(f)))
 
             # init the matrix
-            matrix = INIT_POSITION * np.ones([f, p, 2])
+            dim = persons_appear[person_ids[0]].shape[-1] - 1
+            matrix = INIT_POSITION * np.ones([f, p, dim])
 
             timebar = self.log_timebar(inputs=person_dict.items(),
                                        text='Processing dataset...',
@@ -185,7 +227,7 @@ class VideoClipManager(BaseObject):
         if self.trajectories is None:
             self.make_trajectories()
 
-        sample_rate, frame_rate = self.video_clip.paras
+        sample_rate, frame_rate = self.info.paras
         frame_step = int(0.4 / (sample_rate / frame_rate))
         train_samples = []
 
@@ -315,21 +357,21 @@ class DatasetManager(BaseObject):
         all_agents = []
         count = 1
         total = len(video_clips)
-        dir_check('./dataset_npz/')
 
         for clip in video_clips:
             print('({}/{})  Prepare test data in `{}`...'.format(
                 count, total, clip.name))
 
+            base_dir = os.path.join(clip.path, clip.name)
             if (self.args.obs_frames, self.args.pred_frames) == (8, 12):
-                data_path = './dataset_npz/{}/agent'.format(clip.name)
+                f_name = 'agent'
             else:
-                data_path = './dataset_npz/{}/agent_{}to{}'.format(clip.name,
-                                                                   self.args.obs_frames,
-                                                                   self.args.pred_frames)
+                f_name = 'agent_{}to{}'.format(self.args.obs_frames,
+                                               self.args.pred_frames)
 
             endstring = '' if self.args.step == 4 else self.args.step
-            data_path += '{}.npz'.format(endstring)
+            f_name += '{}.npz'.format(endstring)
+            data_path = os.path.join(base_dir, f_name)
 
             if not os.path.exists(data_path):
                 agents = clip.sample_train_data()
@@ -409,7 +451,7 @@ class DatasetManager(BaseObject):
         :param mode: load mode, canbe `'test'` or `'train'`
         :return agents: loaded agents. It returns a list of `[train_agents, test_agents]` when `mode` is `'train'`.
         """
-        dir_check('./dataset_npz')
+
         Dm = cls(args)
 
         if dataset == 'auto':
@@ -425,7 +467,12 @@ class DatasetManager(BaseObject):
             if type(dataset) == str:
                 dataset = [dataset]
 
-            dms = [VideoClipManager(args, d) for d in dataset]
+            if (d := args.dim) > 2:
+                path = './dataset_temp_dim{}'.format(d)
+            else:
+                path = './dataset_temp'
+
+            dms = [VideoClipManager(args, d, temp_dir=path) for d in dataset]
             return Dm.load_from_videoClips(dms, mode=mode)
 
     def load_maps(self, base_path: str,

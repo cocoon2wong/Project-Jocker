@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 10:44:39
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-21 21:07:27
+@LastEditTime: 2022-06-29 15:24:07
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -32,7 +32,7 @@ class Trajectory():
     """
 
     def __init__(self, agent_index: int,
-    trajectory: np.ndarray,
+                 trajectory: np.ndarray,
                  neighbors: list[list[int]],
                  frames: list[int],
                  init_position: float):
@@ -113,15 +113,15 @@ class Trajectory():
         NOTE that `start_frame`, `obs_frame`, `end_frame` are
         indexes of frames, not their ids.
         """
-        neighbors = self.neighbors[obs_frame - frame_step]
+        neighbors = np.array(self.neighbors[obs_frame - frame_step])
 
         if len(neighbors) > max_neighbor + 1:
-            nei_pos = matrix[obs_frame - frame_step, neighbors, :]
+            nei_pos = matrix[obs_frame - frame_step, list(neighbors), :]
             tar_pos = self.traj[obs_frame - frame_step, np.newaxis, :]
             dis = calculate_length(nei_pos - tar_pos)
             neighbors = neighbors[np.argsort(dis)[1:max_neighbor+1]]
 
-        nei_traj = matrix[start_frame:end_frame:frame_step, neighbors, :]
+        nei_traj = matrix[start_frame:end_frame:frame_step, list(neighbors), :]
         nei_traj = np.transpose(nei_traj, [1, 0, 2])
         tar_traj = self.traj[start_frame:end_frame:frame_step, :]
 
