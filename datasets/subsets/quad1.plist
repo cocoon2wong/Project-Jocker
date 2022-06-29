@@ -2,10 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>name</key>
-	<string>quad1</string>
+	<key>anntype</key>
+	<string>boundingbox</string>
 	<key>dataset_dir</key>
 	<string>./data/sdd/quad/video1</string>
+	<key>dimension</key>
+	<integer>4</integer>
+	<key>name</key>
+	<string>quad1</string>
 	<key>order</key>
 	<array>
 		<integer>1</integer>
@@ -22,9 +26,9 @@
 	<string>./videos/sdd_quad_1.mov</string>
 	<key>weights</key>
 	<array>
-		<real>100.0</real>
+		<real>1920.0</real>
 		<real>0.0</real>
-		<real>100.0</real>
+		<real>1920.0</real>
 		<real>0.0</real>
 	</array>
 </dict>
