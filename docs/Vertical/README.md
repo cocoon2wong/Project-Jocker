@@ -254,12 +254,18 @@ All args and their usages when training and testing are listed below. Args with 
 
 ### Vertical args
 
+- `--K_train`, type=`int`, argtype=`'static'`.
+  Number of multiple generations when training.
+  The default value is `1`.
+- `--K`, type=`int`, argtype=`'dynamic'`.
+  Number of multiple generations when evaluating. The number of trajectories predicted for one agent is calculated by `N = args.K * args.Kc`, where `Kc` is the number of style channels.
+  The default value is `1`.
 - `--Kc`, type=`int`, argtype=`'static'`.
   Number of hidden categories used in alpha model.
   The default value is `20`.
 - `--depth`, type=`int`, argtype=`'static'`.
-  (It is unused in this model) 
-  The default value is `-1`.
+  Depth of the random noise vector (for random generation).
+  The default value is `16`.
 - `--feature_dim`, type=`int`, argtype=`'static'`.
   (It is unused in this model) 
   The default value is `-1`.
@@ -267,6 +273,6 @@ All args and their usages when training and testing are listed below. Args with 
   A list of key-time-steps to be predicted in the agent model. For example, `'0_6_11'`.
   The default value is `'0_6_11'`.
 - `--points`, type=`int`, argtype=`'static'`.
-  Controls number of points (representative time steps) input to the beta model.
+  Controls number of points (representative time steps) input to the beta model. It only works when training the beta model only.
   The default value is `1`.
 <!-- DO NOT CHANGE THIS LINE -->

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-22 20:21:04
+@LastEditTime: 2022-07-05 17:11:58
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -428,6 +428,8 @@ class Structure(BaseObject):
                     return_results=False,
                     show_timebar=False
                 )
+
+                test_epochs.append(epoch)
 
                 # Save model
                 if metrics <= best_metrics:

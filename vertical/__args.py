@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-23 10:16:04
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-23 15:05:21
+@LastEditTime: 2022-07-05 19:37:50
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -34,6 +34,7 @@ class VArgs(BaseArgTable):
     def points(self) -> int:
         """
         Controls number of points (representative time steps) input to the beta model.
+        It only works when training the beta model only.
         """
         return self._get('points', 1, argtype='static')
 
@@ -47,6 +48,23 @@ class VArgs(BaseArgTable):
     @property
     def depth(self) -> int:
         """
-        (It is unused in this model)
+        Depth of the random noise vector (for random generation).
         """
-        return self._get('depth', -1, argtype='static')
+        return self._get('depth', 16, argtype='static')
+
+    @property
+    def K(self) -> int:
+        """
+        Number of multiple generations when evaluating.
+        The number of trajectories predicted for one agent
+        is calculated by `N = args.K * args.Kc`,
+        where `Kc` is the number of style channels.
+        """
+        return self._get('K', 1, argtype='dynamic')
+
+    @property
+    def K_train(self) -> int:
+        """
+        Number of multiple generations when training.
+        """
+        return self._get('K_train', 1, argtype='static')

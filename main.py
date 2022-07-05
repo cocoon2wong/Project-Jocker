@@ -34,7 +34,7 @@ if __name__ == '__main__':
     # ---------------
     # Vertical models
     # ---------------
-    elif model == 'va':
+    elif model in ['va', 'agent']:
         s = vertical.VA
 
     elif model == 'vb':
