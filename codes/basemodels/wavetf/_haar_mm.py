@@ -15,7 +15,7 @@
 import math
 import tensorflow as tf
 from tensorflow import keras
-from wavetf._base_wavelets import DirWaveLayer1D, InvWaveLayer1D, DirWaveLayer2D, InvWaveLayer2D
+from ._base_wavelets import DirWaveLayer1D, InvWaveLayer1D, DirWaveLayer2D, InvWaveLayer2D
 
 ########################################################################
 # 1D wavelet

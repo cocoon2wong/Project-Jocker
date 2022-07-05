@@ -15,8 +15,8 @@
 import math
 import tensorflow as tf
 from tensorflow import keras
-from wavetf._haar_conv import *
-from wavetf._daubachies_conv import *
+from ._haar_conv import *
+from ._daubachies_conv import *
 
 class WaveTFFactory(object) :
     """Factory for different wavelet transforms (1D/2D, haar/db2)"""

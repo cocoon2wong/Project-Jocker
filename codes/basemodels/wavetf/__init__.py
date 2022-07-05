@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from wavetf._wavetf import WaveTFFactory
+from ._wavetf import WaveTFFactory

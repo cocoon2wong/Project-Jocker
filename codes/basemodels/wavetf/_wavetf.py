@@ -15,10 +15,10 @@
 import math
 import tensorflow as tf
 from tensorflow import keras
-from wavetf._haar_conv import *
+from ._haar_conv import *
 # use MM implementations for 1D Haar, since they're faster than conv
-from wavetf._haar_mm import HaarWaveLayer1D, InvHaarWaveLayer1D
-from wavetf._daubachies_conv import *
+from ._haar_mm import HaarWaveLayer1D, InvHaarWaveLayer1D
+from ._daubachies_conv import *
 
 class WaveTFFactory(object) :
     """Factory for different wavelet transforms (1D/2D, haar/db2)"""
