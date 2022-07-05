@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-29 15:36:47
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-29 19:04:45
+@LastEditTime: 2022-07-05 15:21:27
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -76,6 +76,9 @@ def transform_annotations():
             with open(source, 'r') as f:
                 while data_original := f.readline():
                     split = data_original.split(' ')
+                    if split[6] == '1':
+                        continue
+
                     dat.append([split[5],
                                 split[0],
                                 float(split[1])/scale,
@@ -100,12 +103,10 @@ def save_dataset_info():
                 name='{}{}'.format(base_set, index),
                 dataset_dir='./data/sdd/{}/video{}'.format(
                     base_set, index),
-                order=[1, 0],
                 paras=[1, 30],
                 video_path='./videos/sdd_{}_{}.mov'.format(
                     base_set, index),
-                weights=[SDD_SETS[base_set][1], 0.0,
-                         SDD_SETS[base_set][1], 0.0],
+                weights=SDD_SETS[base_set][1],
                 scale=2,
                 dimension=4,
                 anntype='boundingbox',
@@ -129,7 +130,10 @@ def save_dataset_info():
 
     write_plist({'train': train_sets,
                  'test': test_sets,
-                 'val': val_sets},
+                 'val': val_sets,
+                 'weights': SCALE,
+                 'dimension': 4,
+                 'anntype': 'boundingbox'},
                 os.path.join(BASE_DIR, 'sdd.plist'))
 
     for key, value in subsets.items():
