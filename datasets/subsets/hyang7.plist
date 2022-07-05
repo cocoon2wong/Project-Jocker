@@ -10,11 +10,6 @@
 	<integer>4</integer>
 	<key>name</key>
 	<string>hyang7</string>
-	<key>order</key>
-	<array>
-		<integer>1</integer>
-		<integer>0</integer>
-	</array>
 	<key>paras</key>
 	<array>
 		<integer>1</integer>
@@ -25,11 +20,6 @@
 	<key>video_path</key>
 	<string>./videos/sdd_hyang_7.mov</string>
 	<key>weights</key>
-	<array>
-		<real>1920.0</real>
-		<real>0.0</real>
-		<real>1920.0</real>
-		<real>0.0</real>
-	</array>
+	<real>1920.0</real>
 </dict>
 </plist>

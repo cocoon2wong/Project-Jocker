@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:41:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-29 15:17:05
+@LastEditTime: 2022-07-05 15:00:30
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -23,7 +23,6 @@ class VideoClip():
     ```python
     >>> self.name           # dataset name
     >>> self.dataset_dir    # dataset folder
-    >>> self.order          # X, Y order
     >>> self.paras          # [sample_step, frame_rate]
     >>> self.video_path     # video path
     >>> self.weights        # transfer weights from real scales to pixels
@@ -33,7 +32,6 @@ class VideoClip():
 
     def __init__(self, name: str,
                  dataset_dir: str,
-                 order: list[int],
                  paras: list[int],
                  video_path: str,
                  weights: list,
@@ -43,7 +41,6 @@ class VideoClip():
 
         self._name = name
         self._dataset_dir = dataset_dir
-        self._order = order
         self._paras = paras
         self._video_path = video_path
         self._weights = weights
@@ -76,13 +73,6 @@ class VideoClip():
         dataset file, and a scene image `reference.jpg`.
         """
         return self._dataset_dir
-
-    @property
-    def order(self):
-        """
-        order for coordinates, (x, y) -> `[0, 1]`, (y, x) -> `[1, 0]`.
-        """
-        return self._order
 
     @property
     def paras(self):
@@ -148,6 +138,25 @@ class Dataset():
         self.test_sets: list[str] = dic['test']
         self.val_sets: list[str] = dic['val']
 
+        self._dimension: int = dic['dimension']
+        self._weights: float = dic['weights']
+        self._anntype: str = dic['anntype']
+
+    @property
+    def dimension(self) -> int:
+        """
+        Maximum dimension of trajectories recorded in this dataset.
+        For example, `(x, y)` -> `dimension = 2`.
+        """
+        return self._dimension
+
+    @property
+    def weights(self) -> float:
+        """
+        Maximum pixel length of the images.
+        For example, `weights = 1920` when `(H, W) = (1920, 1080)`.
+        """
+        return self._weights
 
 def load_from_plist(path: str) -> dict:
     """

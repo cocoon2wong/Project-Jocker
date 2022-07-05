@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 19:34:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-21 22:02:22
+@LastEditTime: 2022-07-04 14:39:49
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -19,17 +19,18 @@ def apply(loss_list: list[Union[str, Any]],
           labels: tf.Tensor,
           loss_weights: list[float] = None,
           mode='loss',
+          coefficient=1.0,
           *args, **kwargs) -> tuple[tf.Tensor, dict[str, tf.Tensor]]:
 
     loss_dict = {}
     for loss in loss_list:
         if type(loss) == str:
             if re.match('[Aa][Dd][Ee]', loss):
-                loss_dict['ADE({})'.format(mode)] = ADE(
+                loss_dict['ADE({})'.format(mode)] = coefficient * ADE(
                     model_outputs[0], labels)
 
             elif re.match('[Ff][Dd][Ee]', loss):
-                loss_dict['FDE({})'.format(mode)] = FDE(
+                loss_dict['FDE({})'.format(mode)] = coefficient * FDE(
                     model_outputs[0], labels)
 
             elif re.match('[Dd][Ii][Ff]', loss):
@@ -38,7 +39,7 @@ def apply(loss_list: list[Union[str, Any]],
                 weights = [min(1.0, 5 * 10 ** -o) for o in range(order+1)] \
                     if not 'diff_weights' in kwargs.keys() \
                     else kwargs['diff_weights']
-                loss_dict['Diff'] = tf.reduce_sum(
+                loss_dict['Diff'] = coefficient * tf.reduce_sum(
                     tf.stack(weights) *
                     tf.stack(diff(model_outputs[0], labels, order)))
 

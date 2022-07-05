@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 15:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-23 15:33:19
+@LastEditTime: 2022-07-04 10:23:42
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -22,8 +22,8 @@ MASK = cv2.imread('./figures/mask_circle.png')[:, :, 0]/50
 MASKS = {}
 
 # context map parameters
-WINDOW_SIZE_EXPAND_METER = 10.0
-WINDOW_SIZE_GUIDANCE_MAP = 10.0
+WINDOW_SIZE_EXPAND_METER = 0.3
+WINDOW_SIZE_GUIDANCE_MAP = 200.0
 
 # interaction parameters
 # Avoid size in grid cells when modeling social interaction

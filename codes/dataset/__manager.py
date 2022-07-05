@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:38:13
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-29 15:20:05
+@LastEditTime: 2022-07-05 15:09:27
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -71,35 +71,6 @@ class VideoClipManager(BaseObject):
         self.agent_count = None
         self.trajectories: list[Trajectory] = None
 
-    def load_csv(self, file_name='true_pos_.csv') -> tuple[dict[int, np.ndarray], list]:
-        """
-        Load trajectory data from csv file.
-
-        :param file_name: name of the csv dataset file
-        :return persons: data sorted by person ids
-        :return frames: a list of all frame indexs
-        """
-        order = self.info.order
-
-        csv_file_path = os.path.join(self.info.dataset_dir, file_name)
-        data = np.genfromtxt(csv_file_path, delimiter=',').T
-
-        # Load data, and sort by person id
-        persons = {}
-        person_list = set(data.T[1].astype(np.int32))
-        for person in person_list:
-            index_current = np.where(data.T[1] == person)[0]
-            persons[person] = np.column_stack([
-                data[index_current, 0],
-                data[index_current, 2 + order[0]],
-                data[index_current, 2 + order[1]]])
-
-        frames = list(set(data.T[0].astype(np.int32)))
-        frames.sort()
-
-        self.log('Load dataset {} done.'.format(csv_file_path))
-        return persons, frames
-
     def load_dataset(self, file_name='ann.csv'):
         """
         Load trajectory data from the annotation txt file.
@@ -152,14 +123,7 @@ class VideoClipManager(BaseObject):
 
         # or start processing and then saving
         else:
-            if self.args.dim == 2:
-                func = self.load_csv
-            elif self.args.dim > 2:
-                func = self.load_dataset
-            else:
-                raise ValueError
-
-            persons_appear, frame_ids = func()
+            persons_appear, frame_ids = self.load_dataset()
             person_ids = list(persons_appear.keys())
 
             p = len(person_ids)
@@ -214,7 +178,8 @@ class VideoClipManager(BaseObject):
                                     trajectory=self.matrix[:, person_index, :],
                                     neighbors=self.neighbors,
                                     frames=self.frames,
-                                    init_position=INIT_POSITION))
+                                    init_position=INIT_POSITION,
+                                    dimension=self.args.dim))
 
         self.trajectories = trajs
         return self
@@ -439,27 +404,32 @@ class DatasetManager(BaseObject):
                                                         Agent.__version__),
                      level='error')
 
-        return [Agent().load_data(save_dict[key].tolist()) for key in save_dict.keys()]
+        return [Agent(self.args.dim).load_data(save_dict[key].tolist()) for key in save_dict.keys()]
 
     @classmethod
-    def load(cls, args: Args, dataset: Union[str, list[str]], mode: str):
+    def load(cls, args: Args, dataset: Union[str, list[str]], mode: str,
+             datasetInfo: Dataset = None):
         """
         Load train samples in sub-dataset(s).
 
         :param args: args used
         :param dataset: dataset to load. Set it to `'auto'` to load train agents
         :param mode: load mode, canbe `'test'` or `'train'`
+        :param datasetInfo: dataset infomation. It should be given when
+            `dataset` is not `'auto'`.
         :return agents: loaded agents. It returns a list of `[train_agents, test_agents]` when `mode` is `'train'`.
         """
 
         Dm = cls(args)
 
         if dataset == 'auto':
-            train_sets = Dm.dataset.train_sets
-            test_sets = Dm.dataset.test_sets
-
-            train_agents = cls.load(args, train_sets, mode='train')
-            test_agents = cls.load(args, test_sets, mode='test')
+            di = Dm.dataset
+            train_agents = cls.load(args, di.train_sets,
+                                    mode='train',
+                                    datasetInfo=di)
+            test_agents = cls.load(args, di.test_sets,
+                                   mode='test',
+                                   datasetInfo=di)
 
             return train_agents, test_agents
 
@@ -467,7 +437,7 @@ class DatasetManager(BaseObject):
             if type(dataset) == str:
                 dataset = [dataset]
 
-            if (d := args.dim) > 2:
+            if (d := datasetInfo.dimension) > 2:
                 path = './dataset_temp_dim{}'.format(d)
             else:
                 path = './dataset_temp'

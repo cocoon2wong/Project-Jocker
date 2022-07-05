@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-28 19:43:39
+@LastEditTime: 2022-07-05 15:14:08
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,8 +10,8 @@
 
 import json
 import os
-from typing import Any
 import time
+from typing import Any
 
 from ..utils import dir_check
 
@@ -131,7 +131,7 @@ class BaseArgTable():
         value = None
         for index in order:
             value = self._get_args_by_index_and_name(index, name)
-            
+
             if value:
                 break
             else:
@@ -355,6 +355,23 @@ class BaseArgTable():
     def dim(self) -> int:
         """
         Dimension of the `trajectory`.
-        For example, (x, y) -> `dim = 2`
+        For example, (x, y) -> `dim = 2`.
         """
-        return self._get('dim', 2, argtype='static')
+        if self.anntype == 'coordinate':
+            dim = 2
+
+        elif self.anntype == 'boundingbox':
+            dim = 4
+
+        else:
+            raise ValueError(self.anntype)
+
+        return self._get('dim', dim, argtype='static')
+
+    @property
+    def anntype(self) -> str:
+        """
+        Type of annotations in the predicted trajectories.
+        Canbe `'coordinate'` or `'boundingbox'`.
+        """
+        return self._get('anntype', 'coordinate', argtype='static')

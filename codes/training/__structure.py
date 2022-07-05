@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-29 09:34:47
+@LastEditTime: 2022-07-05 09:46:38
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -29,7 +29,7 @@ class Structure(BaseObject):
 
         self.args = BaseArgTable(terminal_args)
         self.model: Model = None
-        self.important_args = ['lr', 'test_set']
+        self.important_args = ['model', 'lr', 'test_set']
 
         self.set_gpu()
         self.optimizer = self.set_optimizer()
@@ -42,6 +42,8 @@ class Structure(BaseObject):
 
         self.set_metrics('ade', 'fde')
         self.set_metrics_weights(1.0, 0.0)
+
+        self.datasetInfo: Dataset = None
 
     def set_inputs(self, *args):
         """
@@ -112,8 +114,9 @@ class Structure(BaseObject):
     def set_metrics_weights(self, *args: list[float]):
         self.metrics_weights = [arg for arg in args]
 
-    def set_optimizer(self, *args, **kwargs) -> tf.keras.optimizers.Optimizer:
-        return tf.keras.optimizers.Adam(learning_rate=self.args.lr)
+    def set_optimizer(self, epoch: int = None) -> tf.keras.optimizers.Optimizer:
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.args.lr)
+        return self.optimizer
 
     def set_gpu(self):
         os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -266,7 +269,8 @@ class Structure(BaseObject):
                              outputs,
                              labels,
                              self.metrics_weights,
-                             mode='m')
+                             mode='m',
+                             coefficient=self.datasetInfo.weights)
 
     def gradient_operations(self, inputs: list[tf.Tensor],
                             labels: tf.Tensor,
@@ -321,6 +325,9 @@ class Structure(BaseObject):
         """
         Load args, load datasets, and start training or test.
         """
+
+        self.datasetInfo = Dataset(self.args.test_set)
+
         # start training if not loading any model weights
         if self.args.load == 'null':
             self.model = self.create_model()
@@ -343,28 +350,34 @@ class Structure(BaseObject):
         Run test accoding to arguments.
         """
 
+        self.datasetInfo = Dataset(self.args.test_set)
+
         if self.args.test_mode == 'one':
             try:
                 agents = DatasetManager.load(self.args,
                                              ds := self.args.force_set,
-                                             mode='test')
+                                             mode='test',
+                                             datasetInfo=self.datasetInfo)
             except:
-                ds = Dataset(self.args.test_set).test_sets[0]
-                agents = DatasetManager.load(self.args, ds, mode='test')
+                ds = self.datasetInfo.test_sets[0]
+                agents = DatasetManager.load(self.args, ds, mode='test',
+                                             datasetInfo=self.datasetInfo)
 
             self.__test(agents=agents, dataset=ds)
             return
 
-        test_sets = Dataset(self.args.test_set).test_sets
+        test_sets = self.datasetInfo.test_sets
         if self.args.test_mode == 'all':
             for ds in test_sets:
-                agents = DatasetManager.load(self.args, ds, mode='test')
+                agents = DatasetManager.load(self.args, ds, mode='test',
+                                             datasetInfo=self.datasetInfo)
                 self.__test(agents, ds)
 
         elif self.args.test_mode == 'mix':
             agents = []
             for ds in test_sets:
-                agents += DatasetManager.load(self.args, ds, mode='test')
+                agents += DatasetManager.load(self.args, ds, mode='test',
+                                              datasetInfo=self.datasetInfo)
 
             self.__test(agents, dataset=self.args.test_set)
 
@@ -399,11 +412,21 @@ class Structure(BaseObject):
             self.args.epochs).batch(self.args.batch_size)
 
         # start training
-        timebar = self.log_timebar(
-            ds_train, 'Training...', return_enumerate=False)
+        timebar = self.log_timebar(inputs=ds_train,
+                                   text='Training...',
+                                   return_enumerate=False)
+
+        epochs = []
         for batch_id, dat in enumerate(timebar):
 
             epoch = (batch_id * self.args.batch_size) // train_number
+
+            # Update learning rate and optimizer
+            if not epoch in epochs:
+                self.set_optimizer(epoch)
+                epochs.append(epoch)
+
+            # Run training once
             loss, loss_dict, loss_move = self.gradient_operations(
                 inputs=dat[:-1],
                 labels=dat[-1],
@@ -536,13 +559,13 @@ class Structure(BaseObject):
         # calculate average metric
         weights = tf.cast(tf.stack(test_numbers), tf.float32)
         metrics_all = \
-            (tf.reduce_sum(tf.stack(metrics_all) * weights)/ \
-            tf.reduce_sum(weights)).numpy()
+            (tf.reduce_sum(tf.stack(metrics_all) * weights) /
+             tf.reduce_sum(weights)).numpy()
 
         for key in metrics_dict_all:
             metrics_dict_all[key] = \
-                (tf.reduce_sum(tf.stack(metrics_dict_all[key]) * weights)/ \
-                tf.reduce_sum(weights)).numpy()
+                (tf.reduce_sum(tf.stack(metrics_dict_all[key]) * weights) /
+                 tf.reduce_sum(weights)).numpy()
 
         if return_results:
             return outputs_all, labels_all, metrics_all, metrics_dict_all
@@ -624,7 +647,7 @@ class Structure(BaseObject):
 
         if self.args.draw_results and (not dataset.startswith('mix')):
             # draw results on video frames
-            tv = Visualization(dataset=dataset)
+            tv = Visualization(args=self.args, dataset=dataset)
             save_base_path = dir_check(self.args.log_dir) \
                 if self.args.load == 'null' \
                 else self.args.load

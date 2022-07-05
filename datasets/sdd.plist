@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>anntype</key>
+	<string>boundingbox</string>
+	<key>dimension</key>
+	<integer>4</integer>
 	<key>test</key>
 	<array>
 		<string>little1</string>
@@ -71,5 +75,7 @@
 		<string>gates3</string>
 		<string>gates4</string>
 	</array>
+	<key>weights</key>
+	<real>1920.0</real>
 </dict>
 </plist>

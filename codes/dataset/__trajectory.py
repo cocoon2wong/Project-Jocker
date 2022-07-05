@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 10:44:39
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-29 15:24:07
+@LastEditTime: 2022-07-01 16:35:09
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -35,7 +35,8 @@ class Trajectory():
                  trajectory: np.ndarray,
                  neighbors: list[list[int]],
                  frames: list[int],
-                 init_position: float):
+                 init_position: float,
+                 dimension: int):
         """
         init
 
@@ -52,9 +53,11 @@ class Trajectory():
         """
 
         self._agent_index = agent_index
-        self._traj = trajectory # matrix[:, agent_index, :]
+        self._traj = trajectory  # matrix[:, agent_index, :]
         self._neighbors = neighbors
         self._frames = frames
+
+        self.dim = dimension
 
         base = self.traj.T[0]
         diff = base[:-1] - base[1:]
@@ -125,14 +128,16 @@ class Trajectory():
         nei_traj = np.transpose(nei_traj, [1, 0, 2])
         tar_traj = self.traj[start_frame:end_frame:frame_step, :]
 
-        return Agent().init_data(target_traj=tar_traj,
-                                 neighbors_traj=nei_traj,
-                                 frames=self.frames[start_frame:end_frame:frame_step],
-                                 start_frame=start_frame,
-                                 obs_frame=obs_frame,
-                                 end_frame=end_frame,
-                                 frame_step=frame_step,
-                                 add_noise=add_noise)
+        return Agent(self.dim).init_data(
+            target_traj=tar_traj,
+            neighbors_traj=nei_traj,
+            frames=self.frames[start_frame:end_frame:frame_step],
+            start_frame=start_frame,
+            obs_frame=obs_frame,
+            end_frame=end_frame,
+            frame_step=frame_step,
+            add_noise=add_noise
+        )
 
 
 def calculate_length(vec1):

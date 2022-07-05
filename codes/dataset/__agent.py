@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-21 15:01:07
+@LastEditTime: 2022-07-05 10:31:33
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -63,8 +63,8 @@ class Agent():
                    'neighbor_traj',
                    'neighbor_traj_linear_pred',
                    'obs_length', 'total_frame']
-    
-    def __init__(self):
+
+    def __init__(self, dimension: int):
         self._traj = []
         self._traj_future = []
 
@@ -85,15 +85,34 @@ class Agent():
         self.neighbor_traj = []
         self.neighbor_traj_linear_pred = []
 
+        self.dim = dimension
+
     def copy(self):
         return copy.deepcopy(self)
+
+    def get_ndim_trajectory(self, traj: np.ndarray, dim: int):
+        """
+        get the n-dim trajectory from the input.
+        """
+        true_dim = traj.shape[-1]
+        dims = (dim, true_dim)
+
+        if dims == (2, 4):
+            xl, yl, xr, yr = traj.T
+            return 0.5 * np.column_stack((xl+xr, yl+yr))
+
+        elif dims == (4, 4):
+            return traj
+
+        else:
+            raise NotImplementedError(dims)
 
     @property
     def traj(self) -> np.ndarray:
         """
         historical trajectory, shape = (obs, 2)
         """
-        return self._traj
+        return self.get_ndim_trajectory(self._traj, self.dim)
 
     @traj.setter
     def traj(self, value):
@@ -155,7 +174,7 @@ class Agent():
         ground truth future trajectory.
         shape = (pred, 2)
         """
-        return self._traj_future
+        return self.get_ndim_trajectory(self._traj_future, self.dim)
 
     @groundtruth.setter
     def groundtruth(self, value):
@@ -186,7 +205,7 @@ class Agent():
                 setattr(self, item, zipped_data[item])
         return self
 
-    def init_data(self, target_traj, 
+    def init_data(self, target_traj,
                   neighbors_traj,
                   frames, start_frame,
                   obs_frame, end_frame,
