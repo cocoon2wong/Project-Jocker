@@ -2,7 +2,7 @@
  * @Author: Conghao Wong
  * @Date: 2021-08-05 15:51:15
  * @LastEditors: Conghao Wong
- * @LastEditTime: 2022-06-23 15:19:52
+ * @LastEditTime: 2022-07-06 10:36:54
  * @Description: file content
  * @Github: https://github.com/cocoon2wong
  * Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -162,6 +162,48 @@ for dataset in eth hotel univ zara1 zara2 sdd
     --loadb ./weights/vertical/b_${dataset}
 ```
 
+## Evaluation of the Usage of Spectrums
+
+We design the minimal vertical model to directly evaluate the metrics improvements brought by the usage of DFT (i.e. the trajectory spectrums).
+The minimal V model considers nothing except agents' observed trajectories when forecasting.
+You can start a quick training to see how the DFT helps improve the prediction accuracy by changing the argument `--T` between `[none, fft]` via the following scripts:
+
+```bash
+for ds in eth hotel univ zara1 zara2
+  python main.py \
+    --model mv \
+    --test_set ${ds} \
+    --T none
+```
+
+You can also [download](drive.google.com) and zip our weights into the `weights/vertical_minimal` folder, then run the following test scripts:
+
+```bash
+for name in FFTmv mv
+  for ds in eth hotel univ zara1 zara2
+    python main.py \
+      --load ./weights/vertical_minimal/${name}${ds}
+```
+
+Test results will be saved at the `test.log` file.
+You can find the following results if everything runs correctly:
+
+```log
+[2022-07-06 10:28:59,536][INFO] `MinimalV`: ./weights/vertical_minimal/FFTmveth, eth, {'ADE(m)': 0.79980284, 'FDE(m)': 1.5165437}
+[2022-07-06 10:29:02,438][INFO] `MinimalV`: ./weights/vertical_minimal/FFTmvhotel, hotel, {'ADE(m)': 0.22864725, 'FDE(m)': 0.38144386}
+[2022-07-06 10:29:15,459][INFO] `MinimalV`: ./weights/vertical_minimal/FFTmvuniv, univ, {'ADE(m)': 0.559813, 'FDE(m)': 1.1061481}
+[2022-07-06 10:29:19,675][INFO] `MinimalV`: ./weights/vertical_minimal/FFTmvzara1, zara1, {'ADE(m)': 0.45233154, 'FDE(m)': 0.9287788}
+[2022-07-06 10:29:25,595][INFO] `MinimalV`: ./weights/vertical_minimal/FFTmvzara2, zara2, {'ADE(m)': 0.34826145, 'FDE(m)': 0.71161735}
+[2022-07-06 10:29:29,694][INFO] `MinimalV`: ./weights/vertical_minimal/mveth, eth, {'ADE(m)': 0.83624077, 'FDE(m)': 1.666721}
+[2022-07-06 10:29:32,632][INFO] `MinimalV`: ./weights/vertical_minimal/mvhotel, hotel, {'ADE(m)': 0.2543166, 'FDE(m)': 0.4409294}
+[2022-07-06 10:29:45,396][INFO] `MinimalV`: ./weights/vertical_minimal/mvuniv, univ, {'ADE(m)': 0.7743274, 'FDE(m)': 1.3987076}
+[2022-07-06 10:29:49,126][INFO] `MinimalV`: ./weights/vertical_minimal/mvzara1, zara1, {'ADE(m)': 0.48137394, 'FDE(m)': 0.97067535}
+[2022-07-06 10:29:54,872][INFO] `MinimalV`: ./weights/vertical_minimal/mvzara2, zara2, {'ADE(m)': 0.38129684, 'FDE(m)': 0.7475274}
+```
+
+You can find the huge ADE and FDE improvements by the DFT (or called the trajectory spectrums) in the above logs.
+Please note that the prediction performance is quite bad due to the simple structure of the *minimal* model, and it considers nothing about agents' interactions and multimodality.
+
 ## Args Used
 
 Please specific your customized args when training or testing your model through the following way:
@@ -171,7 +213,7 @@ python main.py --ARG_KEY1 ARG_VALUE2 --ARG_KEY2 ARG_VALUE2 --ARG_KEY3 ARG_VALUE3
 ```
 
 where `ARG_KEY` is the name of args, and `ARG_VALUE` is the corresponding value.
-All args and their usages when training and testing are listed below. Args with `changable=True` means that their values can be changed after training.
+All args and their usages when training and testing are listed below. Args with `argtype='static'` means that their values can not be changed after training.
 
 <!-- DO NOT CHANGE THIS LINE -->
 ### Basic args
