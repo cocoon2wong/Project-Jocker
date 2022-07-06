@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 15:28:14
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-23 15:46:47
+@LastEditTime: 2022-07-06 10:20:29
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,7 +11,6 @@
 import sys
 
 import codes as C
-import silverballers
 import vertical
 
 if __name__ == '__main__':
@@ -19,22 +18,10 @@ if __name__ == '__main__':
 
     model = args.model
 
-    # --------------------
-    # Silverballers models
-    # --------------------
-    if model == 'agent47C':
-        s = silverballers.agents.Agent47C
-
-    elif model == 'agent47CE':
-        s = silverballers.agents.Agent47CE
-    
-    elif model == 'sb47C':
-        s = silverballers.Silverballers47C
-
     # ---------------
     # Vertical models
     # ---------------
-    elif model in ['va', 'agent']:
+    if model in ['va', 'agent']:
         s = vertical.VA
 
     elif model == 'vb':
