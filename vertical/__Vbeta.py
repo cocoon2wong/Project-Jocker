@@ -2,8 +2,8 @@
 @Author: Conghao Wong
 @Date: 2022-06-23 10:23:53
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-23 11:15:48
-@Description: file content
+@LastEditTime: 2022-07-06 11:24:46
+@Description: Second stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
@@ -17,22 +17,26 @@ from .__args import VArgs
 
 class VBModel(BaseHandlerModel):
     """
-    Second stage `Vertical` model.
+    Spectrum Interpolation Sub-network
+    ---
 
-    It can be applyed on both the first stage generative `Vertical-G`
-    and the first stage deterministic `Vertical-D`
+    The second stage V^2-Net sub-network.
+    It is used to interpolate agents' entire predictions
+    by considering their interactions details.
+    It also implements on agents' spectrums instead of
+    their trajectories.
     """
 
     def __init__(self, Args: VArgs,
-                 feature_dim: int, 
-                 points: int, 
-                 asHandler=False, 
-                 key_points: str = None, 
-                 structure=None, 
+                 feature_dim: int,
+                 points: int,
+                 asHandler=False,
+                 key_points: str = None,
+                 structure=None,
                  *args, **kwargs):
 
-        super().__init__(Args, feature_dim, points, 
-                         asHandler, key_points, 
+        super().__init__(Args, feature_dim, points,
+                         asHandler, key_points,
                          structure, *args, **kwargs)
 
         # Layers
@@ -67,19 +71,6 @@ class VBModel(BaseHandlerModel):
              keypoints_index: tf.Tensor,
              training=None, mask=None,
              *args, **kwargs):
-        """
-        Run the second stage `Vertical` model
-
-        :param inputs: a list of tensors, which includes `trajs` and `maps`
-            - trajs, shape = `(batch, obs, 2)`
-            - maps, shape = `(batch, a, a)`
-
-        :param points: pred points, shape = `(batch, n, 2)`
-        :param points_index: pred time steps, shape = `(n)`
-        :param training: controls run as the training mode or the test mode
-
-        :return predictions: predictions, shape = `(batch, pred, 2)`
-        """
 
         # unpack inputs
         trajs, maps = inputs[:2]
@@ -95,7 +86,8 @@ class VBModel(BaseHandlerModel):
         keypoints = tf.concat([trajs[:, -1:, :], keypoints], axis=1)
 
         # add the last obs point to finish linear interpolation
-        linear_pred = self.linear_interpolation.call(keypoints_index, keypoints)
+        linear_pred = self.linear_interpolation.call(
+            keypoints_index, keypoints)
         traj = tf.concat([trajs, linear_pred], axis=-2)
         t_outputs = self.fft.call(traj)
 
@@ -112,7 +104,7 @@ class VBModel(BaseHandlerModel):
 
 class VB(BaseHandlerStructure):
     """
-    Training structure for the second stage `Vertical`
+    Training structure for the second stage sub-network
     """
 
     def __init__(self, terminal_args: list[str]):
@@ -120,5 +112,3 @@ class VB(BaseHandlerStructure):
 
         self.set_model_type(new_type=VBModel)
         self.args = VArgs(terminal_args)
-        self.set_loss('ade', 'diff')
-        self.set_loss_weights(0.8, 0.2)

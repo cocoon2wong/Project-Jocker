@@ -2,8 +2,8 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:38:13
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-23 15:34:00
-@Description: file content
+@LastEditTime: 2022-07-06 14:56:56
+@Description: Structures to manage trajectory datasets.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """

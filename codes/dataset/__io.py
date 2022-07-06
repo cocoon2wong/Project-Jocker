@@ -2,8 +2,8 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 19:24:34
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-21 19:29:55
-@Description: file content
+@LastEditTime: 2022-07-06 14:55:40
+@Description: Methods to get input tensors from dataset-related structures.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """

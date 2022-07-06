@@ -2,8 +2,8 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:41:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-21 21:02:30
-@Description: file content
+@LastEditTime: 2022-07-06 14:54:50
+@Description: Structures to manage trajectory datasets.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
@@ -133,6 +133,7 @@ def load_from_plist(path: str) -> dict:
 
     import plistlib
     import sys
+
     import biplist
 
     v = sys.version

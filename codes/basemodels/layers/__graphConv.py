@@ -2,8 +2,8 @@
 @Author: Conghao Wong
 @Date: 2021-12-21 15:20:57
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-04-21 10:52:00
-@Description: file content
+@LastEditTime: 2022-07-06 15:17:24
+@Description: Graph conv layer.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """

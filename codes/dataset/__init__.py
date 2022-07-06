@@ -2,8 +2,8 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 16:58:13
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-21 20:57:46
-@Description: file content
+@LastEditTime: 2022-07-06 14:59:32
+@Description: Structures to manage training samples from trajectory datasets.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """

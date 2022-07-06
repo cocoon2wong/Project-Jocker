@@ -2,8 +2,8 @@
 @Author: Conghao Wong
 @Date: 2022-07-05 16:00:26
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-05 20:49:00
-@Description: file content
+@LastEditTime: 2022-07-06 15:22:27
+@Description: First stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
@@ -16,6 +16,17 @@ from .__args import VArgs
 
 
 class VAModel(Model):
+    """
+    Keypoints Estimation Sub-network
+    ---
+
+    The first stage V^2-Net sub-network.
+    It is used to model agents' global plannings by considering
+    agents' observed trajectory spectrums.
+    The model takes agents' observed trajectories as the input,
+    and output several keypoint trajectory spectrums finally.
+    FFTs are applied before and after the model implementing.
+    """
 
     def __init__(self, Args: VArgs,
                  feature_dim: int = 128,
@@ -31,7 +42,7 @@ class VAModel(Model):
         # Parameters
         self.d = feature_dim
         self.n_key = keypoints_number
-        self.d_id = id_depth
+        self.d_id = id_depth    # depth of the random noise vector
 
         # Preprocess
         self.set_preprocess('Move', 'Scale', 'Rotate')
@@ -61,6 +72,8 @@ class VAModel(Model):
                                          include_top=False)
 
         # Trainable adj matrix and gcn layer
+        # See our previous work "MSN: Multi-Style Network for Trajectory Prediction" for detail
+        # It is used to generate multiple predictions within one model implementation
         self.adj_fc = tf.keras.layers.Dense(self.args.Kc, tf.nn.tanh)
         self.gcn = layers.GraphConv(units=self.d)
 
@@ -113,7 +126,7 @@ class VAModel(Model):
 
 class VA(BaseAgentStructure):
     """
-    Training structure for the deterministic first stage `Vertical-D`
+    Training structure for the first stage sub-network
     """
 
     def __init__(self, terminal_args: list[str]):

@@ -2,8 +2,8 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 19:34:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-21 22:02:22
-@Description: file content
+@LastEditTime: 2022-07-06 14:51:33
+@Description: Basic loss functions used in trajectory prediction models.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
@@ -105,7 +105,9 @@ def FDE(pred, GT) -> tf.Tensor:
 
 def context(pred, maps, paras, pred_bias=None) -> tf.Tensor:
     """
-    Context loss for Energy Maps by `tensorflow`.
+    Context loss.
+    See details in "CSCNet: Contextual Semantic Consistency Network 
+    for Trajectory Prediction in Crowded Spaces".
 
     :param pred: pred traj, shape = `[batch, pred, 2] or [batch, K, pred, 2]`
     :param maps: energy map, shape = `[batch, h, w]`
@@ -152,7 +154,7 @@ def context(pred, maps, paras, pred_bias=None) -> tf.Tensor:
 
 def diff(pred, GT, ordd=2) -> list[tf.Tensor]:
     """
-    loss_functions with diference limit
+    Diff loss. (It is unused now.)
 
     :param pred: pred traj, shape = `[(K,) batch, pred, 2]`
     :param GT: ground truth future traj, shape = `[batch, pred, 2]`

@@ -2,11 +2,11 @@
 @Author: Conghao Wong
 @Date: 2021-04-30 15:09:20
 @LastEditors: Conghao Wong
-@LastEditTime: 2021-12-21 15:58:52
-@Description: file content
+@LastEditTime: 2022-07-06 15:07:34
+@Description: Basic transformer structure. Part of modules come 
+              from https://tensorflow.google.cn/tutorials/text/transformer.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
-@Part of modules comes from https://tensorflow.google.cn/tutorials/text/transformer.
 """
 
 import numpy as np

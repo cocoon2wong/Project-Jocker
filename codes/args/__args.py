@@ -2,16 +2,16 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-23 15:36:22
-@Description: file content
+@LastEditTime: 2022-07-06 15:20:44
+@Description: Args for training and test trajectory prediction models.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import json
 import os
-from typing import Any
 import time
+from typing import Any
 
 from ..utils import dir_check
 
@@ -131,7 +131,7 @@ class BaseArgTable():
         value = None
         for index in order:
             value = self._get_args_by_index_and_name(index, name)
-            
+
             if value:
                 break
             else:

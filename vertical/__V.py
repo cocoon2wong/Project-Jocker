@@ -2,8 +2,8 @@
 @Author: Conghao Wong
 @Date: 2022-06-23 10:45:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-23 15:14:06
-@Description: file content
+@LastEditTime: 2022-07-06 15:22:06
+@Description: Structure for the V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
@@ -15,12 +15,13 @@ from .__Vbeta import VBModel
 
 
 class V(BaseSilverballers):
-
     """
-    Vertical model.
+    V^2-Net
+    ---
 
-    - keypoints-interpolation two subnetworks;
-    - implements on agents' trajectory spectrums.
+    Training structure for the V^2-Net model.
+    It has keypoints-interpolation two sub-networks.
+    Both these sub-networks implement on agents' trajectory spectrums.
     """
 
     def __init__(self, terminal_args: list[str]):

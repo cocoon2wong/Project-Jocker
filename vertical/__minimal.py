@@ -2,8 +2,8 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 16:39:49
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-23 15:10:56
-@Description: file content
+@LastEditTime: 2022-07-06 15:21:44
+@Description: The minimal V model to evaluate the usage of spectrums.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
@@ -15,9 +15,8 @@ from silverballers import AgentArgs
 
 
 class MinimalVModel(Model):
-
     """
-    The `minimul` vertical model.
+    The `minimal` vertical model.
 
     - considers nothing about interactions;
     - no keypoints-interpolation two-stage subnetworks;
@@ -44,7 +43,6 @@ class MinimalVModel(Model):
         self.d_id = id_depth
 
         # Layers
-
         if self.args.T == 'fft':
             self.t1 = layers.FFTLayer((self.args.obs_frames, 2))
             self.it1 = layers.IFFTLayer((self.args.pred_frames, 2))
@@ -113,14 +111,8 @@ class MinimalVModel(Model):
 
 
 class MinimalV(Structure):
-
     """
-    Training structure for the `minimul` vertical model.
-
-    - considers nothing about interactions;
-    - no keypoints-interpolation two-stage subnetworks;
-    - contains only the backbone;
-    - considers nothing about agents' multimodality.
+    Training structure for the `minimal` vertical model.
     """
 
     model_type = MinimalVModel

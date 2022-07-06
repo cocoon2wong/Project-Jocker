@@ -2,8 +2,8 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-21 15:01:07
-@Description: file content
+@LastEditTime: 2022-07-06 14:53:14
+@Description: Structure to manage training samples.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
@@ -20,9 +20,9 @@ class Agent():
     One agent manager contains these items for one specific agent:
     - historical trajectory: `traj`;
     - context map: `socialMap` and `trajMap`;
-    - future works: activity label;
-    - future works: agent category;
-    - future works: agent preference items
+    - (future works): activity label;
+    - (future works): agent category;
+    - (future works): agent preference items
 
     Properties
     ----------
@@ -42,7 +42,7 @@ class Agent():
     --------------
     ```python
     # copy this manager to a new address
-    >>> self.copy() -> BasePredictionAgent
+    >>> self.copy() -> Agent
 
     # get neighbors' trajs -> list[np.ndarray]
     >>> self.get_neighbor_traj()
@@ -277,10 +277,6 @@ def __predict_linear(x, y, x_p, diff_weights=0):
 
 
 def predict_linear_for_person(position, time_pred, different_weights=0.95) -> np.ndarray:
-    """
-    对二维坐标的最小二乘拟合
-    注意：`time_pred`中应当包含现有的长度，如`len(position)=8`, `time_pred=20`时，输出长度为20
-    """
     time_obv = position.shape[0]
     t = np.arange(time_obv)
     t_p = np.arange(time_pred)

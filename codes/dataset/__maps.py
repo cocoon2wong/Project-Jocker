@@ -2,8 +2,11 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 15:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-23 15:33:19
-@Description: file content
+@LastEditTime: 2022-07-06 14:57:20
+@Description: Structures to make context maps. For more about the
+              context map, please refer to our previous work "CSCNet: 
+              Contextual Semantic Consistency Network for Trajectory 
+              Prediction in Crowded Spaces".
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """

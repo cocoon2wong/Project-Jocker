@@ -2,8 +2,8 @@
 @Author: Conghao Wong
 @Date: 2021-12-21 15:22:27
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-22 16:20:51
-@Description: file content
+@LastEditTime: 2022-07-06 15:17:39
+@Description: Layers used in trajectory prediction models.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """

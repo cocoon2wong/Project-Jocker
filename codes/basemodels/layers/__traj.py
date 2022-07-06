@@ -2,8 +2,8 @@
 @Author: Conghao Wong
 @Date: 2021-12-21 15:25:47
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-22 16:19:56
-@Description: file content
+@LastEditTime: 2022-07-06 15:15:23
+@Description: Encoding layers.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """

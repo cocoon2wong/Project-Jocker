@@ -2,8 +2,8 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 10:44:39
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-21 21:07:27
-@Description: file content
+@LastEditTime: 2022-07-06 14:58:51
+@Description: Structures to manage all training samples in one video clip.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
@@ -32,7 +32,7 @@ class Trajectory():
     """
 
     def __init__(self, agent_index: int,
-    trajectory: np.ndarray,
+                 trajectory: np.ndarray,
                  neighbors: list[list[int]],
                  frames: list[int],
                  init_position: float):
@@ -52,7 +52,7 @@ class Trajectory():
         """
 
         self._agent_index = agent_index
-        self._traj = trajectory # matrix[:, agent_index, :]
+        self._traj = trajectory  # matrix[:, agent_index, :]
         self._neighbors = neighbors
         self._frames = frames
 

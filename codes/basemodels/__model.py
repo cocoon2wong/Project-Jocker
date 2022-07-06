@@ -2,8 +2,8 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-22 21:03:48
-@Description: file content
+@LastEditTime: 2022-07-06 15:01:46
+@Description: Base trajectory prediction model class.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
@@ -79,7 +79,7 @@ class Model(tf.keras.Model):
              training=None,
              *args, **kwargs):
 
-        raise NotImplementedError
+        raise NotImplementedError(self)
 
     def forward(self, inputs: list[tf.Tensor],
                 training=None) -> list[tf.Tensor]:

@@ -2,8 +2,8 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-22 15:00:41
-@Description: file content
+@LastEditTime: 2022-07-06 14:51:38
+@Description: Structures to draw visualized trajectories.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """

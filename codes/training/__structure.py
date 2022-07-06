@@ -2,8 +2,8 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-05 17:11:58
-@Description: file content
+@LastEditTime: 2022-07-06 14:50:20
+@Description: Structures to train trajectory prediction models.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
@@ -13,12 +13,12 @@ import os
 import numpy as np
 import tensorflow as tf
 
+from ..__base import BaseObject
 from ..args import BaseArgTable
 from ..basemodels import Model
+from ..dataset import Agent, Dataset, DatasetManager, get_inputs_by_type
 from ..utils import dir_check
 from . import __loss as losslib
-from ..__base import BaseObject
-from ..dataset import DatasetManager, get_inputs_by_type, Agent, Dataset
 from .__vis import Visualization
 
 
@@ -45,7 +45,7 @@ class Structure(BaseObject):
 
     def set_inputs(self, *args):
         """
-        Set variables to input to the model.
+        Set inputs to the model.
         Accept keywords:
         ```python
         historical_trajectory = ['traj', 'obs']
@@ -81,11 +81,12 @@ class Structure(BaseObject):
 
     def set_labels(self, *args):
         """
-        Set ground truths of the model
+        Set ground truths of the model.
         Accept keywords:
         ```python
         groundtruth_trajectory = ['traj', 'pred', 'gt']
         destination = ['des', 'inten']
+        ```
 
         :param input_names: type = `str`, accept several keywords
         """
@@ -216,7 +217,7 @@ class Structure(BaseObject):
     def create_model(self, *args, **kwargs) -> Model:
         """
         Create models.
-        Please *rewrite* this when training new models.
+        Please *rewrite* this when subclassing new models.
 
         :return model: created model
         :return optimizer: training optimizer
@@ -235,7 +236,7 @@ class Structure(BaseObject):
              labels: tf.Tensor,
              *args, **kwargs) -> tuple[tf.Tensor, dict[str, tf.Tensor]]:
         """
-        Train loss, use ADE by default.
+        Train loss, use ADE (point-wise l2 loss) by default.
 
         :param outputs: model's outputs
         :param labels: groundtruth labels
@@ -275,13 +276,13 @@ class Structure(BaseObject):
         """
         Run gradient dencent once during training.
 
-        :param inputs: model inputs
-        :param labels :ground truth
-        :param loss_move_average: Moving average loss
+        :param inputs: model inputs, a list of tensors
+        :param labels: ground truth
+        :param loss_move_average: moving average loss
 
         :return loss: sum of all single loss functions
         :return loss_dict: a dict of all loss functions
-        :return loss_move_average: Moving average loss
+        :return loss_move_average: moving average loss
         """
 
         with tf.GradientTape() as tape:
@@ -368,6 +369,9 @@ class Structure(BaseObject):
 
             self.__test(agents, dataset=self.args.test_set)
 
+        else:
+            raise ValueError(self.args.test_mode)
+
     def __train(self):
         """
         Training
@@ -399,8 +403,9 @@ class Structure(BaseObject):
             self.args.epochs).batch(self.args.batch_size)
 
         # start training
-        timebar = self.log_timebar(
-            ds_train, 'Training...', return_enumerate=False)
+        timebar = self.log_timebar(inputs=ds_train,
+                                   text='Training...',
+                                   return_enumerate=False)
         for batch_id, dat in enumerate(timebar):
 
             epoch = (batch_id * self.args.batch_size) // train_number
@@ -537,13 +542,20 @@ class Structure(BaseObject):
         # calculate average metric
         weights = tf.cast(tf.stack(test_numbers), tf.float32)
         metrics_all = \
-            (tf.reduce_sum(tf.stack(metrics_all) * weights)/ \
-            tf.reduce_sum(weights)).numpy()
+            (tf.reduce_sum(tf.stack(metrics_all) * weights) /
+             tf.reduce_sum(weights)).numpy()
 
         for key in metrics_dict_all:
             metrics_dict_all[key] = \
-                (tf.reduce_sum(tf.stack(metrics_dict_all[key]) * weights)/ \
-                tf.reduce_sum(weights)).numpy()
+                (tf.reduce_sum(tf.stack(metrics_dict_all[key]) * weights) /
+                 tf.reduce_sum(weights)).numpy()
+
+        # # wrong way
+        # # Calculate loss
+        # metrics_all = tf.reduce_mean(tf.stack(metrics_all)).numpy()
+        # for key in metrics_dict_all:
+        #     metrics_dict_all[key] = tf.reduce_mean(
+        #         tf.stack(metrics_dict_all[key])).numpy()
 
         if return_results:
             return outputs_all, labels_all, metrics_all, metrics_dict_all
