@@ -15,8 +15,7 @@ A code repository for 🛠developing🛠 codes for the following projects:
 - *Vertical*:
   Codes for "View Vertically: A Hierarchical Network for Trajectory Prediction via Fourier Spectrums".
   Codes are developed in the `Vertical` branch.
-- *Silverballers*: Codes for an unnamed trajectory prediction project.
-  Codes are developed in the `boundingbox` branch.
+  Codes of the released versions are available at https://github.com/cocoon2wong/Vertical.
 
 **NOTE** that all codes developing here are not the final (release) version, and they COULD have many problems when implementing.
 
