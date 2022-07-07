@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 15:28:14
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-28 19:34:25
+@LastEditTime: 2022-07-07 21:46:38
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -24,6 +24,9 @@ if __name__ == '__main__':
     # --------------------
     if model == 'agent47C':
         s = silverballers.agents.Agent47C
+    
+    elif model == 'agent47CNew':
+        s = silverballers.agents.Agent47CNew
 
     elif model == 'agent47CE':
         s = silverballers.agents.Agent47CE
@@ -33,21 +36,12 @@ if __name__ == '__main__':
     
     elif model == 'sb47C':
         s = silverballers.Silverballers47C
+    
+    elif model == 'sb47CExp':
+        s = silverballers.Silverballers47CExperimental
 
-    # ---------------
-    # Vertical models
-    # ---------------
-    elif model == 'va':
-        s = vertical.VA
-
-    elif model == 'vb':
-        s = vertical.VB
-
-    elif model == 'V':
-        s = vertical.V
-
-    elif model == 'mv':
-        s = vertical.MinimalV
+    elif model == 'sb47CNew':
+        s = silverballers.Silverballers47CNew
     
     else:
         raise NotImplementedError(
