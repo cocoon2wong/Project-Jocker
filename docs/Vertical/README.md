@@ -2,7 +2,7 @@
  * @Author: Conghao Wong
  * @Date: 2021-08-05 15:51:15
  * @LastEditors: Conghao Wong
- * @LastEditTime: 2022-07-07 20:01:38
+ * @LastEditTime: 2022-07-07 20:45:35
  * @Description: file content
  * @Github: https://github.com/cocoon2wong
  * Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -179,6 +179,8 @@ for dataset in eth hotel univ zara1 zara2 sdd
     --loada ./weights/vertical/a_${dataset} \
     --loadb l
 ```
+
+We have prepared model outputs that work correctly on the zara1 dataset, details of which can be found in https://github.com/cocoon2wong/Vertical/actions.
 
 ## Evaluation of the Usage of Spectrums
 
