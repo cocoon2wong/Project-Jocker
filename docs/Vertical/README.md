@@ -2,7 +2,7 @@
  * @Author: Conghao Wong
  * @Date: 2021-08-05 15:51:15
  * @LastEditors: Conghao Wong
- * @LastEditTime: 2022-07-07 21:08:25
+ * @LastEditTime: 2022-07-07 21:27:19
  * @Description: file content
  * @Github: https://github.com/cocoon2wong
  * Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -142,6 +142,8 @@ python main.py \
 Where `A_MODEL_PATH` and `B_MODEL_PATH` are the folders of the two sub-networks' weights.
 
 ## Pre-Trained Models
+
+***⚠️ Warning***: We have not yet uploaded the files of the SDD dataset and the weights of our model, but we will do so as soon as possible.
 
 We have provided our pre-trained model weights to help you quickly evaluate the `V^2-Net` performance.
 Click [here](drive.google.com) to download the zipped weights file.
