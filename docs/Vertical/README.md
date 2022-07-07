@@ -2,7 +2,7 @@
  * @Author: Conghao Wong
  * @Date: 2021-08-05 15:51:15
  * @LastEditors: Conghao Wong
- * @LastEditTime: 2022-07-07 20:45:35
+ * @LastEditTime: 2022-07-07 21:08:25
  * @Description: file content
  * @Github: https://github.com/cocoon2wong
  * Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,6 +10,7 @@
 
 # Codes for View Vertically: A Hierarchical Network for Trajectory Prediction via Fourier Spectrums
 
+![status](https://img.shields.io/github/workflow/status/cocoon2wong/Project-Jocker/Python%20application/Vertical)
 ![$V^2$-Net](./vmethod.png)
 
 ## Abstract
