@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-23 10:16:04
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-05 19:37:50
+@LastEditTime: 2022-07-06 20:02:10
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -68,3 +68,14 @@ class VArgs(BaseArgTable):
         Number of multiple generations when training.
         """
         return self._get('K_train', 1, argtype='static')
+
+    @property
+    def preprocess(self) -> str:
+        """
+        Controls if running any preprocess before model inference.
+        Accept a 3-bit-like string value (like `'111'`):
+        - the first bit: `MOVE` trajectories to (0, 0);
+        - the second bit: re-`SCALE` trajectories;
+        - the third bit: `ROTATE` trajectories.
+        """
+        return self._get('preprocess', '111', argtype='static')

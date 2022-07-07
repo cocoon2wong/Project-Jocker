@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-06 14:50:20
+@LastEditTime: 2022-07-07 09:11:48
 @Description: Structures to train trajectory prediction models.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -549,13 +549,6 @@ class Structure(BaseObject):
             metrics_dict_all[key] = \
                 (tf.reduce_sum(tf.stack(metrics_dict_all[key]) * weights) /
                  tf.reduce_sum(weights)).numpy()
-
-        # # wrong way
-        # # Calculate loss
-        # metrics_all = tf.reduce_mean(tf.stack(metrics_all)).numpy()
-        # for key in metrics_dict_all:
-        #     metrics_dict_all[key] = tf.reduce_mean(
-        #         tf.stack(metrics_dict_all[key])).numpy()
 
         if return_results:
             return outputs_all, labels_all, metrics_all, metrics_dict_all

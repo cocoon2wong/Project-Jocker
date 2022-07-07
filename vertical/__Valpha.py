@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-05 16:00:26
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-06 15:22:27
+@LastEditTime: 2022-07-06 20:03:33
 @Description: First stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -45,7 +45,12 @@ class VAModel(Model):
         self.d_id = id_depth    # depth of the random noise vector
 
         # Preprocess
-        self.set_preprocess('Move', 'Scale', 'Rotate')
+        preprocess_list = ()
+        for index, operation in enumerate(['Move', 'Scale', 'Rotate']):
+            if self.args.preprocess[index] == '1':
+                preprocess_list += (operation,)
+
+        self.set_preprocess(*preprocess_list)
         self.set_preprocess_parameters(move=0)
 
         # Layers
@@ -53,7 +58,8 @@ class VAModel(Model):
         self.ifft = layers.IFFTLayer((self.n_key, 2))
 
         self.te = layers.TrajEncoding(units=self.d//2,
-                                      activation=tf.nn.tanh, transform_layer=self.fft)
+                                      activation=tf.nn.tanh,
+                                      transform_layer=self.fft)
 
         self.ie = layers.TrajEncoding(units=self.d//2,
                                       activation=tf.nn.tanh)
