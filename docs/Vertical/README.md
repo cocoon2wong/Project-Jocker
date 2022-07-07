@@ -2,7 +2,7 @@
  * @Author: Conghao Wong
  * @Date: 2021-08-05 15:51:15
  * @LastEditors: Conghao Wong
- * @LastEditTime: 2022-07-06 10:36:54
+ * @LastEditTime: 2022-07-07 19:55:02
  * @Description: file content
  * @Github: https://github.com/cocoon2wong
  * Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -15,21 +15,35 @@
 ## Abstract
 
 Understanding and forecasting future trajectories of agents are critical for behavior analysis, robot navigation, autonomous cars, and other related applications.
-Previous methods mostly treat trajectory prediction as time sequences generation.
-In this work, we try for the first time to focus on agents' trajectories in a vertical view, i.e., the spectral domain for the trajectory prediction.
-Different frequency bands in the trajectory spectrum can reflect different preferences hierarchically.
-The low-frequency and high-frequency portions represent the coarse motion trends and the fine motion variations, respectively.
-Accordingly, we propose a hierarchical network named $V^2$-Net containing two sub-networks to model and predict agents' behaviors with trajectory spectrums hierarchically.
-The coarse-level keypoints estimation sub-network infers trajectory keypoints on the trajectory spectrum to present agents' motion trends.
-The fine-level spectrum interpolation sub-network reconstructs trajectories from the spectrum of keypoints considering the detailed motion variations.
-Experimental results show that $V^2$-Net improves the state-of-the-art performance by 14.2\% on ETH-UCY benchmark and by 17.2\% on the Stanford Drone Dataset.
+Previous methods mostly treat trajectory prediction as time sequence generation.
+Different from them, this work studies agents' trajectories in a "vertical" view, i.e., modeling and forecasting trajectories from the spectral domain.
+Different frequency bands in the trajectory spectrums could hierarchically reflect agents' motion preferences at different scales.
+The low-frequency and high-frequency portions could represent their coarse motion trends and fine motion variations, respectively.
+Accordingly, we propose a hierarchical network V$^2$-Net, which contains two sub-networks, to hierarchically model and predict agents' trajectories with trajectory spectrums.
+The coarse-level keypoints estimation sub-network first predicts the "minimal" spectrums of agents' trajectories on several "key" frequency portions.
+Then the fine-level spectrum interpolation sub-network interpolates the spectrums to reconstruct the final predictions.
+Experimental results display the competitiveness and superiority of V$^2$-Net on both ETH-UCY benchmark and the Stanford Drone Dataset.
+
+## Citation
+
+If you find this work usefull, it would be grateful to cite our paper!
+
+```bib
+@article{wong2021view,
+  title={View Vertically: A hierarchical network for trajectory prediction via fourier spectrums},
+  author={Wong, Conghao and Xia, Beihao and Hong, Ziming and Peng, Qinmu and Yuan, Wei and Cao, Qiong and Yang, Yibo and You, Xinge},
+  journal={arXiv preprint arXiv:2110.07288},
+  year={2021}
+}
+```
 
 ## Requirements
 
-The packages and versions used in our experiments are included in the [requirements.txt](../../requirements.txt) file.
-We recommend you install the above versions of the python packages in a virtual environment (like the `conda` environment), otherwise there *COULD* be other problems due to version conflicts.
+The codes are developed with python 3.9.
+Additional packages used are included in the [requirements.txt](../../requirements.txt) file.
+We recommend installing the above versions of the python packages in a virtual environment (like the `conda` environment), otherwise there *COULD* be other problems due to the package version conflicts.
 
-Please run the following command to install the required packages:
+Run the following command to install the required packages in your python  environment:
 
 ```bash
 pip install -r requirements.txt
@@ -37,15 +51,15 @@ pip install -r requirements.txt
 
 ## Training On Your Datasets
 
-The `V^2-Net` contains two main sub-networks, the coarse-level keypoints estimation sub-network and the fine-level spectrum interpolation sub-network.
-`V^2-Net` forecast agents' multiple stochastic trajectories end-to-end.
+The `V^2-Net` contains two main sub-networks, the coarse-level keypoints estimation sub-network, and the fine-level spectrum interpolation sub-network.
+`V^2-Net` forecast agents' multiple trajectories end-to-end.
 Considering that most of the loss function terms used to optimize the model work within one sub-network alone, we divide `V^2-Net` into `V^2-Net-a` and `V^2-Net-b`, and apply gradient descent separately for easier training.
 You can train your own `V^2-Net` weights on your datasets by training each of these two sub-networks.
-But don't worry, you can use it as a normal end-to-end model after training.
+After training, you can still use it as a regular end-to-end model.
 
 ### Dataset
 
-Before training `V^2-Net` on your own dataset, you can add your dataset information to the `datasets` directory.
+Before training `V^2-Net` on your own dataset, you should add your dataset information to the `datasets` directory.
 
 - Dataset Splits File:
 
@@ -62,7 +76,7 @@ Before training `V^2-Net` on your own dataset, you can add your dataset informat
 
 - Sub-Dataset File:
 
-  You should edit and put information about all sub-dataset, which you have written into the dataset splits file, into the `/datasets/subsets` directory.
+  You should edit and put information about all your sub-dataset that you have written into the dataset splits file into the `/datasets/subsets` directory.
   For example, you can save the following python `dict` object as the `test_subset1.plist`:
 
   ```python
@@ -86,19 +100,18 @@ Before training `V^2-Net` on your own dataset, you can add your dataset informat
 
 ### `V^2-Net-a`
 
-It is actually the coarse-level keypoints estimation sub-network.
+It is the coarse-level keypoints estimation sub-network.
 To train the `V^2-Net-a`, you can pass the `--model va` argument to run the `main.py`.
-You should also specify the indexes of the temporal keypoints in the predicted period.
+You should also specify the temporal keypoint indexes in the predicted period.
 For example, when you want to train a model that predicts future 12 frames of trajectories, and you would like to set $N_{key} = 3$ (which is the same as the basic settings in our paper), you can pass the `--key_points 3_7_11` argument when training.
-Please note that indexes are start with `0`.
+Please note that indexes start with `0`.
 You can also try any other keypoints settings or combinations to train and obtain the `V^2-Net-a` that best fits your datasets.
 Please refer to section `Args Used` to learn how other args work when training and evaluating.
 Note that do not pass any value to `--load` when training, or it will start *evaluating* the loaded model.
 
-For example, you can train the `V^2-Net-a` via the following minimum arguments:
+For a quick start, you can train the `V^2-Net-a` via the following minimum arguments:
 
 ```bash
-cd REPO_ROOT_DIR
 python main.py --model va --key_points 3_7_11 --test_set MyDataset
 ```
 
@@ -125,18 +138,18 @@ python main.py \
   --loadb B_MODEL_PATH
 ```
 
-Where `A_MODEL_PATH` and `B_MODEL_PATH` are two sub-networks' weights.
+Where `A_MODEL_PATH` and `B_MODEL_PATH` are the folders of the two sub-networks' weights.
 
 ## Pre-Trained Models
 
 We have provided our pre-trained model weights to help you quickly evaluate the `V^2-Net` performance.
 Click [here](drive.google.com) to download the zipped weights file.
 Please unzip it to the project's root folder.
-It contains model weights trained on `ETH-UCY` by the `leave-one-out` stragety, and on `SDD` via the dataset split method from SimAug.
+It contains model weights trained on `ETH-UCY` by the `leave-one-out` stragety, and model weights trained on `SDD` via the dataset split method from SimAug.
 
 ```null
 REPO_ROOT_DIR
-  - pretrained_models
+  - weights
     - vertical
       - a_eth
       - a_hotel
@@ -144,12 +157,7 @@ REPO_ROOT_DIR
       - a_univ
       - a_zara1
       - a_zara2
-      - b_eth
-      - b_hotel
-      - b_sdd
-      - b_univ
-      - b_zara1
-      - b_zara2
+      - b_universal
 ```
 
 You can start the quick evaluation via the following commands:
@@ -157,23 +165,24 @@ You can start the quick evaluation via the following commands:
 ```bash
 for dataset in eth hotel univ zara1 zara2 sdd
   python main.py \
-    --model vertical \
+    --model V \
     --loada ./weights/vertical/a_${dataset} \
-    --loadb ./weights/vertical/b_${dataset}
+    --loadb ./weights/vertical/b_universal
 ```
 
 ## Evaluation of the Usage of Spectrums
 
-We design the minimal vertical model to directly evaluate the metrics improvements brought by the usage of DFT (i.e. the trajectory spectrums).
+We design the minimal vertical model to directly evaluate the metrics improvements brought by the usage of DFT (i.e., the trajectory spectrums).
 The minimal V model considers nothing except agents' observed trajectories when forecasting.
 You can start a quick training to see how the DFT helps improve the prediction accuracy by changing the argument `--T` between `[none, fft]` via the following scripts:
 
 ```bash
 for ds in eth hotel univ zara1 zara2
-  python main.py \
-    --model mv \
-    --test_set ${ds} \
-    --T none
+  for T in none fft
+    python main.py \
+      --model mv \
+      --test_set ${ds} \
+      --T ${T}
 ```
 
 You can also [download](drive.google.com) and zip our weights into the `weights/vertical_minimal` folder, then run the following test scripts:
@@ -181,11 +190,10 @@ You can also [download](drive.google.com) and zip our weights into the `weights/
 ```bash
 for name in FFTmv mv
   for ds in eth hotel univ zara1 zara2
-    python main.py \
-      --load ./weights/vertical_minimal/${name}${ds}
+    python main.py --load ./weights/vertical_minimal/${name}${ds}
 ```
 
-Test results will be saved at the `test.log` file.
+Test results will be saved in the `test.log` file.
 You can find the following results if everything runs correctly:
 
 ```log
@@ -201,7 +209,7 @@ You can find the following results if everything runs correctly:
 [2022-07-06 10:29:54,872][INFO] `MinimalV`: ./weights/vertical_minimal/mvzara2, zara2, {'ADE(m)': 0.38129684, 'FDE(m)': 0.7475274}
 ```
 
-You can find the huge ADE and FDE improvements by the DFT (or called the trajectory spectrums) in the above logs.
+You can find the considerable ADE and FDE improvements brought by the DFT (or called the trajectory spectrums) in the above logs.
 Please note that the prediction performance is quite bad due to the simple structure of the *minimal* model, and it considers nothing about agents' interactions and multimodality.
 
 ## Args Used
@@ -213,7 +221,8 @@ python main.py --ARG_KEY1 ARG_VALUE2 --ARG_KEY2 ARG_VALUE2 --ARG_KEY3 ARG_VALUE3
 ```
 
 where `ARG_KEY` is the name of args, and `ARG_VALUE` is the corresponding value.
-All args and their usages when training and testing are listed below. Args with `argtype='static'` means that their values can not be changed after training.
+All args and their usages when training and testing are listed below.
+Args with `argtype='static'` means that their values can not be changed once after training.
 
 <!-- DO NOT CHANGE THIS LINE -->
 ### Basic args
@@ -318,3 +327,7 @@ All args and their usages when training and testing are listed below. Args with 
   Controls number of points (representative time steps) input to the beta model. It only works when training the beta model only.
   The default value is `1`.
 <!-- DO NOT CHANGE THIS LINE -->
+
+## Thanks
+
+Codes of the Transformers used in this model comes from https://www.tensorflow.org/tutorials/text/transformer.
