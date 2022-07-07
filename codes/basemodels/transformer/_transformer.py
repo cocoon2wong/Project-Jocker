@@ -4,7 +4,7 @@
 @LastEditors: Conghao Wong
 @LastEditTime: 2022-07-06 15:07:15
 @Description: Basic transformer structure. Part of modules come 
-              from https://tensorflow.google.cn/tutorials/text/transformer.
+              from https://www.tensorflow.org/tutorials/text/transformer.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
@@ -125,7 +125,7 @@ class DecoderLayer(tf.keras.layers.Layer):
 
 class Encoder(tf.keras.layers.Layer):
     """
-    This module comes from https://tensorflow.google.cn/tutorials/text/transformer.
+    This module comes from https://www.tensorflow.org/tutorials/text/transformer.
 
     ### 编码器（Encoder）
 

@@ -4,7 +4,7 @@
 @LastEditors: Conghao Wong
 @LastEditTime: 2022-07-06 15:07:34
 @Description: Basic transformer structure. Part of modules come 
-              from https://tensorflow.google.cn/tutorials/text/transformer.
+              from https://www.tensorflow.org/tutorials/text/transformer.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
