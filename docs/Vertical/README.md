@@ -2,7 +2,7 @@
  * @Author: Conghao Wong
  * @Date: 2021-08-05 15:51:15
  * @LastEditors: Conghao Wong
- * @LastEditTime: 2022-07-07 19:55:02
+ * @LastEditTime: 2022-07-07 20:01:38
  * @Description: file content
  * @Github: https://github.com/cocoon2wong
  * Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -168,6 +168,16 @@ for dataset in eth hotel univ zara1 zara2 sdd
     --model V \
     --loada ./weights/vertical/a_${dataset} \
     --loadb ./weights/vertical/b_universal
+```
+
+You can also start testing the fast version of `V^2-Net` by passing the argument `--loadb l` like:
+
+```bash
+for dataset in eth hotel univ zara1 zara2 sdd
+  python main.py \
+    --model V \
+    --loada ./weights/vertical/a_${dataset} \
+    --loadb l
 ```
 
 ## Evaluation of the Usage of Spectrums
