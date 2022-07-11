@@ -2,7 +2,7 @@
  * @Author: Conghao Wong
  * @Date: 2021-08-05 15:51:15
  * @LastEditors: Conghao Wong
- * @LastEditTime: 2022-07-07 21:27:19
+ * @LastEditTime: 2022-07-11 21:18:56
  * @Description: file content
  * @Github: https://github.com/cocoon2wong
  * Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -27,7 +27,7 @@ Experimental results display the competitiveness and superiority of V$^2$-Net on
 
 ## Citation
 
-If you find this work usefull, it would be grateful to cite our paper!
+If you find this work useful, it would be grateful to cite our paper!
 
 ```bib
 @article{wong2021view,
@@ -41,7 +41,7 @@ If you find this work usefull, it would be grateful to cite our paper!
 ## Requirements
 
 The codes are developed with python 3.9.
-Additional packages used are included in the [requirements.txt](../../requirements.txt) file.
+Additional packages used are included in the `requirements.txt` file.
 We recommend installing the above versions of the python packages in a virtual environment (like the `conda` environment), otherwise there *COULD* be other problems due to the package version conflicts.
 
 Run the following command to install the required packages in your python  environment:
@@ -143,12 +143,9 @@ Where `A_MODEL_PATH` and `B_MODEL_PATH` are the folders of the two sub-networks'
 
 ## Pre-Trained Models
 
-***⚠️ Warning***: We have not yet uploaded the files of the SDD dataset and the weights of our model, but we will do so as soon as possible.
-
 We have provided our pre-trained model weights to help you quickly evaluate the `V^2-Net` performance.
-Click [here](drive.google.com) to download the zipped weights file.
-Please unzip it to the project's root folder.
-It contains model weights trained on `ETH-UCY` by the `leave-one-out` stragety, and model weights trained on `SDD` via the dataset split method from SimAug.
+We have uploaded our model weights in the `weights` folder.
+It contains model weights trained on `ETH-UCY` by the `leave-one-out` stragety, and model weights trained on `SDD` via the dataset split method from [SimAug](https://github.com/JunweiLiang/Multiverse).
 
 ```null
 REPO_ROOT_DIR
@@ -185,6 +182,11 @@ for dataset in eth hotel univ zara1 zara2 sdd
 
 We have prepared model outputs that work correctly on the zara1 dataset, details of which can be found in https://github.com/cocoon2wong/Vertical/actions.
 
+If you have the dataset videos and put them into the `videos` folder, you can draw the visualized results by adding the `--draw_reuslts 1` argument.
+If you want to draw visualized trajectories like what our paper shows, you can add the additional `--draw_distribution 2` argument:
+
+![Visualization](./fig_vis.png)
+
 ## Evaluation of the Usage of Spectrums
 
 We design the minimal vertical model to directly evaluate the metrics improvements brought by the usage of DFT (i.e., the trajectory spectrums).
@@ -200,7 +202,7 @@ for ds in eth hotel univ zara1 zara2
       --T ${T}
 ```
 
-You can also [download](drive.google.com) and zip our weights into the `weights/vertical_minimal` folder, then run the following test scripts:
+You can also [download](drive.google.com)(⚠️NOT UPLOAD YET) and unzip our weights into the `weights/vertical_minimal` folder, then run the following test scripts:
 
 ```bash
 for name in FFTmv mv
@@ -345,4 +347,6 @@ Args with `argtype='static'` means that their values can not be changed once aft
 
 ## Thanks
 
-Codes of the Transformers used in this model comes from https://www.tensorflow.org/tutorials/text/transformer.
+Codes of the Transformers used in this model comes from [TensorFlow.org](https://www.tensorflow.org/tutorials/text/transformer).  
+Dataset files of ETH-UCY come from [SR-LSTM (CVPR2019)](https://github.com/zhangpur/SR-LSTM).  
+Dataset split file of SDD comes from [SimAug (ECCV2020)](https://github.com/JunweiLiang/Multiverse).
