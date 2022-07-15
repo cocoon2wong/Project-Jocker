@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>anntype</key>
+	<string>coordinate</string>
+	<key>dataset_dir</key>
+	<string>./data/ethucy/zara3</string>
+	<key>dimension</key>
+	<integer>2</integer>
+	<key>name</key>
+	<string>zara3</string>
+	<key>paras</key>
+	<array>
+		<integer>10</integer>
+		<integer>25</integer>
+	</array>
+	<key>scale</key>
+	<integer>1</integer>
+	<key>video_path</key>
+	<string>./videos/zara2.mp4</string>
+	<key>weights</key>
+	<real>720.0</real>
+</dict>
+</plist>
