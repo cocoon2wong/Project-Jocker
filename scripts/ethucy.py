@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-15 14:45:57
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-15 15:37:35
+@LastEditTime: 2022-07-18 10:28:51
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -25,14 +25,10 @@ SUBSETS: dict[str, Any] = {}
 SUBSETS['eth'] = dict(
     name='eth',
     dataset_dir='./data/eth/univ',
-    order=[1, 0],
+    order=[0, 1],
     paras=[6, 25],
     video_path='./videos/eth.mp4',
-    weights=[[
-        [2.8128700e-02, 2.0091900e-03, -4.6693600e+00],
-        [8.0625700e-04, 2.5195500e-02, -5.0608800e+00],
-        [3.4555400e-04, 9.2512200e-05, 4.6255300e-01],
-    ], 0.65, 225, 0.6, 160],
+    weights=[17.667, 190.19, 10.338, 225.89],
     scale=1,
 )
 
@@ -42,11 +38,7 @@ SUBSETS['hotel'] = dict(
     order=[0, 1],
     paras=[10, 25],
     video_path='./videos/hotel.mp4',
-    weights=[[
-        [-1.5966000e-03, 1.1632400e-02, -5.3951400e+00],
-        [1.1048200e-02, 6.6958900e-04, -3.3295300e+00],
-        [1.1190700e-04, 1.3617400e-05, 5.4276600e-01],
-    ], 0.54, 470, 0.54, 300],
+    weights=[44.788, 310.07, 48.308, 497.08],
     scale=1,
 )
 
@@ -56,7 +48,7 @@ SUBSETS['zara1'] = dict(
     order=[1, 0],
     paras=[10, 25],
     video_path='./videos/zara1.mp4',
-    weights=[-42.54748107, 580.5664891, 47.29369894, 3.196071003],
+    weights=[47.707, 0, -49.727, 610.35],
     scale=1,
 )
 
@@ -66,7 +58,7 @@ SUBSETS['zara2'] = dict(
     order=[1, 0],
     paras=[10, 25],
     video_path='./videos/zara2.mp4',
-    weights=[-42.54748107, 630.5664891, 47.29369894, 3.196071003],
+    weights=[47.707, 0, -49.727, 610.35],
     scale=1,
 )
 
@@ -76,7 +68,7 @@ SUBSETS['univ'] = dict(
     order=[1, 0],
     paras=[10, 25],
     video_path='./videos/students003.mp4',
-    weights=[-41.1428, 576, 48, 0],
+    weights=[48.607, -9.439, -41.453, 576.61],
     scale=1,
 )
 
@@ -86,7 +78,7 @@ SUBSETS['zara3'] = dict(
     order=[1, 0],
     paras=[10, 25],
     video_path='./videos/zara2.mp4',
-    weights=[-42.54748107, 630.5664891, 47.29369894, 3.196071003],
+    weights=[47.707, 0, -49.727, 610.35],
     scale=1,
 )
 
@@ -96,7 +88,7 @@ SUBSETS['univ3'] = dict(
     order=[1, 0],
     paras=[10, 25],
     video_path='./videos/students003.mp4',
-    weights=[-41.1428, 576, 48, 0],
+    weights=[48.607, -9.439, -41.453, 576.61],
     scale=1,
 )
 
@@ -106,7 +98,7 @@ SUBSETS['unive'] = dict(
     order=[1, 0],
     paras=[10, 25],
     video_path='./videos/students003.mp4',
-    weights=[-41.1428, 576, 48, 0],
+    weights=[48.607, -9.439, -41.453, 576.61],
     scale=1,
 )
 
@@ -133,22 +125,10 @@ def transform_annotations():
         weights = SUBSETS[name]['weights']
         order = SUBSETS[name]['order']
 
-        if len(weights) == 4:
-            result = np.column_stack([
-                weights[2] * r.T[1] + weights[3],
-                weights[0] * r.T[0] + weights[1],
-            ])/SCALE
-
-        else:
-            H = weights[0]
-            real = np.ones([r.shape[0], 3])
-            real[:, :2] = r
-            pixel = np.matmul(real, np.linalg.inv(H))
-            pixel = pixel[:, :2]
-            result = np.column_stack([
-                weights[1] * pixel.T[0] + weights[2],
-                weights[3] * pixel.T[1] + weights[4],
-            ])/SCALE
+        result = np.column_stack([
+            weights[2] * r.T[1] + weights[3],
+            weights[0] * r.T[0] + weights[1],
+        ])/SCALE
 
         dat = np.column_stack([data_original[0].astype(int).astype(str),
                                data_original[1].astype(int).astype(str),
