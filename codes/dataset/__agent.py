@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-05 10:31:33
+@LastEditTime: 2022-07-18 09:32:20
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -52,11 +52,12 @@ class Agent():
     ```
     """
 
-    __version__ = 4.0
+    __version__ = 5.0
 
     _save_items = ['_traj', '_traj_future',
                    '_traj_pred', '_traj_pred_linear',
                    '_frames', '_frames_future',
+                   '_id',
                    'real2grid', '__version__',
                    'linear_predict',
                    'neighbor_number',
@@ -73,6 +74,8 @@ class Agent():
 
         self._map = None
         self.real2grid = None
+
+        self._id = None
 
         self._frames = []
         self._frames_future = []
@@ -101,11 +104,21 @@ class Agent():
             xl, yl, xr, yr = traj.T
             return 0.5 * np.column_stack((xl+xr, yl+yr))
 
+        elif dims == (2, 2):
+            return traj
+
         elif dims == (4, 4):
             return traj
 
         else:
             raise NotImplementedError(dims)
+
+    @property
+    def id(self) -> str:
+        """
+        Agent ID
+        """
+        return self._id
 
     @property
     def traj(self) -> np.ndarray:
@@ -205,7 +218,8 @@ class Agent():
                 setattr(self, item, zipped_data[item])
         return self
 
-    def init_data(self, target_traj,
+    def init_data(self, id,
+                  target_traj,
                   neighbors_traj,
                   frames, start_frame,
                   obs_frame, end_frame,
@@ -221,6 +235,7 @@ class Agent():
         are `(end_frame - start_frame) // frame_step`.
         """
 
+        self._id = id
         self.linear_predict = linear_predict
 
         # Trajectory info

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:38:13
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-05 15:09:27
+@LastEditTime: 2022-07-18 10:31:57
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -94,6 +94,12 @@ class VideoClipManager(BaseObject):
         agents = {}
         agent_ids = np.unique(agent_order := data.T[1])
 
+        try:
+            _agent_ids = agent_ids.astype(np.int)
+            agent_ids = np.sort(_agent_ids).astype(str)
+        except:
+            pass
+
         for id in agent_ids:
             index = np.where(agent_order == id)[0]
             agents[id] = np.delete(data[index], 1, axis=1)
@@ -117,9 +123,10 @@ class VideoClipManager(BaseObject):
         # load from saved files
         if os.path.exists(npy_path):
             dat = np.load(npy_path, allow_pickle=True)
-            neighbors = dat['neighbors']
             matrix = dat['matrix']
-            frames = dat['frames']
+            neighbor_indexes = dat['neighbor_indexes']
+            frame_ids = dat['frames']
+            person_ids = dat['person_ids']
 
         # or start processing and then saving
         else:
@@ -149,35 +156,36 @@ class VideoClipManager(BaseObject):
                 matrix[frame_index, person_index, :] \
                     = persons_appear[person_id][:, 1:]
 
-            neighbors = np.array([
+            neighbor_indexes = np.array([
                 np.where(np.not_equal(data, INIT_POSITION))[0]
                 for data in matrix[:, :, 0]], dtype=object)
 
             np.savez(npy_path,
-                     neighbors=neighbors,
+                     neighbor_indexes=neighbor_indexes,
                      matrix=matrix,
-                     frames=(frames := frame_ids))
+                     frame_ids=frame_ids,
+                     person_ids=person_ids)
 
         self.agent_count = matrix.shape[1]
         self.frame_number = matrix.shape[0]
 
-        return neighbors, matrix, frames
+        return neighbor_indexes, matrix, frame_ids, person_ids
 
     def make_trajectories(self):
         """
         Make trajectories from the processed dataset files.
         """
-        if len(self.custom_list) == 3:
-            self.neighbors, self.matrix, self.frames = self.custom_list
+        if len(self.custom_list) == 4:
+            self.nei_indexes, self.matrix, self.frame_ids, self.person_ids = self.custom_list
         else:
-            self.neighbors, self.matrix, self.frames = self.process_metadata()
+            self.nei_indexes, self.matrix, self.frame_ids, self.person_ids = self.process_metadata()
 
         trajs = []
         for person_index in range(self.agent_count):
-            trajs.append(Trajectory(agent_index=person_index,
+            trajs.append(Trajectory(agent_id=self.person_ids[person_index],
                                     trajectory=self.matrix[:, person_index, :],
-                                    neighbors=self.neighbors,
-                                    frames=self.frames,
+                                    neighbors=self.nei_indexes,
+                                    frames=self.frame_ids,
                                     init_position=INIT_POSITION,
                                     dimension=self.args.dim))
 

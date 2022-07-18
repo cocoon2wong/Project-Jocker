@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 10:44:39
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-01 16:35:09
+@LastEditTime: 2022-07-18 09:34:13
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -31,7 +31,7 @@ class Trajectory():
     ```
     """
 
-    def __init__(self, agent_index: int,
+    def __init__(self, agent_id: str,
                  trajectory: np.ndarray,
                  neighbors: list[list[int]],
                  frames: list[int],
@@ -40,7 +40,7 @@ class Trajectory():
         """
         init
 
-        :param agent_index: index of the trajectory
+        :param agent_index: ID of the trajectory
         :param neighbors: a list of lists that contain agents' ids \
             who appear in each frames. \
             index are frame indexes.
@@ -52,8 +52,8 @@ class Trajectory():
             agent has gone out of the scene.
         """
 
-        self._agent_index = agent_index
-        self._traj = trajectory  # matrix[:, agent_index, :]
+        self._id = agent_id
+        self._traj = trajectory
         self._neighbors = neighbors
         self._frames = frames
 
@@ -70,8 +70,8 @@ class Trajectory():
         self._end_frame = disappear[0] + 1 if len(disappear) else len(base)
 
     @property
-    def agent_index(self):
-        return self._agent_index
+    def id(self):
+        return self._id
 
     @property
     def traj(self):
@@ -129,6 +129,7 @@ class Trajectory():
         tar_traj = self.traj[start_frame:end_frame:frame_step, :]
 
         return Agent(self.dim).init_data(
+            id=self.id,
             target_traj=tar_traj,
             neighbors_traj=nei_traj,
             frames=self.frames[start_frame:end_frame:frame_step],

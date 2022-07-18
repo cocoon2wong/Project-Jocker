@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-05 15:18:12
+@LastEditTime: 2022-07-18 10:01:47
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -190,8 +190,24 @@ class Visualization():
                                     draw_distribution,
                                     alpha=1.0)
 
-        f = cv2.putText(f, self.videoInfo.name + ' ' + str(int(frame_name)).zfill(6),
-                        (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 2)
+        texts = ['{}'.format(self.videoInfo.name),
+                 'frame: {}'.format(str(int(frame_name)).zfill(6)),
+                 'agent: {}'.format(agent.id)]
+
+        for index, text in enumerate(texts):
+            f = cv2.putText(f, text,
+                            org=(10 + 3, 40 + index * 30 + 3),
+                            fontFace=cv2.FONT_HERSHEY_COMPLEX,
+                            fontScale=0.9,
+                            color=(0, 0, 0),
+                            thickness=2)
+                            
+            f = cv2.putText(f, text,
+                            org=(10, 40 + index * 30),
+                            fontFace=cv2.FONT_HERSHEY_COMPLEX,
+                            fontScale=0.9,
+                            color=(255, 255, 255),
+                            thickness=2)
 
         if self.videoInfo.scale > 1:
             original_shape = f.shape
