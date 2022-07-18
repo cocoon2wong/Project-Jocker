@@ -1,14 +1,11 @@
 """
 @Author: Conghao Wong
-@Date: 2022-06-20 15:30:24
+@Date: 2022-07-15 20:17:39
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-18 11:34:13
+@LastEditTime: 2022-07-18 11:33:38
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-from . import args
-from . import basemodels
-from . import training
-from . import models
+from .__linear import Linear

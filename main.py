@@ -18,10 +18,13 @@ if __name__ == '__main__':
 
     model = args.model
 
+    if model == 'linear':
+        s = C.models.Linear
+
     # --------------------
     # Silverballers models
     # --------------------
-    if model == 'agent47C':
+    elif model == 'agent47C':
         s = silverballers.agents.Agent47C
 
     elif model == 'agent47CE':
