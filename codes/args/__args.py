@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-05 15:14:08
+@LastEditTime: 2022-07-15 20:35:59
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -132,12 +132,12 @@ class BaseArgTable():
         for index in order:
             value = self._get_args_by_index_and_name(index, name)
 
-            if value:
+            if value is not None:
                 break
             else:
                 continue
 
-        if not value:
+        if value is None:
             value = default
 
         value = type(default)(value)
