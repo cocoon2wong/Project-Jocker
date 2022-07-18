@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:38:13
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-18 10:31:57
+@LastEditTime: 2022-07-18 10:42:35
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -125,7 +125,7 @@ class VideoClipManager(BaseObject):
             dat = np.load(npy_path, allow_pickle=True)
             matrix = dat['matrix']
             neighbor_indexes = dat['neighbor_indexes']
-            frame_ids = dat['frames']
+            frame_ids = dat['frame_ids']
             person_ids = dat['person_ids']
 
         # or start processing and then saving
