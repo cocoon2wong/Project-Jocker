@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-29 15:36:47
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-19 13:52:26
+@LastEditTime: 2022-07-19 15:11:06
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -116,7 +116,7 @@ def save_dataset_info():
             subsets['{}{}'.format(base_set, index)] = dict(
                 name='{}{}'.format(base_set, index),
                 annpath=TARGET_FILE.format(base_set, index),
-                order=[0, 1],
+                order=[1, 0],
                 paras=[1, 30],
                 video_path='./videos/sdd_{}_{}.mov'.format(
                     base_set, index),
