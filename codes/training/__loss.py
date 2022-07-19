@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 19:34:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-04 14:39:49
+@LastEditTime: 2022-07-18 20:10:48
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -26,12 +26,12 @@ def apply(loss_list: list[Union[str, Any]],
     for loss in loss_list:
         if type(loss) == str:
             if re.match('[Aa][Dd][Ee]', loss):
-                loss_dict['ADE({})'.format(mode)] = coefficient * ADE(
-                    model_outputs[0], labels)
+                name = 'ADE'
+                value = ADE(model_outputs[0], labels)
 
             elif re.match('[Ff][Dd][Ee]', loss):
-                loss_dict['FDE({})'.format(mode)] = coefficient * FDE(
-                    model_outputs[0], labels)
+                name = 'FDE'
+                value = FDE(model_outputs[0], labels)
 
             elif re.match('[Dd][Ii][Ff]', loss):
                 order = 2 if not 'diff_order' in kwargs.keys() \
@@ -39,13 +39,20 @@ def apply(loss_list: list[Union[str, Any]],
                 weights = [min(1.0, 5 * 10 ** -o) for o in range(order+1)] \
                     if not 'diff_weights' in kwargs.keys() \
                     else kwargs['diff_weights']
-                loss_dict['Diff'] = coefficient * tf.reduce_sum(
+
+                name = 'Diff'
+                value = tf.reduce_sum(
                     tf.stack(weights) *
                     tf.stack(diff(model_outputs[0], labels, order)))
 
         elif callable(loss):
-            loss_dict[loss.__name__ + '({})'.format(mode)] = loss(model_outputs, labels,
-                                                                  *args, **kwargs)
+            name = loss.__name__
+            value = loss(model_outputs, labels, *args, **kwargs)
+        
+        else:
+            raise ValueError(loss)
+
+        loss_dict[name + '({})'.format(mode)] = coefficient * value
 
     if loss_weights is None:
         loss_weights = tf.ones(len(loss_dict))
@@ -100,6 +107,8 @@ def FDE(pred, GT) -> tf.Tensor:
 
     t = pred.shape[-2]
     f = tf.gather(pred, [t-1], axis=-2)
+
+    t = GT.shape[-2]
     f_gt = tf.gather(GT, [t-1], axis=-2)
     return ADE(f, f_gt)
 

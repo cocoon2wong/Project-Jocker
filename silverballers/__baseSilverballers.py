@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-23 14:33:11
+@LastEditTime: 2022-07-19 13:48:50
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -124,7 +124,10 @@ class BaseSilverballers(C.training.Structure):
 
         if self.args.batch_size > self.agent.args.batch_size:
             self.args._set('batch_size', self.agent.args.batch_size)
-        self.args._set('test_set', self.agent.args.test_set)
+
+        self.args._set('split', self.agent.args.split)
+        self.args._set('dim', self.agent.args.dim)
+        self.args._set('anntype', self.agent.args.anntype)
 
     def set_models(self, agentModel: type[C.basemodels.Model],
                    handlerModel: type[BaseHandlerModel],
@@ -160,15 +163,8 @@ class BaseSilverballers(C.training.Structure):
             structure=self,
             *args, **kwargs)
 
-    def print_test_results(self, loss_dict: dict[str, float], dataset: str):
-        """
-        Information to show (or to log into files) after testing
-        """
-        self.print_parameters(title='test results',
-                              dataset=dataset,
-                              **loss_dict)
-        self.log('Results from {}, {}, {}, {}'.format(
+    def print_test_results(self, loss_dict: dict[str, float], **kwargs):
+        self.log('Start test with 1st sub-network {} and 2nd seb-network {}'.format(
             self.args.loada,
-            self.args.loadb,
-            dataset,
-            loss_dict))
+            self.args.loadb))
+        super().print_test_results(loss_dict, **kwargs)

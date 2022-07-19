@@ -50,9 +50,18 @@ Args with `changable=False` means that their values can not be changed once the 
 - `--K`, type=`int`, argtype=`'dynamic'`.
   Number of multiple generations when test. This arg only works for `Generative Models`.
   The default value is `20`.
+- `--anntype`, type=`str`, argtype=`'static'`.
+  Type of annotations in the predicted trajectories. Canbe `'coordinate'` or `'boundingbox'`.
+  The default value is `'coordinate'`.
 - `--batch_size`, type=`int`, argtype=`'dynamic'`.
   Batch size when implementation.
   The default value is `5000`.
+- `--dataset`, type=`str`, argtype=`'static'`.
+  Name of the video dataset to train or evaluate. For example, `'ETH-UCY'` or `'SDD'`. DO NOT set this argument manually.
+  The default value is `dataset`.
+- `--dim`, type=`int`, argtype=`'static'`.
+  Dimension of the `trajectory`. For example, (x, y) -> `dim = 2`.
+  The default value is `dim`.
 - `--draw_distribution`, type=`int`, argtype=`'dynamic'`.
   Conrtols if draw distributions of predictions instead of points.
   The default value is `0`.
@@ -98,6 +107,9 @@ Args with `changable=False` means that their values can not be changed once the 
 - `--save_model`, type=`int`, argtype=`'static'`.
   Controls if save the final model at the end of training.
   The default value is `1`.
+- `--split`, type=`str`, argtype=`'static'`.
+  Dataset split used when training and evaluating.
+  The default value is `'zara1'`.
 - `--start_test_percent`, type=`float`, argtype=`'static'`.
   Set when to start validation during training. Range of this arg is `0 <= x <= 1`. Validation will start at `epoch = args.epochs * args.start_test_percent`.
   The default value is `0.0`.
@@ -105,11 +117,8 @@ Args with `changable=False` means that their values can not be changed once the 
   Frame interval for sampling training data.
   The default value is `1`.
 - `--test_mode`, type=`str`, argtype=`'dynamic'`.
-  Test settings, canbe `'one'` or `'all'` or `'mix'`. When set it to `one`, it will test the model on the `args.force_set` only; When set it to `all`, it will test on each of the test dataset in `args.test_set`; When set it to `mix`, it will test on all test dataset in `args.test_set` together.
+  Test settings, canbe `'one'` or `'all'` or `'mix'`. When set it to `one`, it will test the model on the `args.force_set` only; When set it to `all`, it will test on each of the test dataset in `args.split`; When set it to `mix`, it will test on all test dataset in `args.split` together.
   The default value is `'mix'`.
-- `--test_set`, type=`str`, argtype=`'static'`.
-  Dataset used when training or evaluating.
-  The default value is `'zara1'`.
 - `--test_step`, type=`int`, argtype=`'static'`.
   Epoch interval to run validation during training. """ return self._get('test_step', 3, argtype='static') """ Trajectory Prediction Args 
   The default value is `3`.
@@ -166,5 +175,5 @@ Args with `changable=False` means that their values can not be changed once the 
   The default value is `'111'`.
 - `--use_maps`, type=`int`, argtype=`'static'`.
   Controls if using the trajectory maps and the social maps in the model. DO NOT change this arg manually.
-  The default value is `1`.
+  The default value is `0`.
 <!-- DO NOT CHANGE THIS LINE -->

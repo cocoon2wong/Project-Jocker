@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 10:44:39
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-18 09:34:13
+@LastEditTime: 2022-07-19 11:57:27
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -22,7 +22,7 @@ class Trajectory():
     Properties
     ----------
     ```python
-    >>> self.agent_index
+    >>> self.id
     >>> self.traj
     >>> self.neighbors
     >>> self.frames

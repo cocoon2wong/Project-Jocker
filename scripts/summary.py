@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-05-03 09:07:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-23 10:02:10
+@LastEditTime: 2022-07-19 12:40:52
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -37,10 +37,10 @@ def read_model_weights(base_path: str):
             continue
 
         model_type = args['model']
-        dataset = args['test_set']
+        split = args['split']
 
         model_dict.append({'type': model_type,
-                           'dataset': dataset,
+                           'split': split,
                            'metric': metric,
                            'path': current_path})
 
@@ -51,7 +51,7 @@ def sort_weights(base_path: str, model_dict: list[dict]):
 
     dataset_dict: dict[str, list[int]] = {}
     for index, item in enumerate(model_dict):
-        ds = item['dataset']
+        ds = item['split']
 
         if not ds in dataset_dict.keys():
             dataset_dict[ds] = []

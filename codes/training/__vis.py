@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-18 10:01:47
+@LastEditTime: 2022-07-19 14:35:56
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -14,12 +14,7 @@ import tensorflow as tf
 
 from ..args import BaseArgTable as Args
 from ..dataset import Agent, VideoClip
-
-SMALL_POINTS = True
-OBS_IMAGE = './figures/obs_small.png' if SMALL_POINTS else './figures/obs.png'
-GT_IMAGE = './figures/gt_small.png' if SMALL_POINTS else './figures/gt.png'
-PRED_IMAGE = './figures/pred_small.png' if SMALL_POINTS else './figures/pred.png'
-DISTRIBUTION_IMAGE = './figures/dis.png'
+from ..utils import DISTRIBUTION_IMAGE, GT_IMAGE, OBS_IMAGE, PRED_IMAGE
 
 CONV_LAYER = tf.keras.layers.Conv2D(
     1, (20, 20), (1, 1), 'same',
@@ -50,18 +45,16 @@ class Visualization():
     >>> self.real2pixel(real_pos)
     """
 
-    def __init__(self, args: Args, dataset: str):
+    def __init__(self, args: Args, dataset: str, clip: str):
 
         self.args = args
         self._vc = None
         self._paras = None
-        self._weights = None
+        self._scale = None
 
-        if dataset:
-            self.videoInfo = VideoClip.get(dataset)
-            self.set_video(video_capture=cv2.VideoCapture(self.videoInfo.video_path),
-                           video_paras=self.videoInfo.paras,
-                           video_weights=self.videoInfo.weights)
+        self.info: VideoClip = VideoClip.get(dataset, clip)
+        self.order = self.info.order
+        self.set_video(self.info)
 
         self.obs_file = cv2.imread(OBS_IMAGE, -1)
         self.pred_file = cv2.imread(PRED_IMAGE, -1)
@@ -88,19 +81,31 @@ class Visualization():
 
     @property
     def video_paras(self):
+        """
+        [sample_step, frame_rate]
+        """
         return self._paras
 
     @property
-    def video_weights(self):
-        return self._weights
+    def video_scale(self):
+        """
+        annotation scales
+        """
+        return self._scale
 
-    def set_video(self, video_capture: cv2.VideoCapture,
-                  video_paras: list[int],
-                  video_weights: list):
+    @property
+    def video_matrix(self) -> list[float]:
+        """
+        transfer weights from real scales to pixels.
+        """
+        return self._matrix
 
-        self._vc = video_capture
-        self._paras = video_paras
-        self._weights = video_weights
+    def set_video(self, video_info: VideoClip):
+
+        self._vc = cv2.VideoCapture(video_info.video_path)
+        self._paras = video_info.paras
+        self._scale = video_info.scale
+        self._matrix = video_info.matrix
 
     def real2pixel(self, real_pos):
         """
@@ -109,7 +114,8 @@ class Visualization():
         :param real_pos: coordinates, shape = (n, 2) or (k, n, 2)
         :return pixel_pos: coordinates in pixels
         """
-        weights = self.video_weights
+        scale = self.video_scale
+        weights = self.video_matrix
 
         if type(real_pos) == list:
             real_pos = np.array(real_pos)
@@ -122,22 +128,22 @@ class Visualization():
         all_results = []
         for step in range(real_pos.shape[1]):
             # position at one step, shape = (k, d)
-            r = real_pos[:, step, :]
+            r = scale * real_pos[:, step, :]
 
             # both model and dataset support `boundingbox`
-            if self.videoInfo.anntype == 'boundingbox' and \
+            if self.info.anntype == 'boundingbox' and \
                     self.args.anntype == 'boundingbox':
                 result = []
                 for index in range(0, self.args.dim, 2):
-                    result += [weights * r.T[index+1],
-                               weights * r.T[index+0]]
+                    result += [weights[0] * r.T[index+self.order[0]] + weights[1],
+                               weights[2] * r.T[index+self.order[1]] + weights[3]]
                 result = np.column_stack(result).astype(np.int32)
 
             # when model only support `coordinate`
             elif self.args.anntype.startswith('coordinate'):
                 result = np.column_stack([
-                    weights * r.T[1],
-                    weights * r.T[0],
+                    weights[0] * r.T[self.order[0]] + weights[1],
+                    weights[2] * r.T[self.order[1]] + weights[3],
                 ]).astype(np.int32)
 
             all_results.append(result)
@@ -179,7 +185,7 @@ class Visualization():
 
         if f is None:
             raise FileNotFoundError(
-                'Video at `{}` NOT FOUND.'.format(self.videoInfo.video_path))
+                'Video at `{}` NOT FOUND.'.format(self.info.video_path))
 
         for agent in agents:
             obs = self.real2pixel(agent.traj)
@@ -190,7 +196,7 @@ class Visualization():
                                     draw_distribution,
                                     alpha=1.0)
 
-        texts = ['{}'.format(self.videoInfo.name),
+        texts = ['{}'.format(self.info.name),
                  'frame: {}'.format(str(int(frame_name)).zfill(6)),
                  'agent: {}'.format(agent.id)]
 
@@ -201,7 +207,7 @@ class Visualization():
                             fontScale=0.9,
                             color=(0, 0, 0),
                             thickness=2)
-                            
+
             f = cv2.putText(f, text,
                             org=(10, 40 + index * 30),
                             fontFace=cv2.FONT_HERSHEY_COMPLEX,
@@ -209,16 +215,16 @@ class Visualization():
                             color=(255, 255, 255),
                             thickness=2)
 
-        if self.videoInfo.scale > 1:
+        if self.info.scale_vis > 1:
             original_shape = f.shape
             f = cv2.resize(
-                f, (int(original_shape[1]/self.videoInfo.scale), int(original_shape[0]/self.videoInfo.scale)))
+                f, (int(original_shape[1]/self.info.scale_vis), int(original_shape[0]/self.info.scale_vis)))
 
         if show_img:
-            cv2.namedWindow(self.videoInfo.name, cv2.WINDOW_NORMAL |
+            cv2.namedWindow(self.info.name, cv2.WINDOW_NORMAL |
                             cv2.WINDOW_KEEPRATIO)
             f = f.astype(np.uint8)
-            cv2.imshow(self.videoInfo.name, f)
+            cv2.imshow(self.info.name, f)
             cv2.waitKey(80)
 
         else:
@@ -522,7 +528,7 @@ def draw_pred(source, pred: np.ndarray, png_file,
 def draw_dis(source, trajs, png_file, color_bar: np.ndarray, alpha=1.0):
     dis = np.zeros([source.shape[0], source.shape[1], 3])
     for p in trajs:
-        dis = Visualization.add_png_value(dis, png_file, p, alpha)
+        dis = Visualization.add_png_value(dis, png_file, (p[1], p[0]), alpha)
     dis = dis[:, :, -1]
 
     if not dis.max() == 0:

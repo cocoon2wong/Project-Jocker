@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 15:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-04 10:23:42
+@LastEditTime: 2022-07-19 14:52:05
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -15,22 +15,14 @@ import numpy as np
 
 from ..__base import BaseObject
 from ..args import BaseArgTable as Args
+from ..utils import (AVOID_SIZE, INTEREST_SIZE, MAP_HALF_SIZE,
+                     WINDOW_EXPAND_METER, WINDOW_EXPAND_PIXEL,
+                     WINDOW_SIZE_METER, WINDOW_SIZE_PIXEL)
 from .__agent import Agent
 from .__trajectory import Trajectory
 
 MASK = cv2.imread('./figures/mask_circle.png')[:, :, 0]/50
 MASKS = {}
-
-# context map parameters
-WINDOW_SIZE_EXPAND_METER = 0.3
-WINDOW_SIZE_GUIDANCE_MAP = 200.0
-
-# interaction parameters
-# Avoid size in grid cells when modeling social interaction
-AVOID_SIZE = 15 
-
-# Interest size in grid cells when modeling social interaction
-INTEREST_SIZE = 20
 
 
 class MapManager(BaseObject):
@@ -62,6 +54,7 @@ class MapManager(BaseObject):
     """
 
     def __init__(self, args: Args,
+                 map_type: str,
                  agents: list[Agent] = None,
                  init_manager=None):
         """
@@ -76,6 +69,7 @@ class MapManager(BaseObject):
 
         self.args = args
         self.agents = agents
+        self.map_type = map_type
 
         if init_manager:
             self.void_map, self.W, self.b = [
@@ -118,8 +112,16 @@ class MapManager(BaseObject):
         y_max = np.max(traj[:, 1])
         y_min = np.min(traj[:, 1])
 
-        a = WINDOW_SIZE_GUIDANCE_MAP
-        e = WINDOW_SIZE_EXPAND_METER
+        if self.map_type == 'pixel':
+            a = WINDOW_SIZE_PIXEL
+            e = WINDOW_EXPAND_PIXEL
+
+        elif self.map_type == 'meter':
+            a = WINDOW_SIZE_METER
+            e = WINDOW_EXPAND_METER
+
+        else:
+            raise ValueError(self.map_type)
 
         guidance_map = np.zeros([int((x_max - x_min + 2 * e) * a) + 1,
                                  int((y_max - y_min + 2 * e) * a) + 1])

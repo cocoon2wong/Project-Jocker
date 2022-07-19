@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:28:13
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-21 09:39:01
+@LastEditTime: 2022-07-19 13:35:50
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -19,7 +19,7 @@ class BaseObject():
     BaseObject
     ----------
     Base class for all structures.
-    
+
     Public Methods
     --------------
     ```python
@@ -39,7 +39,7 @@ class BaseObject():
 
         # create or restore a logger
         logger = logging.getLogger(name=type(self).__name__)
-        
+
         if not logger.hasHandlers():
             logger.setLevel(logging.INFO)
 
@@ -74,18 +74,18 @@ class BaseObject():
         """
         if level == 'info':
             self.logger.info(s)
-        
+
         elif level == 'error':
             self.logger.error(s)
-        
+
         elif level == 'debug':
             self.logger.debug(s)
-        
+
         else:
             raise NotImplementedError
-        
+
         return s
-    
+
     @staticmethod
     def log_timebar(inputs, text='', return_enumerate=True):
         itera = tqdm(inputs, desc=text)
@@ -98,12 +98,13 @@ class BaseObject():
     @staticmethod
     def print_parameters(title='null', **kwargs):
         print('\n>>> ' + title + ':')
-        for key in kwargs:
-            print('    - {} is {}.'.format(
-                key,
-                kwargs[key].numpy() if type(kwargs[key]) == tf.Tensor
-                else kwargs[key]
-            ))
+        for key, value in kwargs.items():
+
+            if type(value) == tf.Tensor:
+                value = value.numpy()
+
+            print('    - {}: {}.'.format(key, value))
+
         print('')
 
     @staticmethod

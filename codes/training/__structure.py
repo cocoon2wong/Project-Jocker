@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-05 09:46:38
+@LastEditTime: 2022-07-19 14:53:33
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,12 +13,12 @@ import os
 import numpy as np
 import tensorflow as tf
 
+from ..__base import BaseObject
 from ..args import BaseArgTable
 from ..basemodels import Model
+from ..dataset import Agent, Dataset, DatasetManager, get_inputs_by_type
 from ..utils import dir_check
 from . import __loss as losslib
-from ..__base import BaseObject
-from ..dataset import DatasetManager, get_inputs_by_type, Agent, Dataset
 from .__vis import Visualization
 
 
@@ -29,7 +29,7 @@ class Structure(BaseObject):
 
         self.args = BaseArgTable(terminal_args)
         self.model: Model = None
-        self.important_args = ['model', 'lr', 'test_set']
+        self.important_args = ['model', 'lr', 'split']
 
         self.set_gpu()
         self.optimizer = self.set_optimizer()
@@ -43,7 +43,7 @@ class Structure(BaseObject):
         self.set_metrics('ade', 'fde')
         self.set_metrics_weights(1.0, 0.0)
 
-        self.datasetInfo: Dataset = None
+        self.dsInfo: Dataset = None
 
     def set_inputs(self, *args):
         """
@@ -181,10 +181,8 @@ class Structure(BaseObject):
         :return dataset_train: train dataset, type = `tf.data.Dataset`
         :return dataset_val: val dataset, type = `tf.data.Dataset`
         """
-        train_agents, test_agents = DatasetManager.load(self.args,
-                                                        dataset='auto',
-                                                        mode='train')
-
+        dsManager = DatasetManager(self.args)
+        train_agents, test_agents = dsManager.load('auto', 'train')
         train_data = self.load_inputs_from_agents(train_agents)
         test_data = self.load_inputs_from_agents(test_agents)
 
@@ -269,8 +267,8 @@ class Structure(BaseObject):
                              outputs,
                              labels,
                              self.metrics_weights,
-                             mode='m',
-                             coefficient=self.datasetInfo.weights)
+                             mode='metric',
+                             coefficient=self.dsInfo.scale)
 
     def gradient_operations(self, inputs: list[tf.Tensor],
                             labels: tf.Tensor,
@@ -326,7 +324,7 @@ class Structure(BaseObject):
         Load args, load datasets, and start training or test.
         """
 
-        self.datasetInfo = Dataset(self.args.test_set)
+        self.dsInfo = Dataset(self.args.dataset, self.args.split)
 
         # start training if not loading any model weights
         if self.args.load == 'null':
@@ -350,36 +348,32 @@ class Structure(BaseObject):
         Run test accoding to arguments.
         """
 
-        self.datasetInfo = Dataset(self.args.test_set)
+        self.dsInfo = Dataset(self.args.dataset, self.args.split)
+        dsManager = DatasetManager(self.args)
 
         if self.args.test_mode == 'one':
             try:
-                agents = DatasetManager.load(self.args,
-                                             ds := self.args.force_set,
-                                             mode='test',
-                                             datasetInfo=self.datasetInfo)
-            except:
-                ds = self.datasetInfo.test_sets[0]
-                agents = DatasetManager.load(self.args, ds, mode='test',
-                                             datasetInfo=self.datasetInfo)
+                agents = dsManager.load(self.args.force_set, 'test')
 
-            self.__test(agents=agents, dataset=ds)
+            except:
+                clip = self.dsInfo.test_sets[0]
+                agents = dsManager.load(clip, 'test')
+
+            self.__test(agents, self.args.dataset, [clip])
             return
 
-        test_sets = self.datasetInfo.test_sets
+        test_sets = self.dsInfo.test_sets
         if self.args.test_mode == 'all':
-            for ds in test_sets:
-                agents = DatasetManager.load(self.args, ds, mode='test',
-                                             datasetInfo=self.datasetInfo)
-                self.__test(agents, ds)
+            for clip in test_sets:
+                agents = dsManager.load(clip, 'test')
+                self.__test(agents, self.args.dataset, [clip])
 
         elif self.args.test_mode == 'mix':
             agents = []
-            for ds in test_sets:
-                agents += DatasetManager.load(self.args, ds, mode='test',
-                                              datasetInfo=self.datasetInfo)
+            for clip in test_sets:
+                agents += dsManager.load(clip, 'test')
 
-            self.__test(agents, dataset=self.args.test_set)
+            self.__test(agents, self.args.dataset, test_sets)
 
     def __train(self):
         """
@@ -488,7 +482,7 @@ class Structure(BaseObject):
         self.print_train_results(best_epoch=best_epoch,
                                  best_metric=best_metrics)
 
-    def __test(self, agents: list[Agent], dataset: str):
+    def __test(self, agents: list[Agent], dataset: str, clips: list[str]):
         """
         Test
         """
@@ -507,7 +501,9 @@ class Structure(BaseObject):
         )
 
         # Write test results
-        self.print_test_results(metrics_dict, dataset)
+        self.print_test_results(metrics_dict,
+                                dataset=dataset,
+                                clips=clips)
 
         # model_inputs_all = list(ds_test.as_numpy_iterator())
         outputs = stack_results(outputs)
@@ -515,7 +511,7 @@ class Structure(BaseObject):
 
         self.write_test_results(outputs=outputs,
                                 agents=agents,
-                                dataset=dataset)
+                                clips=clips)
 
     def __test_on_dataset(self, ds: tf.data.Dataset,
                           return_results=False,
@@ -629,25 +625,27 @@ class Structure(BaseObject):
                   '`python main.py --load {}`.').format(self.args.log_dir,
                                                         self.args.log_dir))
 
-    def print_test_results(self, loss_dict: dict[str, float], dataset: str):
+    def print_test_results(self, loss_dict: dict[str, float],
+                           **kwargs):
         """
         Information to show (or to log into files) after testing
         """
         self.print_parameters(title='Test Results',
-                              dataset=dataset,
+                              **kwargs,
                               **loss_dict)
-        self.log('{}, {}, {}\n'.format(
+        self.log('split: {}, load: {}, metrics: {}'.format(
+                 self.args.split,
                  self.args.load,
-                 dataset,
                  loss_dict))
 
     def write_test_results(self, outputs: list[tf.Tensor],
                            agents: dict[str, list[Agent]],
-                           dataset: str):
+                           clips: list[str]):
 
-        if self.args.draw_results and (not dataset.startswith('mix')):
+        if self.args.draw_results and len(clips) == 1:
             # draw results on video frames
-            tv = Visualization(args=self.args, dataset=dataset)
+            clip = clips[0]
+            tv = Visualization(self.args, self.args.dataset, clip)
             save_base_path = dir_check(self.args.log_dir) \
                 if self.args.load == 'null' \
                 else self.args.load
@@ -668,7 +666,7 @@ class Structure(BaseObject):
                         frame_name=float(
                             agent.frames[self.args.obs_frames]),
                         save_path=save_format.format(
-                            dataset, index, 'jpg'),
+                            clip, index, 'jpg'),
                         show_img=False,
                         draw_distribution=self.args.draw_distribution)
 

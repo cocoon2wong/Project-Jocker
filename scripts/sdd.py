@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-29 15:36:47
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-05 15:21:27
+@LastEditTime: 2022-07-19 13:52:26
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -16,8 +16,22 @@ SCALE = 1920.0
 
 SOURCE_FILE = './data/sdd/{}/video{}/annotations.txt'
 TARGET_FILE = './data/sdd/{}/video{}/ann.csv'
-BASE_DIR = './datasets'
-SUBSETS_DIR = './datasets/subsets'
+BASE_DIR = './dataset_configs'
+
+DATASET = 'SDD'
+TYPE = 'pixel'
+
+
+def dir_check(path):
+    if not os.path.exists(path):
+        os.mkdir(path)
+    return path
+
+
+dir_check(BASE_DIR)
+CURRENT_DIR = dir_check(os.path.join(BASE_DIR, DATASET))
+SUBSETS_DIR = dir_check(os.path.join(CURRENT_DIR, 'subsets'))
+
 
 SDD_SETS = {
     'quad':   [[0, 1, 2, 3], SCALE],
@@ -101,20 +115,17 @@ def save_dataset_info():
         for index in SDD_SETS[base_set][0]:
             subsets['{}{}'.format(base_set, index)] = dict(
                 name='{}{}'.format(base_set, index),
-                dataset_dir='./data/sdd/{}/video{}'.format(
-                    base_set, index),
+                annpath=TARGET_FILE.format(base_set, index),
+                order=[0, 1],
                 paras=[1, 30],
                 video_path='./videos/sdd_{}_{}.mov'.format(
                     base_set, index),
-                weights=SDD_SETS[base_set][1],
-                scale=2,
+                scale=SCALE,
+                scale_vis=2,
                 dimension=4,
                 anntype='boundingbox',
+                matrix=[1.0, 0.0, 1.0, 0.0],
             )
-
-    for path in [BASE_DIR, SUBSETS_DIR]:
-        if not os.path.exists(path):
-            os.mkdir(path)
 
     train_sets = []
     test_sets = []
@@ -131,10 +142,12 @@ def save_dataset_info():
     write_plist({'train': train_sets,
                  'test': test_sets,
                  'val': val_sets,
-                 'weights': SCALE,
+                 'dataset': DATASET,
+                 'scale': SCALE,
                  'dimension': 4,
-                 'anntype': 'boundingbox'},
-                os.path.join(BASE_DIR, 'sdd.plist'))
+                 'anntype': 'boundingbox',
+                 'type': TYPE},
+                os.path.join(CURRENT_DIR, 'sdd.plist'))
 
     for key, value in subsets.items():
         write_plist(value,

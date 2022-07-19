@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-15 20:35:59
+@LastEditTime: 2022-07-19 11:54:21
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,12 +10,10 @@
 
 import json
 import os
-import time
+import re
 from typing import Any
 
-from ..utils import dir_check
-
-TIME = time.strftime('%Y%m%d-%H%M%S', time.localtime(time.time()))
+from ..utils import DATASET_DIR, TIME, dir_check
 
 
 class BaseArgTable():
@@ -33,6 +31,9 @@ class BaseArgTable():
 
         # args that set manually
         self._args_manually: dict[str, Any] = {}
+
+        # default args
+        self._args_default: dict[str, Any] = {}
 
         # a list that contains all args' names
         self._arg_list = [s for s in self.__dir__() if not s.startswith('_')]
@@ -155,6 +156,45 @@ class BaseArgTable():
         return self._get('batch_size', 5000, argtype='dynamic')
 
     @property
+    def dataset(self) -> str:
+        """
+        Name of the video dataset to train or evaluate.
+        For example, `'ETH-UCY'` or `'SDD'`.
+        DO NOT set this argument manually.
+        """
+        if not 'dataset' in self._args_default.keys():
+            dirs = os.listdir(DATASET_DIR)
+
+            plist_files = []
+            for d in dirs:
+                try:
+                    _path = os.path.join(DATASET_DIR, d)
+                    for p in os.listdir(_path):
+                        if p.endswith('.plist'):
+                            plist_files.append(os.path.join(_path, p))
+                except:
+                    pass
+
+            dataset = None
+            for f in plist_files:
+                res = re.findall('{}/(.*)/({}.plist)'.format(
+                    DATASET_DIR, self.split), f)
+
+                if len(res):
+                    dataset = res[0][0]
+                    break
+
+            if not dataset:
+                raise ValueError(self.split)
+
+            self._args_default['dataset'] = dataset
+
+        else:
+            dataset = self._args_default['dataset']
+
+        return self._get('dataset', dataset, argtype='static')
+
+    @property
     def epochs(self) -> int:
         """
         Maximum training epochs.
@@ -208,12 +248,18 @@ class BaseArgTable():
         Folder to save training logs and models. If set to `null`,
         logs will save at `args.save_base_dir/current_model`.
         """
-        log_dir_current = (TIME +
-                           self.model_name +
-                           self.model +
-                           self.test_set)
-        default_log_dir = os.path.join(dir_check(self.save_base_dir),
-                                       log_dir_current)
+        if not 'log_dir' in self._args_default.keys():
+            log_dir_current = (TIME +
+                               self.model_name +
+                               self.model +
+                               self.split)
+            default_log_dir = os.path.join(dir_check(self.save_base_dir),
+                                           log_dir_current)
+            self._args_default['log_dir'] = default_log_dir
+
+        else:
+            default_log_dir = self._args_default['log_dir']
+
         return self._get('log_dir', dir_check(default_log_dir), argtype='static')
 
     @property
@@ -247,11 +293,11 @@ class BaseArgTable():
         return self._get('restore', 'null', argtype='dynamic')
 
     @property
-    def test_set(self) -> str:
+    def split(self) -> str:
         """
-        Dataset used when training or evaluating.
+        Dataset split used when training and evaluating.
         """
-        return self._get('test_set', 'zara1', argtype='static')
+        return self._get('split', 'zara1', argtype='static')
 
     @property
     def test_step(self) -> int:
@@ -305,8 +351,8 @@ class BaseArgTable():
         """
         Test settings, canbe `'one'` or `'all'` or `'mix'`.
         When set it to `one`, it will test the model on the `args.force_set` only;
-        When set it to `all`, it will test on each of the test dataset in `args.test_set`;
-        When set it to `mix`, it will test on all test dataset in `args.test_set` together.
+        When set it to `all`, it will test on each of the test dataset in `args.split`;
+        When set it to `mix`, it will test on all test dataset in `args.split` together.
         """
         return self._get('test_mode', 'mix', argtype='dynamic')
 
