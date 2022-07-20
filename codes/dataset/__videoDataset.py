@@ -2,13 +2,14 @@
 @Author: Conghao Wong
 @Date: 2022-07-19 11:19:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-19 14:06:21
+@LastEditTime: 2022-07-20 21:05:40
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import os
+import random
 from typing import Union
 
 import cv2
@@ -16,7 +17,7 @@ import numpy as np
 
 from ..__base import BaseObject
 from ..args import BaseArgTable as Args
-from ..utils import MAP_HALF_SIZE, dir_check, load_from_plist, TEMP_PATH
+from ..utils import MAP_HALF_SIZE, TEMP_PATH, dir_check, load_from_plist
 from .__agent import Agent
 from .__maps import MapManager
 from .__videoClip import TrajMapNotFoundError, VideoClipManager
@@ -122,6 +123,7 @@ class DatasetManager(BaseObject):
 
         self.args = args
         self.info = Dataset(args.dataset, args.split)
+        self.bar = None
 
     def load_from_videoClips(self, video_clips: list[VideoClipManager],
                              mode='test') -> list[Agent]:
@@ -133,12 +135,17 @@ class DatasetManager(BaseObject):
         :return all_agents: a list of train agents (`Agent`)
         """
         all_agents = []
-        count = 1
-        total = len(video_clips)
 
-        for clip in video_clips:
-            print('({}/{})  Prepare test data in `{}`...'.format(
-                count, total, clip.name))
+        if mode == 'train':
+            random.shuffle(video_clips)
+
+        self.bar = self.timebar(video_clips)
+        for clip in (self.bar):
+
+            # assign time bar
+            s = 'Prepare {} data in `{}`...'.format(mode, clip.name)
+            self.update_timebar(self.bar, s, pos='start')
+            clip.bar = self.bar
 
             base_dir = os.path.join(clip.path, clip.name)
             if (self.args.obs_frames, self.args.pred_frames) == (8, 12):
@@ -147,8 +154,8 @@ class DatasetManager(BaseObject):
                 f_name = 'agent_{}to{}'.format(self.args.obs_frames,
                                                self.args.pred_frames)
 
-            endstring = '' if self.args.step == 4 else self.args.step
-            f_name += '{}.npz'.format(endstring)
+            endstring = '' if self.args.step == 4 else str(self.args.step)
+            f_name = f_name + endstring + '.npz'
             data_path = os.path.join(base_dir, f_name)
 
             if not os.path.exists(data_path):
@@ -156,8 +163,6 @@ class DatasetManager(BaseObject):
                 self.zip_and_save(data_path, agents)
             else:
                 agents = self.load_and_unzip(data_path)
-
-            self.log('Successfully load train agents from `{}`'.format(data_path))
 
             if self.args.use_maps:
                 map_path = dir_check(data_path.split('.np')[0] + '_maps')
@@ -180,8 +185,6 @@ class DatasetManager(BaseObject):
                     exit()
 
                 except:
-                    self.log('Load maps failed, start re-making...')
-
                     clip.make_maps(agents, map_type, map_path,
                                    save_map_file='trajMap.png',
                                    save_social_file='socialMap.npy',
@@ -194,10 +197,7 @@ class DatasetManager(BaseObject):
                                             para_file='para.txt',
                                             centers_file='centers.txt')
 
-                self.log('Successfully load maps from `{}`.'.format(map_path))
-
             all_agents += agents
-            count += 1
 
         return all_agents
 
@@ -243,7 +243,8 @@ class DatasetManager(BaseObject):
             if type(clips) == str:
                 clips = [clips]
 
-            dms = [VideoClipManager(self.args, d, temp_dir=TEMP_PATH) for d in clips]
+            dms = [VideoClipManager(self.args, d, temp_dir=TEMP_PATH)
+                   for d in clips]
             return self.load_from_videoClips(dms, mode=mode)
 
     def load_maps(self, base_path: str,

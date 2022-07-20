@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-19 10:32:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-19 14:28:00
+@LastEditTime: 2022-07-20 21:02:44
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,6 +11,7 @@
 import os
 
 import numpy as np
+from tqdm import tqdm
 
 from ..__base import BaseObject
 from ..args import BaseArgTable as Args
@@ -204,6 +205,7 @@ class VideoClipManager(BaseObject):
         self.custom_list = custom_list
         self.agent_count = None
         self.trajectories: list[Trajectory] = None
+        self.bar: tqdm = None
 
     def load_dataset(self, file_name: str):
         """
@@ -240,7 +242,6 @@ class VideoClipManager(BaseObject):
         frame_ids = list(set(data.T[0].astype(np.int32)))
         frame_ids.sort()
 
-        self.log('Dataset file {} loaded.'.format(file_name))
         return agents, frame_ids
 
     def process_metadata(self):
@@ -279,10 +280,11 @@ class VideoClipManager(BaseObject):
             dim = persons_appear[person_ids[0]].shape[-1] - 1
             matrix = INIT_POSITION * np.ones([f, p, dim])
 
-            timebar = self.log_timebar(inputs=person_dict.items(),
-                                       text='Processing dataset...',
-                                       return_enumerate=False)
-            for person_id, person_index in timebar:
+            for index, [person_id, person_index] in enumerate(person_dict.items()):
+
+                p = '{}%'.format((index+1)*100/len(person_dict))
+                self.update_timebar(self.bar, 'Processing dataset: ' + p)
+
                 frame_id = persons_appear[person_id].T[0].astype(np.int32)
                 frame_index = [frame_dict[fi] for fi in frame_id]
 
@@ -337,9 +339,12 @@ class VideoClipManager(BaseObject):
         frame_step = int(0.4 / (sample_rate / frame_rate))
         train_samples = []
 
-        timebar = self.log_timebar(range(self.agent_count),
-                                   text='Prepare train data...')
-        for agent_index, _ in timebar:
+        for agent_index in range(self.agent_count):
+
+            # update timebar
+            p = '{}%'.format((agent_index + 1)*100//self.agent_count)
+            self.update_timebar(self.bar, 'Prepare train data: ' + p)
+
             trajectory = self.trajectories[agent_index]
             start_frame = trajectory.start_frame
             end_frame = trajectory.end_frame
@@ -405,14 +410,16 @@ class VideoClipManager(BaseObject):
 
         social_maps = []
         centers = []
-        for agent in self.log_timebar(agents,
-                                      'Build maps...',
-                                      return_enumerate=False):
-
+        agent_count = len(agents)
+        for index, agent in enumerate(agents):
             centers.append(agent.traj[-1:, :])
             social_maps.append(map_manager.build_social_map(
                 target_agent=agent,
                 traj_neighbors=agent.get_pred_traj_neighbor_linear()))
+
+            # update timebar
+            p = '{}%'.format((index+1)*100//agent_count)
+            self.update_timebar(self.bar, 'Building Maps: ' + p)
 
         social_maps = np.array(social_maps)  # (batch, a, b)
 

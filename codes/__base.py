@@ -2,16 +2,19 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:28:13
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-19 13:35:50
+@LastEditTime: 2022-07-20 21:08:24
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import logging
+from typing import TypeVar, Union
 
 import tensorflow as tf
 from tqdm import tqdm
+
+T = TypeVar('T')
 
 
 class BaseObject():
@@ -87,13 +90,28 @@ class BaseObject():
         return s
 
     @staticmethod
-    def log_timebar(inputs, text='', return_enumerate=True):
-        itera = tqdm(inputs, desc=text)
+    def timebar(inputs: T, text='') -> T:
+        return tqdm(inputs, desc=text)
 
-        if return_enumerate:
-            return enumerate(itera)
+    @staticmethod
+    def update_timebar(timebar: tqdm, item: Union[str, dict], pos='end'):
+        if timebar is None:
+            return timebar
+
+        if pos == 'end':
+            if type(item) is str:
+                timebar.set_postfix_str(item)
+            elif type(item) is dict:
+                timebar.set_postfix(item)
+            else:
+                raise ValueError(item)
+
+        elif pos == 'start':
+            timebar.set_description(item)
         else:
-            return itera
+            raise NotImplementedError(pos)
+
+        return timebar
 
     @staticmethod
     def print_parameters(title='null', **kwargs):

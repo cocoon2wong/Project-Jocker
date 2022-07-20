@@ -2,12 +2,13 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-19 14:35:56
+@LastEditTime: 2022-07-20 19:47:43
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
+from typing import Union
 import cv2
 import numpy as np
 import tensorflow as tf
@@ -165,7 +166,7 @@ class Visualization():
         return source
 
     def draw(self, agents: list[Agent],
-             frame_name,
+             frame_id: Union[str, int],
              save_path='null',
              show_img=False,
              draw_distribution=False):
@@ -173,13 +174,12 @@ class Visualization():
         Draw trajecotries on images.
 
         :param agents: a list of agent managers (`Agent`)
-        :param frame_name: name of the frame to draw on
+        :param frame_id: name of the frame to draw on
         :param save_path: save path
         :param show_img: controls if show results in opencv window
         :draw_distrubution: controls if draw as distribution for generative models
         """
-        obs_frame = frame_name
-        time = 1000 * obs_frame / self.video_paras[1]
+        time = 1000 * frame_id / self.video_paras[1]
         self.video_capture.set(cv2.CAP_PROP_POS_MSEC, time - 1)
         _, f = self.video_capture.read()
 
@@ -197,7 +197,7 @@ class Visualization():
                                     alpha=1.0)
 
         texts = ['{}'.format(self.info.name),
-                 'frame: {}'.format(str(int(frame_name)).zfill(6)),
+                 'frame: {}'.format(str(frame_id).zfill(6)),
                  'agent: {}'.format(agent.id)]
 
         for index, text in enumerate(texts):

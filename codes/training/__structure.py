@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-19 15:09:25
+@LastEditTime: 2022-07-20 20:54:05
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,6 +12,7 @@ import os
 
 import numpy as np
 import tensorflow as tf
+from tqdm import tqdm
 
 from ..__base import BaseObject
 from ..args import BaseArgTable
@@ -44,6 +45,8 @@ class Structure(BaseObject):
         self.set_metrics_weights(1.0, 0.0)
 
         self.dsInfo: Dataset = None
+        self.bar: tqdm = None
+        self.leader: Structure = None
 
     def set_inputs(self, *args):
         """
@@ -350,31 +353,33 @@ class Structure(BaseObject):
 
         self.dsInfo = Dataset(self.args.dataset, self.args.split)
         dsManager = DatasetManager(self.args)
+        test_sets = self.dsInfo.test_sets
 
+        # test on a single sub-dataset
         if self.args.test_mode == 'one':
             try:
-                agents = dsManager.load(self.args.force_set, 'test')
                 clip = self.args.force_set
+                agents = dsManager.load(clip, 'test')
 
             except:
                 clip = self.dsInfo.test_sets[0]
                 agents = dsManager.load(clip, 'test')
 
             self.__test(agents, self.args.dataset, [clip])
-            return
 
-        test_sets = self.dsInfo.test_sets
-        if self.args.test_mode == 'all':
+        # test on all test datasets separately
+        elif self.args.test_mode == 'all':
             for clip in test_sets:
                 agents = dsManager.load(clip, 'test')
                 self.__test(agents, self.args.dataset, [clip])
 
+        # test on all test datasets together
         elif self.args.test_mode == 'mix':
-            agents = []
-            for clip in test_sets:
-                agents += dsManager.load(clip, 'test')
-
+            agents = dsManager.load(test_sets, 'test')
             self.__test(agents, self.args.dataset, test_sets)
+
+        else:
+            raise NotImplementedError(self.args.test_mode)
 
     def __train(self):
         """
@@ -392,10 +397,13 @@ class Structure(BaseObject):
         tb = tf.summary.create_file_writer(self.args.log_dir)
 
         # init variables for training
-        best_metrics = 10000.0
-        best_epoch = 0
         loss_move = tf.Variable(0, dtype=tf.float32)
         loss_dict = {}
+        metrics_dict = {}
+
+        best_epoch = 0
+        best_metrics = 10000.0
+        best_metrics_dict = {'-': best_metrics}
         test_epochs = []
 
         # Load dataset
@@ -407,12 +415,10 @@ class Structure(BaseObject):
             self.args.epochs).batch(self.args.batch_size)
 
         # start training
-        timebar = self.log_timebar(inputs=ds_train,
-                                   text='Training...',
-                                   return_enumerate=False)
+        self.bar = self.timebar(ds_train, text='Training...')
 
         epochs = []
-        for batch_id, dat in enumerate(timebar):
+        for batch_id, dat in enumerate(self.bar):
 
             epoch = (batch_id * self.args.batch_size) // train_number
 
@@ -451,6 +457,7 @@ class Structure(BaseObject):
                 # Save model
                 if metrics <= best_metrics:
                     best_metrics = metrics
+                    best_metrics_dict = metrics_dict
                     best_epoch = epoch
 
                     self.save_model_weights(os.path.join(
@@ -462,21 +469,23 @@ class Structure(BaseObject):
                                np.array([best_metrics, best_epoch]))
 
             # Update time bar
-            step_dict = dict(zip(['epoch', 'best'], [epoch, best_metrics]))
-            try:
-                loss_dict = dict(
-                    step_dict, **dict(loss_dict, **metrics_dict))
-            except UnboundLocalError as e:
-                loss_dict = dict(step_dict, **loss_dict)
+            loss_dict = dict(epoch=epoch,
+                             best=tf.stack(list(best_metrics_dict.values())),
+                             **loss_dict,
+                             **metrics_dict)
 
-            for key in loss_dict:
-                if issubclass(type(loss_dict[key]), tf.Tensor):
-                    loss_dict[key] = loss_dict[key].numpy()
-            timebar.set_postfix(loss_dict)
+            for key, value in loss_dict.items():
+                if issubclass(type(value), tf.Tensor):
+                    loss_dict[key] = value.numpy()
+
+            self.update_timebar(self.bar, loss_dict, pos='end')
 
             # Write tensorboard
             with tb.as_default():
                 for loss_name in loss_dict:
+                    if loss_name == 'best':
+                        continue
+
                     value = loss_dict[loss_name]
                     tf.summary.scalar(loss_name, value, step=epoch)
 
@@ -527,13 +536,11 @@ class Structure(BaseObject):
         # divide with batch size
         ds_batch = ds.batch(self.args.batch_size)
 
-        timebar = self.log_timebar(
-            ds_batch,
-            text='Test...',
-            return_enumerate=False) if show_timebar else ds_batch
+        self.bar = self.timebar(ds_batch, 'Test...') if show_timebar \
+            else ds_batch
 
         test_numbers = []
-        for dat in timebar:
+        for dat in self.bar:
             outputs, metrics, metrics_dict = self.model_validate(
                 inputs=dat[:-1],
                 labels=dat[-1],
@@ -640,13 +647,14 @@ class Structure(BaseObject):
                  loss_dict))
 
     def write_test_results(self, outputs: list[tf.Tensor],
-                           agents: dict[str, list[Agent]],
+                           agents: list[Agent],
                            clips: list[str]):
 
         if self.args.draw_results and len(clips) == 1:
             # draw results on video frames
             clip = clips[0]
             tv = Visualization(self.args, self.args.dataset, clip)
+            
             save_base_path = dir_check(self.args.log_dir) \
                 if self.args.load == 'null' \
                 else self.args.load
@@ -657,17 +665,15 @@ class Structure(BaseObject):
             self.log('Start saving images at {}'.format(
                 os.path.join(save_base_path, 'VisualTrajs')))
 
-            for index, agent in self.log_timebar(agents, 'Saving...'):
+            pred_all = outputs[0].numpy()
+            for index, agent in enumerate(self.timebar(agents, 'Saving...')):
                 # write traj
-                output = outputs[0][index].numpy()
-                agents[index].pred = output
+                agent.pred = pred_all[index]
 
                 # draw as one image
                 tv.draw(agents=[agent],
-                        frame_name=float(
-                            agent.frames[self.args.obs_frames]),
-                        save_path=save_format.format(
-                            clip, index, 'jpg'),
+                        frame_id=agent.frames[self.args.obs_frames],
+                        save_path=save_format.format(clip, index, 'jpg'),
                         show_img=False,
                         draw_distribution=self.args.draw_distribution)
 
