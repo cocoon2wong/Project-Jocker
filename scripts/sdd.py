@@ -2,37 +2,34 @@
 @Author: Conghao Wong
 @Date: 2022-06-29 15:36:47
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-19 15:11:06
+@LastEditTime: 2022-07-20 10:20:08
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-import numpy as np
 import os
 import plistlib
 
-SCALE = 1920.0
+import numpy as np
 
-SOURCE_FILE = './data/sdd/{}/video{}/annotations.txt'
-TARGET_FILE = './data/sdd/{}/video{}/ann.csv'
-BASE_DIR = './dataset_configs'
+from utils import dir_check
 
+# Dataset info
 DATASET = 'SDD'
 TYPE = 'pixel'
+SCALE = 100.0
 
+# Annotation paths
+SOURCE_FILE = './data/sdd/{}/video{}/annotations.txt'
+TARGET_FILE = './data/sdd/{}/video{}/ann.csv'
 
-def dir_check(path):
-    if not os.path.exists(path):
-        os.mkdir(path)
-    return path
-
-
-dir_check(BASE_DIR)
+# Saving paths
+BASE_DIR = dir_check('./dataset_configs')
 CURRENT_DIR = dir_check(os.path.join(BASE_DIR, DATASET))
 SUBSETS_DIR = dir_check(os.path.join(CURRENT_DIR, 'subsets'))
 
-
+# Dataset configs
 SDD_SETS = {
     'quad':   [[0, 1, 2, 3], SCALE],
     'little':   [[0, 1, 2, 3], SCALE],
@@ -139,14 +136,16 @@ def save_dataset_info():
         else:
             train_sets.append(d)
 
-    write_plist({'train': train_sets,
-                 'test': test_sets,
-                 'val': val_sets,
-                 'dataset': DATASET,
-                 'scale': SCALE,
-                 'dimension': 4,
-                 'anntype': 'boundingbox',
-                 'type': TYPE},
+    dataset_dic = dict(train=train_sets,
+                       test=test_sets,
+                       val=val_sets,
+                       dataset=DATASET,
+                       scale=SCALE,
+                       dimension=4,
+                       anntype='boundingbox',
+                       type=TYPE)
+
+    write_plist(dataset_dic,
                 os.path.join(CURRENT_DIR, 'sdd.plist'))
 
     for key, value in subsets.items():
@@ -156,5 +155,5 @@ def save_dataset_info():
 
 
 if __name__ == '__main__':
-    # transform_annotations()
+    transform_annotations()
     save_dataset_info()

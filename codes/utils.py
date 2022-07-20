@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 20:10:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-19 14:04:40
+@LastEditTime: 2022-07-20 10:29:24
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -23,8 +23,10 @@ DATASET_DIR = './dataset_configs'
 INIT_POSITION = 10000
 
 # Context map configs
-WINDOW_EXPAND_PIXEL = 0.3
-WINDOW_SIZE_PIXEL = 200.0
+# WINDOW_EXPAND_PIXEL = 0.3
+# WINDOW_SIZE_PIXEL = 200.0
+WINDOW_EXPAND_PIXEL = 10.0
+WINDOW_SIZE_PIXEL = 10.0
 
 WINDOW_EXPAND_METER = 10.0
 WINDOW_SIZE_METER = 10.0

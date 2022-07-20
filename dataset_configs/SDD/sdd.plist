@@ -9,7 +9,7 @@
 	<key>dimension</key>
 	<integer>4</integer>
 	<key>scale</key>
-	<real>1920.0</real>
+	<real>100.0</real>
 	<key>test</key>
 	<array>
 		<string>little1</string>

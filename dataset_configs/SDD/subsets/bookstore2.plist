@@ -28,7 +28,7 @@
 		<integer>30</integer>
 	</array>
 	<key>scale</key>
-	<real>1920.0</real>
+	<real>100.0</real>
 	<key>scale_vis</key>
 	<integer>2</integer>
 	<key>video_path</key>

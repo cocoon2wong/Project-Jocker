@@ -9,7 +9,7 @@
 	<key>dimension</key>
 	<integer>2</integer>
 	<key>scale</key>
-	<real>720.0</real>
+	<real>30.0</real>
 	<key>test</key>
 	<array>
 		<string>hotel_pixel</string>

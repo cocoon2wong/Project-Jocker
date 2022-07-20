@@ -2,39 +2,36 @@
 @Author: Conghao Wong
 @Date: 2022-07-15 14:45:57
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-19 14:34:14
+@LastEditTime: 2022-07-20 10:20:24
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-from typing import Any
-import numpy as np
 import os
 import plistlib
+from typing import Any
 
-SCALE = 720.0
+import numpy as np
 
-SOURCE_FILE = './data/ethucy/{}/true_pos_.csv'
-TARGET_FILE = './data/ethucy/{}/ann_pixel.csv'
-BASE_DIR = './dataset_configs'
-SUBSETS_DIR = './datasets/subsets'
+from utils import dir_check
 
-SUBSETS: dict[str, Any] = {}
+# Dataset info
 DATASET = 'ETH-UCY-pixel'
 TYPE = 'pixel'
+SCALE = 30.0
 
+# Annotation paths
+SOURCE_FILE = './data/ethucy/{}/true_pos_.csv'
+TARGET_FILE = './data/ethucy/{}/ann_pixel.csv'
 
-def dir_check(path):
-    if not os.path.exists(path):
-        os.mkdir(path)
-    return path
-
-
-dir_check(BASE_DIR)
+# Saving paths
+BASE_DIR = dir_check('./dataset_configs')
 CURRENT_DIR = dir_check(os.path.join(BASE_DIR, DATASET))
 SUBSETS_DIR = dir_check(os.path.join(CURRENT_DIR, 'subsets'))
 
+# Dataset configs
+SUBSETS: dict[str, Any] = {}
 
 SUBSETS['eth_pixel'] = dict(
     name='eth_pixel',
@@ -116,7 +113,8 @@ SUBSETS['unive_pixel'] = dict(
     scale=1,
 )
 
-TESTSETS = ['eth_pixel', 'hotel_pixel', 'zara1_pixel', 'zara2_pixel', 'univ_pixel']
+TESTSETS = ['eth_pixel', 'hotel_pixel',
+            'zara1_pixel', 'zara2_pixel', 'univ_pixel']
 
 
 def write_plist(value: dict, path: str):
@@ -129,7 +127,7 @@ def transform_annotations():
     Transform annotations with the new `ann.csv` type.
     """
     for name in SUBSETS.keys():
-        
+
         sname = name.split('_pixel')[0]
         source = SOURCE_FILE.format(sname)
         target = TARGET_FILE.format(sname)
@@ -187,14 +185,16 @@ def save_dataset_info():
             else:
                 train_sets.append(d)
 
-        write_plist({'train': train_sets,
-                     'test': test_sets,
-                     'val': val_sets,
-                     'dataset': DATASET,
-                     'scale': SCALE,
-                     'dimension': 2,
-                     'anntype': 'coordinate',
-                     'type': TYPE},
+        dataset_dic = dict(train=train_sets,
+                           test=test_sets,
+                           val=val_sets,
+                           dataset=DATASET,
+                           scale=SCALE,
+                           dimension=2,
+                           anntype='coordinate',
+                           type=TYPE)
+
+        write_plist(dataset_dic,
                     os.path.join(CURRENT_DIR, '{}.plist'.format(ds)))
 
     for key, value in subsets.items():
