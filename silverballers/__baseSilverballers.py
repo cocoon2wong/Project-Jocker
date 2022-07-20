@@ -2,24 +2,26 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-19 13:48:50
+@LastEditTime: 2022-07-20 20:58:04
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-import codes as C
 import tensorflow as tf
+from codes.basemodels import Model, layers
+from codes.training import Structure
 
 from .__args import SilverballersArgs
-from .agents.__baseAgent import BaseAgentStructure
-from .handlers.__baseHandler import BaseHandlerModel, BaseHandlerStructure
+from .__loss import SilverballersLoss
+from .agents import BaseAgentModel, BaseAgentStructure
+from .handlers import BaseHandlerModel, BaseHandlerStructure
 
 
-class BaseSilverballersModel(C.basemodels.Model):
+class BaseSilverballersModel(Model):
 
     def __init__(self, Args: SilverballersArgs,
-                 agentModel: C.basemodels.Model,
+                 agentModel: BaseAgentModel,
                  handlerModel: BaseHandlerModel = None,
                  structure=None,
                  *args, **kwargs):
@@ -33,7 +35,7 @@ class BaseSilverballersModel(C.basemodels.Model):
         self.linear = not self.handler
 
         if self.linear:
-            self.linear_layer = C.basemodels.layers.LinearInterpolation()
+            self.linear_layer = layers.LinearInterpolation()
 
     def call(self, inputs: list[tf.Tensor],
              training=None, mask=None,
@@ -43,7 +45,7 @@ class BaseSilverballersModel(C.basemodels.Model):
 
         # obtain shape parameters
         batch, Kc = outputs[0].shape[:2]
-        pos = self.agent.structure.p_index
+        pos = self.agent.structure.Loss.p_index
 
         # shape = (batch, Kc, n, 2)
         proposals = outputs[0]
@@ -67,7 +69,7 @@ class BaseSilverballersModel(C.basemodels.Model):
         return (final_results,)
 
 
-class BaseSilverballers(C.training.Structure):
+class BaseSilverballers(Structure):
 
     """
     Basic structure to run the `agent-handler` based silverballers model.
@@ -97,7 +99,8 @@ class BaseSilverballers(C.training.Structure):
         self.set_labels('gt')
 
         # set metrics
-        self.set_metrics('ade', 'fde')
+        self.Loss = SilverballersLoss(self.args)
+        self.set_metrics(self.Loss.avgADE, self.Loss.avgFDE)
         self.set_metrics_weights(1.0, 0.0)
 
         # check weights
@@ -105,22 +108,27 @@ class BaseSilverballers(C.training.Structure):
             raise ('`Agent` or `Handler` not found!' +
                    ' Please specific their paths via `--loada` or `--loadb`.')
 
-        # assign models
+        # assign stage-1 models
         self.agent = self.agent_structure(
             terminal_args + ['--load', self.args.loada])
         self.agent.set_model_type(self.agent_model)
         self.agent.load_best_model(self.args.loada)
+        self.agent.leader = self
 
         if self.args.loadb.startswith('l'):
             self.linear_predict = True
+            self.set_inputs('trajs')
+            self.args._set('use_maps', 0)
 
         else:
+            # assign stage-2 models
             self.linear_predict = False
             self.handler = self.handler_structure(
                 terminal_args + ['--load', self.args.loadb])
             self.handler.set_model_type(self.handler_model)
             self.handler.args._set('key_points', self.agent.args.key_points)
             self.handler.load_best_model(self.args.loadb, asHandler=True)
+            self.handler.leader = self
 
         if self.args.batch_size > self.agent.args.batch_size:
             self.args._set('batch_size', self.agent.args.batch_size)
@@ -129,7 +137,7 @@ class BaseSilverballers(C.training.Structure):
         self.args._set('dim', self.agent.args.dim)
         self.args._set('anntype', self.agent.args.anntype)
 
-    def set_models(self, agentModel: type[C.basemodels.Model],
+    def set_models(self, agentModel: type[BaseAgentModel],
                    handlerModel: type[BaseHandlerModel],
                    agentStructure: type[BaseAgentStructure] = None,
                    handlerStructure: type[BaseHandlerStructure] = None):
@@ -164,7 +172,7 @@ class BaseSilverballers(C.training.Structure):
             *args, **kwargs)
 
     def print_test_results(self, loss_dict: dict[str, float], **kwargs):
-        self.log('Start test with 1st sub-network {} and 2nd seb-network {}'.format(
+        super().print_test_results(loss_dict, **kwargs)
+        self.log('Test with 1st sub-network `{}` and 2nd seb-network `{}` done.'.format(
             self.args.loada,
             self.args.loadb))
-        super().print_test_results(loss_dict, **kwargs)

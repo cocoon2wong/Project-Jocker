@@ -2,67 +2,88 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-19 14:57:15
+@LastEditTime: 2022-07-20 21:09:27
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-import codes as C
 import tensorflow as tf
+from codes.basemodels import Model
+from codes.training import Structure
 
 from ..__args import AgentArgs
+from ..__loss import SilverballersLoss
 
 
-class BaseAgentStructure(C.training.Structure):
+class BaseAgentModel(Model):
 
-    model_type = None
+    def __init__(self, Args: AgentArgs,
+                 feature_dim: int = 128,
+                 id_depth: int = 16,
+                 keypoints_number: int = 3,
+                 keypoints_index: tf.Tensor = None,
+                 structure=None,
+                 *args, **kwargs):
+
+        super().__init__(Args, structure, *args, **kwargs)
+
+        self.args = Args
+        self.structure: BaseAgentStructure = structure
+
+        # Parameters
+        self.d = feature_dim
+        self.d_id = id_depth
+        self.n_key = keypoints_number
+        self.p_index = keypoints_index
+
+        # Preprocess
+        preprocess_list = ()
+        for index, operation in enumerate(['Move', 'Scale', 'Rotate']):
+            if self.args.preprocess[index] == '1':
+                preprocess_list += (operation,)
+
+        self.set_preprocess(*preprocess_list)
+        self.set_preprocess_parameters(move=0)
+
+
+class BaseAgentStructure(Structure):
+
+    model_type: BaseAgentModel = None
 
     def __init__(self, terminal_args: list[str]):
         super().__init__(terminal_args)
 
         self.args = AgentArgs(terminal_args)
-        self.important_args += ['Kc', 'key_points', 'depth', 'preprocess']
+        self.Loss = SilverballersLoss(self.args)
+
+        self.important_args += ['key_points', 'preprocess']
 
         self.set_inputs('obs')
         self.set_labels('pred')
 
-        self.set_loss(self.l2)
+        self.set_loss(self.Loss.avgKey)
         self.set_loss_weights(1.0)
 
-        self.set_metrics(self.l2, 'fde')
-        self.set_metrics_weights(0.0, 1.0)
+        self.set_metrics(self.Loss.avgKey, self.Loss.avgFDE)
+        self.set_metrics_weights(1.0, 0.0)
 
-    @property
-    def p_index(self) -> tf.Tensor:
-        """
-        Time step of predicted key points.
-        """
-        p_index = [int(i) for i in self.args.key_points.split('_')]
-        return tf.cast(p_index, tf.int32)
-
-    @property
-    def p_len(self) -> int:
-        """
-        Length of predicted key points.
-        """
-        return len(self.p_index)
-
-    def set_model_type(self, new_type):
+    def set_model_type(self, new_type: type[BaseAgentModel]):
         self.model_type = new_type
 
     def create_model(self, *args, **kwargs):
         return self.model_type(self.args,
                                feature_dim=self.args.feature_dim,
                                id_depth=self.args.depth,
-                               keypoints_number=self.p_len,
+                               keypoints_number=self.Loss.p_len,
+                               keypoints_index=self.Loss.p_index,
                                structure=self)
 
-    def l2(self, outputs: list[tf.Tensor],
-           labels: tf.Tensor,
-           *args, **kwargs) -> tf.Tensor:
-        """
-        L2 distance between predictions and labels on predicted key points
-        """
-        labels_pickled = tf.gather(labels, self.p_index, axis=1)
-        return C.training.loss.ADE(outputs[0], labels_pickled)
+    def print_test_results(self, loss_dict: dict[str, float], **kwargs):
+        super().print_test_results(loss_dict, **kwargs)
+        s = 'python main.py --model sb{} --loada {} --loadb l'
+        s = s.format(self.args.model.split('agent')[-1],
+                     self.args.load)
+
+        self.log('You can run `{}` to '.format(s) +
+                 'start the silverballers evaluation.')

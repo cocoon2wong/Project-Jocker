@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-23 14:32:06
+@LastEditTime: 2022-07-20 21:11:46
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,12 +11,14 @@
 import codes as C
 import numpy as np
 import tensorflow as tf
-from tqdm import tqdm
+
+from codes.training import Structure
+from codes.basemodels import Model
 
 from ..__args import HandlerArgs
 
 
-class BaseHandlerModel(C.basemodels.Model):
+class BaseHandlerModel(Model):
 
     def __init__(self, Args: HandlerArgs,
                  feature_dim: int,
@@ -27,6 +29,8 @@ class BaseHandlerModel(C.basemodels.Model):
                  *args, **kwargs):
 
         super().__init__(Args, structure, *args, **kwargs)
+
+        self.structure: Structure = structure
 
         # Preprocess
         self.set_preprocess('move')
@@ -58,7 +62,11 @@ class BaseHandlerModel(C.basemodels.Model):
         p_all = []
         K = keypoints.shape[1]
 
-        for k in tqdm(range(K)):
+        for k in range(K):
+            # set timebar
+            p = 'Calculating: {}%'.format((k+1)*100//K)
+            self.structure.update_timebar(self.structure.leader.bar, p)
+
             # single shape is (batch, pred, 2)
             p_all.append(self.call(inputs=inputs,
                                    keypoints=keypoints[:, k, :, :],
