@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-22 21:03:48
+@LastEditTime: 2022-07-20 10:32:22
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -165,6 +165,7 @@ class Model(tf.keras.Model):
             if item in self._preprocess_list:
                 trajs, self._preprocess_variables = func(
                     trajs, self._preprocess_variables,
+                    self.args.anntype,
                     self._preprocess_para[item],
                     use_new_para_dict)
 
@@ -181,6 +182,7 @@ class Model(tf.keras.Model):
 
         for item, func in zip(items[::-1], funcs[::-1]):
             if item in self._preprocess_list:
-                trajs = func(trajs, self._preprocess_variables)
+                trajs = func(trajs, self._preprocess_variables,
+                             self.args.anntype)
 
         return preprocess.update((trajs,), outputs)

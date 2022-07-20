@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 15:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-19 14:52:05
+@LastEditTime: 2022-07-19 15:24:21
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -316,7 +316,18 @@ class MapManager(BaseObject):
         if not type(traj) == np.ndarray:
             traj = np.array(traj)
 
-        return ((traj - self.b) * self.W).astype(np.int32)
+        if self.args.anntype == 'coordinate':
+            grid = ((traj - self.b) * self.W).astype(np.int32)
+        
+        elif self.args.anntype == 'boundingbox':
+            tl = ((traj[:, 0:2] - self.b) * self.W)
+            br = ((traj[:, 2:4] - self.b) * self.W)
+            grid = ((tl + br)/2).astype(np.int32)
+
+        else:
+            raise NotImplementedError(self.args.anntype)
+
+        return grid
 
     def _add_one_traj(self, source_map: np.ndarray,
                       traj: np.ndarray,
