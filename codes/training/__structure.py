@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-19 14:53:33
+@LastEditTime: 2022-07-19 15:09:25
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -354,6 +354,7 @@ class Structure(BaseObject):
         if self.args.test_mode == 'one':
             try:
                 agents = dsManager.load(self.args.force_set, 'test')
+                clip = self.args.force_set
 
             except:
                 clip = self.dsInfo.test_sets[0]
