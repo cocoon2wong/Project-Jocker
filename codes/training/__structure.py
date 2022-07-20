@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-20 20:54:05
+@LastEditTime: 2022-07-20 21:31:07
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -536,11 +536,15 @@ class Structure(BaseObject):
         # divide with batch size
         ds_batch = ds.batch(self.args.batch_size)
 
-        self.bar = self.timebar(ds_batch, 'Test...') if show_timebar \
-            else ds_batch
+        # do not show time bar when training
+        if show_timebar:
+            self.bar = self.timebar(ds_batch, 'Test...')
+            timebar = self.bar
+        else:
+            timebar = ds_batch
 
         test_numbers = []
-        for dat in self.bar:
+        for dat in timebar:
             outputs, metrics, metrics_dict = self.model_validate(
                 inputs=dat[:-1],
                 labels=dat[-1],
@@ -654,7 +658,7 @@ class Structure(BaseObject):
             # draw results on video frames
             clip = clips[0]
             tv = Visualization(self.args, self.args.dataset, clip)
-            
+
             save_base_path = dir_check(self.args.log_dir) \
                 if self.args.load == 'null' \
                 else self.args.load
