@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-19 11:54:21
+@LastEditTime: 2022-07-26 20:56:17
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -207,8 +207,10 @@ class BaseArgTable():
         Force test dataset. 
         Only works when evaluating when `test_mode` is `one`.
         """
-        fs = self._get('force_set', 'null', argtype='dynamic')
-        return fs
+        if not self.draw_results in  ['null', '0', '1']:
+            self._set('force_set', self.draw_results)
+        
+        return self._get('force_set', 'null', argtype='dynamic')
 
     @property
     def gpu(self) -> str:
@@ -324,13 +326,16 @@ class BaseArgTable():
         return self._get('pred_frames', 12, argtype='static')
 
     @property
-    def draw_results(self) -> int:
+    def draw_results(self) -> str:
         """
         Controls if draw visualized results on video frames.
+        Accept the name of one video clip.
         Make sure that you have put video files into `./videos`
         according to the specific name way.
+        Note that `test_mode` will be set to `'one'` and `force_set`
+        will be set to `draw_results` if `draw_results != 'null'`.
         """
-        return self._get('draw_results', 0, argtype='dynamic')
+        return self._get('draw_results', 'null', argtype='dynamic')
 
     @property
     def draw_distribution(self) -> int:
@@ -354,6 +359,9 @@ class BaseArgTable():
         When set it to `all`, it will test on each of the test dataset in `args.split`;
         When set it to `mix`, it will test on all test dataset in `args.split` together.
         """
+        if not self.draw_results in  ['null', '0', '1']:
+            self._set('test_mode', 'one')
+
         return self._get('test_mode', 'mix', argtype='dynamic')
 
     @property

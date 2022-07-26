@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-20 21:31:07
+@LastEditTime: 2022-07-26 20:58:42
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -654,7 +654,7 @@ class Structure(BaseObject):
                            agents: list[Agent],
                            clips: list[str]):
 
-        if self.args.draw_results and len(clips) == 1:
+        if (not self.args.draw_results in ['null', '0', '1']) and (len(clips) == 1):
             # draw results on video frames
             clip = clips[0]
             tv = Visualization(self.args, self.args.dataset, clip)
