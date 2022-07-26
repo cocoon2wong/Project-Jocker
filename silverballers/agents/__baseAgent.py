@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-20 21:09:27
+@LastEditTime: 2022-07-21 19:26:08
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -62,7 +62,7 @@ class BaseAgentStructure(Structure):
         self.set_inputs('obs')
         self.set_labels('pred')
 
-        self.set_loss(self.Loss.avgKey)
+        self.set_loss(self.Loss.l2)
         self.set_loss_weights(1.0)
 
         self.set_metrics(self.Loss.avgKey, self.Loss.avgFDE)
