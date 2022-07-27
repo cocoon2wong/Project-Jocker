@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-29 15:36:47
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-20 10:20:08
+@LastEditTime: 2022-07-27 09:09:02
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -86,12 +86,13 @@ def transform_annotations():
             dat = []
             with open(source, 'r') as f:
                 while data_original := f.readline():
+                    data_original = data_original[:-1]
                     split = data_original.split(' ')
                     if split[6] == '1':
                         continue
 
-                    dat.append([split[5],
-                                split[0],
+                    dat.append([split[5],                   # frame number
+                                split[-1] + '_' + split[0], # name of the agent
                                 float(split[1])/scale,
                                 float(split[2])/scale,
                                 float(split[3])/scale,
