@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-21 19:26:08
+@LastEditTime: 2022-07-27 16:03:52
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -57,7 +57,9 @@ class BaseAgentStructure(Structure):
         self.args = AgentArgs(terminal_args)
         self.Loss = SilverballersLoss(self.args)
 
-        self.important_args += ['key_points', 'preprocess']
+        self.add_keywords(KeypointsIndex=self.args.key_points,
+                          PreprocessOptions=self.args.preprocess,
+                          Transformation=self.args.T)
 
         self.set_inputs('obs')
         self.set_labels('pred')

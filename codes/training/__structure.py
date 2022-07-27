@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-26 20:58:42
+@LastEditTime: 2022-07-27 15:36:00
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -30,11 +30,17 @@ class Structure(BaseObject):
 
         self.args = BaseArgTable(terminal_args)
         self.model: Model = None
-        self.important_args = ['model', 'lr', 'split']
+
+        self.keywords = {}
+
+        self.dsInfo: Dataset = None
+        self.bar: tqdm = None
+        self.leader: Structure = None
 
         self.set_gpu()
         self.optimizer = self.set_optimizer()
 
+        # You can change the following items in your subclasses
         self.set_inputs('obs')
         self.set_labels('pred')
 
@@ -44,9 +50,9 @@ class Structure(BaseObject):
         self.set_metrics('ade', 'fde')
         self.set_metrics_weights(1.0, 0.0)
 
-        self.dsInfo: Dataset = None
-        self.bar: tqdm = None
-        self.leader: Structure = None
+        self.add_keywords(ModelType=self.args.model,
+                          PredictionType=self.args.anntype,
+                          ModelName=self.args.model_name)
 
     def set_inputs(self, *args):
         """
@@ -337,7 +343,8 @@ class Structure(BaseObject):
             if self.args.restore != 'null':
                 self.load_best_model(self.args.restore)
 
-            self.log('Start training with args = {}'.format(self.args))
+            self.log('Start training with args = {}'.format(
+                self.args._args_runnning))
             self.__train()
 
         # prepare test
@@ -387,8 +394,13 @@ class Structure(BaseObject):
         """
 
         # print training infomation
-        self.print_dataset_info()
-        self.__print_train_info()
+        self.print_dataset_info(DatasetName=self.dsInfo.dataset,
+                                DatasetSplitName=self.args.split,
+                                TrainingSets=self.dsInfo.train_sets,
+                                TestSets=self.dsInfo.test_sets,
+                                DatasetType=self.dsInfo.anntype,)
+        self.print_model_info()
+        self.print_train_info()
 
         # make log directory and save current args
         self.args._save_as_json(dir_check(self.args.log_dir))
@@ -498,7 +510,9 @@ class Structure(BaseObject):
         """
 
         # Print test information
-        self.__print_test_info()
+        self.print_dataset_info(DatasetName=dataset, TestSets=clips)
+        self.print_model_info()
+        self.print_test_info()
 
         # Load dataset
         ds_test = self.load_test_dataset(agents)
@@ -511,9 +525,7 @@ class Structure(BaseObject):
         )
 
         # Write test results
-        self.print_test_results(metrics_dict,
-                                dataset=dataset,
-                                clips=clips)
+        self.print_test_results(metrics_dict)
 
         # model_inputs_all = list(ds_test.as_numpy_iterator())
         outputs = stack_results(outputs)
@@ -580,50 +592,33 @@ class Structure(BaseObject):
         else:
             return metrics_all, metrics_dict_all
 
-    def __get_important_args(self):
-        args_dict = dict(zip(
-            self.important_args,
-            [getattr(self.args, n) for n in self.important_args]))
-        return args_dict
+    def add_keywords(self, **kwargs):
+        self.keywords.update(**kwargs)
 
-    def __print_train_info(self):
-        args_dict = self.__get_important_args()
+    def print_model_info(self, **kwargs):
+        self.print_parameters(title='Model Options',
+                              **self.keywords,
+                              **kwargs)
+
+    def print_train_info(self, **kwargs):
         self.print_parameters(title='Training Options',
-                              model_name=self.args.model_name,
-                              batch_size=self.args.batch_size,
-                              epoch=self.args.epochs,
-                              gpu=self.args.gpu,
-                              **args_dict)
-        self.print_train_info()
+                              BatchSize=self.args.batch_size,
+                              GPUIndex=self.args.gpu,
+                              TrainEpochs=self.args.epochs,
+                              LearningRate=self.args.lr,
+                              **kwargs)
 
-    def __print_test_info(self):
-        args_dict = self.__get_important_args()
+    def print_test_info(self, **kwargs):
         self.print_parameters(title='Test Options',
-                              model_name=self.args.model_name,
-                              batch_size=self.args.batch_size,
-                              gpu=self.args.gpu,
-                              **args_dict)
-        self.print_test_info()
+                              BatchSize=self.args.batch_size,
+                              GPUIndex=self.args.gpu,
+                              **kwargs)
 
-    def print_dataset_info(self):
-        self.print_parameters(title='dataset options')
-
-    def print_train_info(self):
-        """
-        Information to show (or to log into files) before training
-        """
-        pass
-
-    def print_test_info(self):
-        """
-        Information to show (or to log into files) before testing
-        """
-        pass
+    def print_dataset_info(self, **kwargs):
+        self.print_parameters(title='Dataset Details',
+                              **kwargs)
 
     def print_train_results(self, best_epoch: int, best_metric: float):
-        """
-        Information to show (or to log into files) after training
-        """
         self.log('Training done.')
         self.log('During training, the model reaches the best metric ' +
                  '`{}` at epoch {}.'.format(best_metric, best_epoch))
@@ -637,11 +632,7 @@ class Structure(BaseObject):
                   '`python main.py --load {}`.').format(self.args.log_dir,
                                                         self.args.log_dir))
 
-    def print_test_results(self, loss_dict: dict[str, float],
-                           **kwargs):
-        """
-        Information to show (or to log into files) after testing
-        """
+    def print_test_results(self, loss_dict: dict[str, float], **kwargs):
         self.print_parameters(title='Test Results',
                               **kwargs,
                               **loss_dict)

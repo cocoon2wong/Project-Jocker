@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-20 20:58:04
+@LastEditTime: 2022-07-27 15:47:44
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -92,14 +92,14 @@ class BaseSilverballers(Structure):
 
         # set args
         self.args = SilverballersArgs(terminal_args)
-        self.important_args += ['K']
+        self.Loss = SilverballersLoss(self.args)
 
         # set inputs and outputs
         self.set_inputs('trajs', 'maps', 'paras')
         self.set_labels('gt')
 
         # set metrics
-        self.Loss = SilverballersLoss(self.args)
+
         self.set_metrics(self.Loss.avgADE, self.Loss.avgFDE)
         self.set_metrics_weights(1.0, 0.0)
 
@@ -115,10 +115,17 @@ class BaseSilverballers(Structure):
         self.agent.load_best_model(self.args.loada)
         self.agent.leader = self
 
+        self.add_keywords(KeypointsIndex=self.agent.args.key_points,
+                          AgentModelType=type(self.agent.model).__name__,
+                          AgentModelPath=self.args.loada,
+                          AgentTransformation=self.agent.args.T)
+
         if self.args.loadb.startswith('l'):
             self.linear_predict = True
             self.set_inputs('trajs')
             self.args._set('use_maps', 0)
+
+            self.add_keywords(HandlerModelType='Linear Interpolation')
 
         else:
             # assign stage-2 models
@@ -129,6 +136,10 @@ class BaseSilverballers(Structure):
             self.handler.args._set('key_points', self.agent.args.key_points)
             self.handler.load_best_model(self.args.loadb, asHandler=True)
             self.handler.leader = self
+
+            self.add_keywords(HandlerModelType=type(self.handler.model).__name__,
+                              HandlerModelPath=self.args.loadb,
+                              HandlerTransformation=self.handler.args.T)
 
         if self.args.batch_size > self.agent.args.batch_size:
             self.args._set('batch_size', self.agent.args.batch_size)

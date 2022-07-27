@@ -2,46 +2,33 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:38
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-29 10:42:57
+@LastEditTime: 2022-07-27 15:12:33
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import tensorflow as tf
-from codes.basemodels import Model, layers, transformer
+from codes.basemodels import layers, transformer
 
 from ..__args import AgentArgs
 from ..__layers import OuterLayer, get_transform_layers
-from .__baseAgent import BaseAgentStructure
+from .__baseAgent import BaseAgentModel, BaseAgentStructure
 
 
-class Agent47CModel(Model):
+class Agent47CModel(BaseAgentModel):
 
     def __init__(self, Args: AgentArgs,
                  feature_dim: int = 128,
                  id_depth: int = 16,
                  keypoints_number: int = 3,
+                 keypoints_index: tf.Tensor = None,
                  structure=None,
                  *args, **kwargs):
 
-        super().__init__(Args, structure, *args, **kwargs)
-
-        self.args = Args
-
-        # Parameters
-        self.d = feature_dim
-        self.n_key = keypoints_number
-        self.d_id = id_depth
-
-        # Preprocess
-        preprocess_list = ()
-        for index, operation in enumerate(['Move', 'Scale', 'Rotate']):
-            if self.args.preprocess[index] == '1':
-                preprocess_list += (operation,)
-
-        self.set_preprocess(*preprocess_list)
-        self.set_preprocess_parameters(move=0)
+        super().__init__(Args, feature_dim, id_depth,
+                         keypoints_number, keypoints_index,
+                         structure, *args, **kwargs)
 
         # Layers
         self.Tlayer, self.ITlayer = get_transform_layers(self.args.T)
@@ -142,7 +129,7 @@ class Agent47CModel(Model):
             adj = tf.transpose(self.adj_fc(t_inputs), [0, 2, 1])
             m_features = self.gcn.call(behavior_features, adj)
 
-            # predicted keypoints -> (batch, Kc, key, 2)
+            # predicted keypoints -> (batch, Kc, Tsteps_Key, Tchannels)
             y = self.decoder_fc1(m_features)
             y = self.decoder_fc2(y)
             y = self.decoder_reshape(y)
@@ -166,18 +153,3 @@ class Agent47C(BaseAgentStructure):
         super().__init__(terminal_args)
 
         self.set_model_type(new_type=Agent47CModel)
-        self.important_args += ['T']
-
-
-class Agent47CExperimental(BaseAgentStructure):
-
-    def __init__(self, terminal_args: list[str]):
-
-        super().__init__(terminal_args)
-
-        # self.args._set('test_set', 'sdd_debug')
-        self.args._set('preprocess', '100')
-        self.args._set('dim', 4)
-
-        self.set_model_type(new_type=Agent47CModel)
-        self.important_args += ['T']
