@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-19 10:32:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-20 21:02:44
+@LastEditTime: 2022-07-27 13:19:56
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -226,23 +226,25 @@ class VideoClipManager(BaseObject):
 
         data = np.genfromtxt(file_name, dtype=np.str, delimiter=',')
 
-        agents = {}
-        agent_ids = np.unique(agent_order := data.T[1])
+        agent_dict = {}
+        agent_names = np.unique(agent_order := data.T[1])
 
         try:
-            _agent_ids = agent_ids.astype(np.int)
-            agent_ids = np.sort(_agent_ids).astype(str)
+            agent_ids = [int(n.split('_')[0]) for n in agent_names]
+            agent_order = np.argsort(agent_ids)
         except:
-            pass
+            agent_order = np.arange(len(agent_names))
 
-        for id in agent_ids:
-            index = np.where(agent_order == id)[0]
-            agents[id] = np.delete(data[index], 1, axis=1)
+        for agent_index in agent_order:
+            name = agent_names[agent_index]
+            index = np.where(data.T[1] == name)[0]
+            _dat = np.delete(data[index], 1, axis=1)
+            agent_dict[name] = _dat.astype(np.float64)
 
         frame_ids = list(set(data.T[0].astype(np.int32)))
         frame_ids.sort()
 
-        return agents, frame_ids
+        return agent_dict, frame_ids
 
     def process_metadata(self):
         """
@@ -260,36 +262,35 @@ class VideoClipManager(BaseObject):
             matrix = dat['matrix']
             neighbor_indexes = dat['neighbor_indexes']
             frame_ids = dat['frame_ids']
-            person_ids = dat['person_ids']
+            agent_names = dat['person_ids']
 
         # or start processing and then saving
         else:
-            persons_appear, frame_ids = self.load_dataset(self.info.annpath)
-            person_ids = list(persons_appear.keys())
+            agent_dict, frame_ids = self.load_dataset(self.info.annpath)
+            agent_names = list(agent_dict.keys())
 
-            p = len(person_ids)
+            p = len(agent_names)
             f = len(frame_ids)
 
-            # person_id -> person_index
-            person_dict = dict(zip(person_ids, np.arange(p)))
+            # agent_name -> agent_index
+            name_dict = dict(zip(agent_names, np.arange(p)))
 
             # frame_id -> frame_index
             frame_dict = dict(zip(frame_ids, np.arange(f)))
 
             # init the matrix
-            dim = persons_appear[person_ids[0]].shape[-1] - 1
+            dim = agent_dict[agent_names[0]].shape[-1] - 1
             matrix = INIT_POSITION * np.ones([f, p, dim])
 
-            for index, [person_id, person_index] in enumerate(person_dict.items()):
+            for name, index in name_dict.items():
 
-                p = '{}%'.format((index+1)*100/len(person_dict))
+                p = '{}%'.format((index+1)*100/len(name_dict))
                 self.update_timebar(self.bar, 'Processing dataset: ' + p)
 
-                frame_id = persons_appear[person_id].T[0].astype(np.int32)
+                frame_id = agent_dict[name].T[0].astype(np.int32)
                 frame_index = [frame_dict[fi] for fi in frame_id]
 
-                matrix[frame_index, person_index, :] \
-                    = persons_appear[person_id][:, 1:]
+                matrix[frame_index, index, :] = agent_dict[name][:, 1:]
 
             neighbor_indexes = np.array([
                 np.where(np.not_equal(data, INIT_POSITION))[0]
@@ -299,26 +300,26 @@ class VideoClipManager(BaseObject):
                      neighbor_indexes=neighbor_indexes,
                      matrix=matrix,
                      frame_ids=frame_ids,
-                     person_ids=person_ids)
+                     person_ids=agent_names)
 
         self.agent_count = matrix.shape[1]
         self.frame_number = matrix.shape[0]
 
-        return neighbor_indexes, matrix, frame_ids, person_ids
+        return neighbor_indexes, matrix, frame_ids, agent_names
 
     def make_trajectories(self):
         """
         Make trajectories from the processed dataset files.
         """
         if len(self.custom_list) == 4:
-            self.nei_indexes, self.matrix, self.frame_ids, self.person_ids = self.custom_list
+            self.nei_indexes, self.matrix, self.frame_ids, self.agent_names = self.custom_list
         else:
-            self.nei_indexes, self.matrix, self.frame_ids, self.person_ids = self.process_metadata()
+            self.nei_indexes, self.matrix, self.frame_ids, self.agent_names = self.process_metadata()
 
         trajs = []
-        for person_index in range(self.agent_count):
-            trajs.append(Trajectory(agent_id=self.person_ids[person_index],
-                                    trajectory=self.matrix[:, person_index, :],
+        for agent_index in range(self.agent_count):
+            trajs.append(Trajectory(agent_id=self.agent_names[agent_index],
+                                    trajectory=self.matrix[:, agent_index, :],
                                     neighbors=self.nei_indexes,
                                     frames=self.frame_ids,
                                     init_position=INIT_POSITION,
