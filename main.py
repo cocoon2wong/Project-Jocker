@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 15:28:14
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-07 21:46:38
+@LastEditTime: 2022-07-27 14:06:01
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,17 +12,31 @@ import sys
 
 import codes as C
 import silverballers
-import vertical
 
 if __name__ == '__main__':
     args = C.args.BaseArgTable(terminal_args=sys.argv)
 
     model = args.model
 
+    if model == 'linear':
+        s = C.models.Linear
+    
+    # --------------------
+    # V^2-Net models
+    # --------------------
+    elif model in ['agent', 'va']:
+        s = silverballers.agents.VA
+
+    elif model == 'vb':
+        s = silverballers.handlers.VB
+
+    elif model == 'V':
+        s = silverballers.V
+
     # --------------------
     # Silverballers models
     # --------------------
-    if model == 'agent47C':
+    elif model == 'agent47C':
         s = silverballers.agents.Agent47C
     
     elif model == 'agent47CNew':
