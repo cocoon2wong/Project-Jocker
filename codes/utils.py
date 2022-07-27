@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 20:10:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-20 10:29:24
+@LastEditTime: 2022-07-27 13:51:47
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -34,6 +34,10 @@ WINDOW_SIZE_METER = 10.0
 MAP_HALF_SIZE = 50  # Local map's half size
 AVOID_SIZE = 15     # Avoid size in grid cells when modeling social interaction
 INTEREST_SIZE = 20  # Interest size in grid cells when modeling social interaction
+
+# Preprocess configs
+ROTATE_BIAS = 0.01
+SCALE_THRESHOLD = 0.05
 
 # Visualization configs
 SMALL_POINTS = True

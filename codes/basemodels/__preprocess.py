@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:24:29
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-20 10:32:29
+@LastEditTime: 2022-07-27 13:52:04
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,6 +11,8 @@
 from typing import Union
 
 import tensorflow as tf
+
+from ..utils import ROTATE_BIAS, SCALE_THRESHOLD
 
 
 def move(trajs: tf.Tensor,
@@ -100,7 +102,8 @@ def rotate(trajs: tf.Tensor,
         for [x, y] in order:
             vector_x = tf.gather(vectors, x, axis=-1)
             vector_y = tf.gather(vectors, y, axis=-1)
-            main_angle = tf.atan((vector_y + 0.0001)/(vector_x + 0.0001))
+            main_angle = tf.atan((vector_y + ROTATE_BIAS) /
+                                 (vector_x + ROTATE_BIAS))
             angle = ref - main_angle
             angles.append(angle)
 
@@ -204,7 +207,7 @@ def scale(trajs: tf.Tensor,
         for [x, y] in order:
             vector = tf.gather(vectors, [x, y], axis=-1)
             scale = tf.linalg.norm(vector, axis=-1)
-            scale = tf.maximum(0.0005, scale)
+            scale = tf.maximum(SCALE_THRESHOLD, scale)
 
             # reshape into (batch, 1, 1)
             while len(scale.shape) < 3:
