@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-27 09:25:49
+@LastEditTime: 2022-07-27 15:58:57
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -94,6 +94,8 @@ class BaseArgTable():
             dic = self._args_runnning
         elif index == 99:
             dic = self._args_manually
+        elif index == -1:
+            dic = self._args_default
         else:
             raise ValueError('Args index not exist.')
 
@@ -104,6 +106,12 @@ class BaseArgTable():
         Set argument manually.
         """
         self._args_manually[name] = value
+
+    def _set_default(self, name: str, value: Any):
+        """
+        Set default argument values.
+        """
+        self._args_default[name] = value
 
     def _get(self, name: str, default: Any, argtype: str):
         """
@@ -121,11 +129,12 @@ class BaseArgTable():
         # _args_load: 0
         # _args_running: 1
         # _args_manually: 99
+        # _args_default: -1
 
         if argtype == 'static':
-            order = [99, 0, 1]
+            order = [99, 0, 1, -1]
         elif argtype == 'dynamic':
-            order = [99, 1, 0]
+            order = [99, 1, 0, -1]
         else:
             raise ValueError('Wrong arg type.')
 
@@ -187,12 +196,9 @@ class BaseArgTable():
             if not dataset:
                 raise ValueError(self.split)
 
-            self._args_default['dataset'] = dataset
+            self._set_default('dataset', dataset)
 
-        else:
-            dataset = self._args_default['dataset']
-
-        return self._get('dataset', dataset, argtype='static')
+        return self._get('dataset', 'error', argtype='static')
 
     @property
     def epochs(self) -> int:
@@ -207,9 +213,9 @@ class BaseArgTable():
         Force test dataset. 
         Only works when evaluating when `test_mode` is `one`.
         """
-        if not self.draw_results in  ['null', '0', '1']:
+        if not self.draw_results in ['null', '0', '1']:
             self._set('force_set', self.draw_results)
-        
+
         return self._get('force_set', 'null', argtype='dynamic')
 
     @property
@@ -257,12 +263,10 @@ class BaseArgTable():
                                self.split)
             default_log_dir = os.path.join(dir_check(self.save_base_dir),
                                            log_dir_current)
-            self._args_default['log_dir'] = default_log_dir
 
-        else:
-            default_log_dir = self._args_default['log_dir']
+            self._set_default('log_dir', dir_check(default_log_dir))
 
-        return self._get('log_dir', dir_check(default_log_dir), argtype='static')
+        return self._get('log_dir', 'null', argtype='static')
 
     @property
     def load(self) -> str:
@@ -301,7 +305,7 @@ class BaseArgTable():
         """
         if 'test_set' in self._args_load.keys():
             return self._get('test_set', 'zara1', argtype='static')
-            
+
         return self._get('split', 'zara1', argtype='static')
 
     @property
@@ -362,7 +366,7 @@ class BaseArgTable():
         When set it to `all`, it will test on each of the test dataset in `args.split`;
         When set it to `mix`, it will test on all test dataset in `args.split` together.
         """
-        if not self.draw_results in  ['null', '0', '1']:
+        if not self.draw_results in ['null', '0', '1']:
             self._set('test_mode', 'one')
 
         return self._get('test_mode', 'mix', argtype='dynamic')
