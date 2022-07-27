@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-26 20:56:17
+@LastEditTime: 2022-07-27 09:25:49
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -299,6 +299,9 @@ class BaseArgTable():
         """
         Dataset split used when training and evaluating.
         """
+        if 'test_set' in self._args_load.keys():
+            return self._get('test_set', 'zara1', argtype='static')
+            
         return self._get('split', 'zara1', argtype='static')
 
     @property
