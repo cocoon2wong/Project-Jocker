@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-12-21 15:25:47
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-22 16:19:56
+@LastEditTime: 2022-07-15 17:09:43
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -21,6 +21,7 @@ class TrajEncoding(tf.keras.layers.Layer):
     def __init__(self, units: int = 64,
                  activation=None,
                  transform_layer: _BaseTransformLayer = None,
+                 channels_first=True,
                  *args, **kwargs):
         """
         Init a trajectory encoding module
@@ -29,11 +30,14 @@ class TrajEncoding(tf.keras.layers.Layer):
         :param activation: activations used in the output layer
         :param transform_layer: controls if encode trajectories \
             with some transform methods (like FFTs)
+        :param channels_first: controls if run computations on \
+            the last dimension of the inputs
         """
 
         super().__init__(*args, **kwargs)
 
         self.Tlayer = None
+        self.channels_first = channels_first
 
         if transform_layer:
             self.Tlayer = transform_layer
@@ -49,7 +53,11 @@ class TrajEncoding(tf.keras.layers.Layer):
         :return features: features, shape = `(batch, N, units)`
         """
         if self.Tlayer:
-            t = self.Tlayer(trajs)
+            t = self.Tlayer(trajs)  # (batch, Tsteps, Tchannels)
+            
+            if not self.channels_first:
+                t = tf.transpose(t, [0, 2, 1])  # (batch, Tchannels, Tsteps)
+
             fc2 = self.fc2(t)
             return self.fc1(fc2)
 
