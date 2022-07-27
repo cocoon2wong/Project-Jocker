@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-15 14:45:57
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-20 10:20:24
+@LastEditTime: 2022-07-27 20:12:54
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -18,12 +18,14 @@ from utils import dir_check
 
 # Dataset info
 DATASET = 'ETH-UCY-pixel'
+SPLIT_NAME = None
+PROCESSED_FILE = 'ann_pixel.csv'
 TYPE = 'pixel'
 SCALE = 30.0
 
 # Annotation paths
-SOURCE_FILE = './data/ethucy/{}/true_pos_.csv'
-TARGET_FILE = './data/ethucy/{}/ann_pixel.csv'
+SOURCE_FILE = './dataset_original/ethucy/{}/true_pos_.csv'
+TARGET_FILE = './dataset_processed/' + DATASET + '/{}/' + PROCESSED_FILE
 
 # Saving paths
 BASE_DIR = dir_check('./dataset_configs')
@@ -131,6 +133,10 @@ def transform_annotations():
         sname = name.split('_pixel')[0]
         source = SOURCE_FILE.format(sname)
         target = TARGET_FILE.format(sname)
+
+        d = target.split(PROCESSED_FILE)[0]
+        if not os.path.exists(d):
+            os.makedirs(d)
 
         data_original = np.loadtxt(source, delimiter=',')
         r = data_original[2:].T

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-29 15:36:47
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-27 10:47:14
+@LastEditTime: 2022-07-27 19:50:49
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -17,12 +17,14 @@ from utils import dir_check
 
 # Dataset info
 DATASET = 'SDD'
+SPLIT_NAME = 'sdd_ped'
+PROCESSED_FILE = 'ann_full.csv'
 TYPE = 'pixel'
 SCALE = 100.0
 
 # Annotation paths
-SOURCE_FILE = './data/sdd/{}/video{}/annotations.txt'
-TARGET_FILE = './data/sdd/{}/video{}/ann.csv'
+SOURCE_FILE = './dataset_original/sdd/{}/video{}/annotations.txt'
+TARGET_FILE = './dataset_processed/' + DATASET + '/{}/video{}/' + PROCESSED_FILE
 
 # Saving paths
 BASE_DIR = dir_check('./dataset_configs')
@@ -82,6 +84,10 @@ def transform_annotations():
         for clip_id in clip_ids:
             source = SOURCE_FILE.format(name, clip_id)
             target = TARGET_FILE.format(name, clip_id)
+
+            d = target.split(PROCESSED_FILE)[0]
+            if not os.path.exists(d):
+                os.makedirs(d)
 
             dat = []
             with open(source, 'r') as f:
@@ -147,7 +153,7 @@ def save_dataset_info():
                        type=TYPE)
 
     write_plist(dataset_dic,
-                os.path.join(CURRENT_DIR, 'sdd.plist'))
+                os.path.join(CURRENT_DIR, '{}.plist'.format(SPLIT_NAME)))
 
     for key, value in subsets.items():
         write_plist(value,

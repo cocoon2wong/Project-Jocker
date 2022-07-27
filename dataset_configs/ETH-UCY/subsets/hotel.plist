@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>annpath</key>
-	<string>./data/ethucy/hotel/ann_true.csv</string>
+	<string>./dataset_processed/ETH-UCY/hotel/ann_meter.csv</string>
 	<key>anntype</key>
 	<string>coordinate</string>
 	<key>dimension</key>

@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>annpath</key>
-	<string>./data/sdd/hyang/video13/ann.csv</string>
+	<string>./dataset_processed/SDD/hyang/video13/ann_full.csv</string>
 	<key>anntype</key>
 	<string>boundingbox</string>
 	<key>dimension</key>

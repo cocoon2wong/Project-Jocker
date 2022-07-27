@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>annpath</key>
-	<string>./data/ethucy/zara1/ann_pixel.csv</string>
+	<string>./dataset_processed/ETH-UCY-pixel/zara1/ann_pixel.csv</string>
 	<key>anntype</key>
 	<string>coordinate</string>
 	<key>dimension</key>

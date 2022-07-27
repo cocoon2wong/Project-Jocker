@@ -1,8 +1,7 @@
 # data and logs
 videos
-dataset_npz
-dataset_npz*
-*dataset_npz
+dataset_original
+dataset_processed
 logs
 vislogs
 *logs

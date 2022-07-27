@@ -365,7 +365,7 @@ class Structure(BaseObject):
         # test on a single sub-dataset
         if self.args.test_mode == 'one':
             try:
-                clip = self.args.force_set
+                clip = self.args.force_split
                 agents = dsManager.load(clip, 'test')
 
             except:

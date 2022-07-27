@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-27 15:58:57
+@LastEditTime: 2022-07-27 19:28:08
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -171,6 +171,9 @@ class BaseArgTable():
         For example, `'ETH-UCY'` or `'SDD'`.
         DO NOT set this argument manually.
         """
+        if self.force_dataset != 'null':
+            return self.force_dataset
+
         if not 'dataset' in self._args_default.keys():
             dirs = os.listdir(DATASET_DIR)
 
@@ -208,15 +211,22 @@ class BaseArgTable():
         return self._get('epochs', 500, argtype='static')
 
     @property
-    def force_set(self) -> str:
+    def force_dataset(self) -> str:
+        """
+        Force test dataset. 
+        """
+        return self._get('force_dataset', 'null', argtype='dynamic')
+
+    @property
+    def force_split(self) -> str:
         """
         Force test dataset. 
         Only works when evaluating when `test_mode` is `one`.
         """
         if not self.draw_results in ['null', '0', '1']:
-            self._set('force_set', self.draw_results)
+            self._set('force_split', self.draw_results)
 
-        return self._get('force_set', 'null', argtype='dynamic')
+        return self._get('force_split', 'null', argtype='dynamic')
 
     @property
     def gpu(self) -> str:
@@ -303,6 +313,9 @@ class BaseArgTable():
         """
         Dataset split used when training and evaluating.
         """
+        if self.force_split != 'null':
+            return self.force_split
+
         if 'test_set' in self._args_load.keys():
             return self._get('test_set', 'zara1', argtype='static')
 
@@ -339,7 +352,7 @@ class BaseArgTable():
         Accept the name of one video clip.
         Make sure that you have put video files into `./videos`
         according to the specific name way.
-        Note that `test_mode` will be set to `'one'` and `force_set`
+        Note that `test_mode` will be set to `'one'` and `force_split`
         will be set to `draw_results` if `draw_results != 'null'`.
         """
         return self._get('draw_results', 'null', argtype='dynamic')
@@ -362,7 +375,7 @@ class BaseArgTable():
     def test_mode(self) -> str:
         """
         Test settings, canbe `'one'` or `'all'` or `'mix'`.
-        When set it to `one`, it will test the model on the `args.force_set` only;
+        When set it to `one`, it will test the model on the `args.force_split` only;
         When set it to `all`, it will test on each of the test dataset in `args.split`;
         When set it to `mix`, it will test on all test dataset in `args.split` together.
         """
