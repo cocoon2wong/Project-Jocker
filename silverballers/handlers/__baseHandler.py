@@ -2,20 +2,19 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-26 21:01:35
+@LastEditTime: 2022-07-27 16:26:58
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-import codes as C
 import numpy as np
 import tensorflow as tf
-
-from codes.training import Structure
 from codes.basemodels import Model
+from codes.training import Structure
 
 from ..__args import HandlerArgs
+from ..__loss import SilverballersLoss
 
 
 class BaseHandlerModel(Model):
@@ -116,7 +115,7 @@ class BaseHandlerModel(Model):
         return self.post_process(outputs, training, model_inputs=model_inputs)
 
 
-class BaseHandlerStructure(C.training.Structure):
+class BaseHandlerStructure(Structure):
 
     model_type = None
 
@@ -124,25 +123,27 @@ class BaseHandlerStructure(C.training.Structure):
         super().__init__(terminal_args)
 
         self.args = HandlerArgs(terminal_args)
+        self.Loss = SilverballersLoss(self.args)
 
-        self.important_args += ['points']
+        self.add_keywords(NumberOfKeyoints=self.args.points,
+                          Transformation=self.args.T)
 
+        # GT in the inputs is only used when training
         self.set_inputs('trajs', 'maps', 'paras', 'gt')
         self.set_labels('gt')
 
-        self.set_loss('ade', 'diff')
-        self.set_loss_weights(0.8, 0.2)
+        self.set_loss(self.Loss.l2)
+        self.set_loss_weights(1.0)
 
         if self.args.key_points == 'null':
-            self.set_metrics('ade', 'fde')
+            self.set_metrics(self.Loss.avgADE,
+                             self.Loss.avgFDE)
             self.set_metrics_weights(1.0, 0.0)
 
         else:
-            key_points = self.args.key_points
-            pi = [int(i) for i in key_points.split('_')]
-            self.keypoints_index = tf.cast(pi, tf.int32)
-
-            self.set_metrics('ade', 'fde', self.l2_keypoints)
+            self.set_metrics(self.Loss.avgADE,
+                             self.Loss.avgFDE,
+                             self.Loss.avgKey)
             self.set_metrics_weights(1.0, 0.0, 0.0)
 
     def set_model_type(self, new_type: type[BaseHandlerModel]):
@@ -154,15 +155,3 @@ class BaseHandlerStructure(C.training.Structure):
                                key_points=self.args.key_points,
                                structure=self,
                                *args, **kwargs)
-
-    def l2_keypoints(self, outputs: list[tf.Tensor],
-                     labels: tf.Tensor,
-                     *args, **kwargs) -> tf.Tensor:
-        """
-        l2 loss on the keypoints
-        """
-        # shapes of pickled tensors are (batch, n_key, 2)
-        labels_pickled = tf.gather(labels, self.keypoints_index, axis=1)
-        pred_pickled = tf.gather(outputs[0], self.keypoints_index, axis=1)
-
-        return C.training.loss.ADE(pred_pickled, labels_pickled)

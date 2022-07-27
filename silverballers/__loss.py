@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-20 14:51:51
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-20 16:28:11
+@LastEditTime: 2022-07-27 16:25:28
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,7 +11,7 @@
 import tensorflow as tf
 from codes.training import loss
 
-from .__args import AgentArgs
+from .__args import _BaseSilverballersArgs
 
 
 class SilverballersLoss():
@@ -19,7 +19,7 @@ class SilverballersLoss():
     Structure to manage all silverballers loss and metrics.
     """
 
-    def __init__(self, args: AgentArgs):
+    def __init__(self, args: _BaseSilverballersArgs):
         self.args = args
         self.order = self.get_order()
 
@@ -52,12 +52,37 @@ class SilverballersLoss():
         return loss.ADE(outputs[0], labels_pickled)
 
     def avgKey(self, outputs, labels, *args, **kwargs):
+        """
+        l2 loss on the keypoints.
+
+        :param outputs: a list of tensors, where `outputs[0].shape`
+            is `(batch, K, pred, 2)` or `(batch, pred, 2)`
+            or `(batch, K, n_key, 2)` or `(batch, n_key, 2)`
+        :param labels: shape is `(batch, pred, 2)`
+        """
+        pred = outputs[0]
+        if pred.ndim == 3:
+            pred = pred[:, tf.newaxis, :, :]
+
+        if pred.shape[-2] != self.p_len:
+            pred = tf.gather(pred, self.p_index, axis=-2)
+
         labels_key = tf.gather(labels, self.p_index, axis=-2)
-        return self.avgADE(outputs, labels_key)
+        return self.avgADE([pred], labels_key)
 
     def avgADE(self, outputs, labels, *args, **kwargs):
+        """
+        l2 loss.
+
+        :param outputs: a list of tensors, where `outputs[0].shape` 
+            is `(batch, K, pred, 2)` or `(batch, pred, 2)`
+        :param labels: shape is `(batch, pred, 2)`
+        """
         pred = outputs[0]
         order = self.order
+
+        if pred.ndim == 3:
+            pred = pred[:, tf.newaxis, :, :]
 
         ade = []
         for [x, y] in order:
@@ -68,7 +93,18 @@ class SilverballersLoss():
         return tf.reduce_mean(ade)
 
     def avgFDE(self, outputs, labels, *args, **kwargs):
+        """
+        l2 loss on the last prediction point.
+
+        :param outputs: a list of tensors, where 
+            `outputs[0].shape` is `(batch, K, pred, 2)`
+            or `(batch, pred, 2)`
+        :param labels: shape is `(batch, pred, 2)`
+        """
         pred = outputs[0]
+
+        if pred.ndim == 3:
+            pred = pred[:, tf.newaxis, :, :]
 
         pred_final = pred[:, :, -1:, :]
         labels_final = labels[:, -1:, :]

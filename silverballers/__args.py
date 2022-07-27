@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:41:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-27 15:53:27
+@LastEditTime: 2022-07-27 16:07:34
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,7 +11,7 @@
 from codes.args import BaseArgTable as Args
 
 
-class __BaseSilverballersArgs(Args):
+class _BaseSilverballersArgs(Args):
 
     def __init__(self, terminal_args: list[str] = None) -> None:
         super().__init__(terminal_args)
@@ -65,7 +65,7 @@ class __BaseSilverballersArgs(Args):
         return self._get('feature_dim', 128, argtype='static')
 
 
-class AgentArgs(__BaseSilverballersArgs):
+class AgentArgs(_BaseSilverballersArgs):
 
     def __init__(self, terminal_args: list[str] = None) -> None:
         super().__init__(terminal_args)
@@ -80,7 +80,7 @@ class AgentArgs(__BaseSilverballersArgs):
         return self._get('depth', 16, argtype='static')
 
 
-class HandlerArgs(__BaseSilverballersArgs):
+class HandlerArgs(_BaseSilverballersArgs):
 
     def __init__(self, terminal_args: list[str] = None) -> None:
         super().__init__(terminal_args)
@@ -95,7 +95,7 @@ class HandlerArgs(__BaseSilverballersArgs):
         return self._get('points', 1, argtype='static')
 
 
-class SilverballersArgs(__BaseSilverballersArgs):
+class SilverballersArgs(_BaseSilverballersArgs):
 
     def __init__(self, terminal_args: list[str] = None) -> None:
         super().__init__(terminal_args)
