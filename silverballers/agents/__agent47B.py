@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
-@Date: 2022-06-22 20:00:17
+@Date: 2022-07-15 16:56:02
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-27 21:45:38
+@LastEditTime: 2022-07-27 21:44:42
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -16,7 +16,10 @@ from ..__layers import OuterLayer, get_transform_layers
 from .__baseAgent import BaseAgentModel, BaseAgentStructure
 
 
-class Agent47CEModel(BaseAgentModel):
+class Agent47BModel(BaseAgentModel):
+    """
+    `B` for bilinear for different frequency portions.
+    """
 
     def __init__(self, Args: AgentArgs,
                  feature_dim: int = 128,
@@ -34,15 +37,17 @@ class Agent47CEModel(BaseAgentModel):
         self.Tlayer, self.ITlayer = get_transform_layers(self.args.T)
 
         # Transform layers
-        self.t1 = self.Tlayer((self.args.obs_frames, self.args.dim))
-        self.it1 = self.ITlayer((self.args.pred_frames, self.args.dim))
+        self.t1 = self.Tlayer(Oshape=(self.args.obs_frames, self.args.dim))
+        self.it1 = self.ITlayer(Oshape=(self.n_key, self.args.dim))
 
         # Trajectory encoding (with FFTs)
         self.te = layers.TrajEncoding(self.d//2, tf.nn.relu,
-                                      transform_layer=self.t1)
+                                      transform_layer=self.t1,
+                                      channels_first=False)
 
         # steps and shapes after applying transforms
-        self.Tsteps_en = self.t1.Tshape[0]
+        self.Tsteps_en = self.te.Tlayer.Tshape[0] if self.te.Tlayer else self.args.obs_frames
+        self.Tchannels_en = self.te.Tlayer.Tshape[1] if self.te.Tlayer else self.args.dim
         self.Tsteps_de, self.Tchannels_de = self.it1.Tshape
 
         # Bilinear structure (outer product + pooling + fc)
@@ -63,17 +68,17 @@ class Agent47CEModel(BaseAgentModel):
                                          dff=512,
                                          input_vocab_size=None,
                                          target_vocab_size=None,
-                                         pe_input=self.Tsteps_en,
-                                         pe_target=self.Tsteps_en,
+                                         pe_input=self.Tchannels_en,
+                                         pe_target=self.Tchannels_en,
                                          include_top=False)
 
         # Trainable adj matrix and gcn layer
         # It is used to generate multi-style predictions
         self.adj_fc = tf.keras.layers.Dense(self.args.Kc, tf.nn.tanh)
-        self.gcn = layers.GraphConv(units=2*self.d)
+        self.gcn = layers.GraphConv(units=self.d)
 
         # Decoder layers (with spectrums)
-        self.decoder_fc1 = tf.keras.layers.Dense(2*self.d, tf.nn.tanh)
+        self.decoder_fc1 = tf.keras.layers.Dense(self.d, tf.nn.tanh)
         self.decoder_fc2 = tf.keras.layers.Dense(
             self.Tsteps_de * self.Tchannels_de)
         self.decoder_reshape = tf.keras.layers.Reshape(
@@ -97,30 +102,32 @@ class Agent47CEModel(BaseAgentModel):
         trajs = inputs[0]   # (batch, obs, 2)
         bs = trajs.shape[0]
 
-        # feature embedding and encoding -> (batch, Tsteps, d/2)
+        # feature embedding and encoding -> (batch, Tchannels, d/2)
         # uses bilinear structure to encode features
-        f = self.te.call(trajs)             # (batch, Tsteps, d/2)
-        f = self.outer.call(f, f)           # (batch, Tsteps, d/2, d/2)
-        f = self.pooling(f)                 # (batch, Tsteps, d/4, d/4)
+        f = self.te.call(trajs)             # (batch, Tchannels, d/2)
+        f = self.outer.call(f, f)           # (batch, Tchannels, d/2, d/2)
+        f = self.pooling(f)                 # (batch, Tchannels, d/4, d/4)
         f = tf.reshape(f, [f.shape[0], f.shape[1], -1])
-        spec_features = self.outer_fc(f)    # (batch, Tsteps, d/2)
+        spec_features = self.outer_fc(f)    # (batch, Tchannels, d/2)
 
         # Sample random predictions
         all_predictions = []
         rep_time = self.args.K_train if training else self.args.K
 
         t_outputs = self.t1.call(trajs)  # (batch, Tsteps, Tchannels)
+        # reshape into (batch, Tchannels, Tsteps)
+        t_outputs = tf.transpose(t_outputs, [0, 2, 1])
 
         for _ in range(rep_time):
-            # assign random ids and embedding -> (batch, Tsteps, d)
-            ids = tf.random.normal([bs, self.Tsteps_en, self.d_id])
+            # assign random ids and embedding -> (batch, Tchannels, d)
+            ids = tf.random.normal([bs, self.Tchannels_en, self.d_id])
             id_features = self.ie.call(ids)
 
             # transformer inputs
-            # shapes are (batch, Tsteps, d)
+            # shapes are (batch, Tchannels, d)
             t_inputs = self.concat([spec_features, id_features])
 
-            # transformer -> (batch, Tsteps, d)
+            # transformer -> (batch, Tchannels, d)
             behavior_features, _ = self.T.call(inputs=t_inputs,
                                                targets=t_outputs,
                                                training=training)
@@ -129,7 +136,7 @@ class Agent47CEModel(BaseAgentModel):
             adj = tf.transpose(self.adj_fc(t_inputs), [0, 2, 1])
             m_features = self.gcn.call(behavior_features, adj)
 
-            # predicted keypoints -> (batch, Kc, pred, 2)
+            # predicted keypoints -> (batch, Kc, key, 2)
             y = self.decoder_fc1(m_features)
             y = self.decoder_fc2(y)
             y = self.decoder_reshape(y)
@@ -140,16 +147,9 @@ class Agent47CEModel(BaseAgentModel):
         return tf.concat(all_predictions, axis=1)
 
 
-class Agent47CE(BaseAgentStructure):
-
-    """
-    Training structure for the `Agent47CE` model.
-    Note that it is only used to train the single model.
-    Please use the `Silverballers` structure if you want to test any
-    agent-handler based silverballers models.
-    """
+class Agent47B(BaseAgentStructure):
 
     def __init__(self, terminal_args: list[str]):
         super().__init__(terminal_args)
 
-        self.set_model_type(new_type=Agent47CEModel)
+        self.set_model_type(Agent47BModel)
