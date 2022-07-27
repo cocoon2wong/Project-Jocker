@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-29 15:36:47
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-27 09:09:02
+@LastEditTime: 2022-07-27 10:47:14
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -92,13 +92,13 @@ def transform_annotations():
                         continue
 
                     dat.append([split[5],                   # frame number
-                                split[-1] + '_' + split[0], # name of the agent
-                                float(split[1])/scale,
+                                split[0] + '_' + split[-1], # name of the agent
                                 float(split[2])/scale,
-                                float(split[3])/scale,
-                                float(split[4])/scale, ])
+                                float(split[1])/scale,
+                                float(split[4])/scale,
+                                float(split[3])/scale, ])
 
-            dat = np.array(dat, dtype=np.str)
+            dat = np.array(dat, dtype=str)
             with open(target, 'w+') as f:
                 f.writelines([','.join(item)+'\n' for item in dat])
             print('{} Done.'.format(target))
@@ -114,7 +114,7 @@ def save_dataset_info():
             subsets['{}{}'.format(base_set, index)] = dict(
                 name='{}{}'.format(base_set, index),
                 annpath=TARGET_FILE.format(base_set, index),
-                order=[1, 0],
+                order=[0, 1],
                 paras=[1, 30],
                 video_path='./videos/sdd_{}_{}.mov'.format(
                     base_set, index),
