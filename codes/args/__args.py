@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-27 19:28:08
+@LastEditTime: 2022-07-27 21:21:56
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -58,6 +58,8 @@ class BaseArgTable():
         except:
             raise ValueError(
                 'Failed to load args from path {}.'.format(dir_path))
+        
+        return self
 
     def _load_from_terminal(self, argv: list[str]):
         dic = {}
@@ -76,6 +78,7 @@ class BaseArgTable():
                 break
 
         self._args_runnning = dic
+        return self
 
     def _save_as_json(self, dir_path: str):
         json_path = os.path.join(dir_path, 'args.json')
@@ -211,6 +214,17 @@ class BaseArgTable():
         return self._get('epochs', 500, argtype='static')
 
     @property
+    def force_clip(self) -> str:
+        """
+        Force test video clip.
+        It only works when `test_mode` is `one`. 
+        """
+        if not self.draw_results in ['null', '0', '1']:
+            self._set('force_clip', self.draw_results)
+
+        return self._get('force_clip', 'null', argtype='dynamic')
+
+    @property
     def force_dataset(self) -> str:
         """
         Force test dataset. 
@@ -223,9 +237,6 @@ class BaseArgTable():
         Force test dataset. 
         Only works when evaluating when `test_mode` is `one`.
         """
-        if not self.draw_results in ['null', '0', '1']:
-            self._set('force_split', self.draw_results)
-
         return self._get('force_split', 'null', argtype='dynamic')
 
     @property
