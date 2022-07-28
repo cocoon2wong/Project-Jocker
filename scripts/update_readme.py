@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-08-05 15:26:57
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-19 11:50:56
+@LastEditTime: 2022-07-28 10:58:20
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,7 +11,7 @@
 import re
 
 FLAG = '<!-- DO NOT CHANGE THIS LINE -->'
-TARGET_FILE = './docs/{}/README.md'
+TARGET_FILE = './README.md'
 MAX_SPACE = 20
 
 
