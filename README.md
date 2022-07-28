@@ -2,7 +2,7 @@
  * @Author: Conghao Wong
  * @Date: 2022-07-07 21:43:30
  * @LastEditors: Conghao Wong
- * @LastEditTime: 2022-07-28 11:10:09
+ * @LastEditTime: 2022-07-28 14:40:06
  * @Description: file content
  * @Github: https://github.com/cocoon2wong
  * Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -31,7 +31,7 @@ pip install -r requirements.txt
 Then, clone this repository and check out with
 
 ```bash
-https://github.com/cocoon2wong/Project-Jocker.git
+git clone https://github.com/cocoon2wong/Project-Jocker.git
 cd Project-Jocker
 git checkout bb
 ```
@@ -47,7 +47,7 @@ After training, you can still use it as a regular end-to-end model.
 ### Dataset Prepare
 
 Before training `$MODEL` on your own dataset, you should add your dataset information to the `datasets` directory.
-See [this document](./docs/datasetFormat.md) for details.
+See [this document](./docs/datasetFormat.md) (Not Available Now) for details.
 
 ### Dataset Process
 
@@ -75,7 +75,7 @@ We process the original full-dataset files from these datasets with observations
 Detailed process codes are available in `./scripts/add_ethucy_datasets.py`, `./scripts/add_sdd.py`, and `./scripts/sdd_txt2csv.py`.
 See deatils in [this issue](https://github.com/cocoon2wong/Vertical/issues/1).
 
-In order to start validating the effects of our pre-trained models, please run the following steps:
+In order to start validating the effects of our pre-trained models, please following these steps to prepare dataset files and model weights:
 
 1. As this repository contains only codes, you may need to download the original dataset files first.
    If you have clone this repository with `git clone` command, you can download the dataset files by the following command:
@@ -84,7 +84,7 @@ In order to start validating the effects of our pre-trained models, please run t
    git submodule update --init --recursive
    ```
 
-   Or you can just download them from [here](https://github.com/cocoon2wong/Project-Luna), re-name the folder as `dataset_original`, and then put them in the folder of this repository.
+   Or you can just download them from [here](https://github.com/cocoon2wong/Project-Luna), then re-name the folder as `dataset_original` and put it into the repository root path.
 
 2. You need to process these original dataset files so that they are in a format that our code can read and process.
    You can run the following lines to process the `ETH-UCY`, `SDD`, and `SDD_pedestrian` (a sub-dataset from SDD that only contains `"Pedestrian"` agents) dataset files:
@@ -95,7 +95,7 @@ In order to start validating the effects of our pre-trained models, please run t
    python scripts/sdd_pedestrian.py
    ```
 
-3. After these steps, you can download our model weights file [here](https://github.com/cocoon2wong/Project-Jocker/releases), and put them into the `./weights` folder (optional).
+3. After these steps, you can find and download our model weights file [here](https://github.com/cocoon2wong/Project-Jocker/releases), and put them into the `./weights` folder (optional).
 
 You can start the quick evaluation via the following commands:
 
@@ -110,6 +110,10 @@ for dataset in eth hotel univ zara1 zara2 sdd
 ```
 
 ### $MODEL
+
+```bash
+TBA
+```
 
 ### Linear-Interpolation Models
 
