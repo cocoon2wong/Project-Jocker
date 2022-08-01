@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-27 21:22:52
+@LastEditTime: 2022-08-01 10:20:11
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -428,6 +428,7 @@ class Structure(BaseObject):
 
         # start training
         self.bar = self.timebar(ds_train, text='Training...')
+        batch_number = len(self.bar)
 
         epochs = []
         for batch_id, dat in enumerate(self.bar):
@@ -457,7 +458,7 @@ class Structure(BaseObject):
             if ((epoch >= self.args.start_test_percent * self.args.epochs)
                     and ((epoch - 1) % self.args.test_step == 0)
                     and (not epoch in test_epochs)
-                    and (epoch > 0)):
+                    and (epoch > 0)) or (batch_id == batch_number - 1):
 
                 metrics, metrics_dict = self.__test_on_dataset(
                     ds=ds_val,
