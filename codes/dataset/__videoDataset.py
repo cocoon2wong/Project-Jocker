@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-19 11:19:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-20 21:05:40
+@LastEditTime: 2022-08-01 20:30:15
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -17,7 +17,8 @@ import numpy as np
 
 from ..__base import BaseObject
 from ..args import BaseArgTable as Args
-from ..utils import MAP_HALF_SIZE, TEMP_PATH, dir_check, load_from_plist
+from ..utils import (DATASET_DIR, MAP_HALF_SIZE, TEMP_PATH, dir_check,
+                     load_from_plist)
 from .__agent import Agent
 from .__maps import MapManager
 from .__videoClip import TrajMapNotFoundError, VideoClipManager
@@ -33,7 +34,7 @@ class Dataset():
     """
 
     def __init__(self, dataset: str, split: str,
-                 root_dir='./dataset_configs'):
+                 root_dir=DATASET_DIR):
         """
         init
 

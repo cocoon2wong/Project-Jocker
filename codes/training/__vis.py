@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-20 19:47:43
+@LastEditTime: 2022-08-01 20:27:35
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -53,7 +53,7 @@ class Visualization():
         self._paras = None
         self._scale = None
 
-        self.info: VideoClip = VideoClip.get(dataset, clip)
+        self.info: VideoClip(name=clip, dataset=dataset).get()
         self.order = self.info.order
         self.set_video(self.info)
 

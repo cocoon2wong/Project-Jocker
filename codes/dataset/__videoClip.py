@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-19 10:32:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-27 13:19:56
+@LastEditTime: 2022-08-01 20:29:51
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -42,42 +42,39 @@ class VideoClip():
     ```
     """
 
+    # Saving paths
+    BASE_DIR = './dataset_original/dataset_configs'
+    CONFIG_FILE = os.path.join(BASE_DIR, '{}', 'subsets', '{}.plist')
+
     def __init__(self, name: str,
-                 annpath: str,
-                 anntype: str,
-                 dimension: int,
-                 order: list[int],
-                 paras: list[int],
-                 matrix: list,
-                 scale: float,
-                 scale_vis: float,
-                 video_path: str):
+                 dataset: str,
+                 annpath: str = None,
+                 order: tuple[int, int] = None,
+                 paras: tuple[int, int] = None,
+                 video_path: str = None,
+                 matrix: list[float] = None,
+                 datasetInfo=None,
+                 *args, **kwargs):
 
-        self._name = name
-        self._anntype = anntype
-        self._annpath = annpath
-        self._dimension = dimension
-        self._order = order
-        self._paras = paras
-        self._matrix = matrix
-        self._scale = scale
-        self._scale_vis = scale_vis
-        self._video_path = video_path
+        self.__name = name
+        self.__annpath = annpath
+        self.__order = order
+        self.__paras = paras
+        self.__video_path = video_path
+        self.__matrix = matrix
+        self.__dataset = dataset
 
-    @staticmethod
-    def get(dataset: str, clip: str, root_dir='./dataset_configs'):
-        """
-        Get a `VideoClip` object
+        self.CONFIG_FILE = self.CONFIG_FILE.format(self.dataset, self.name)
 
-        :param dataset: name of the image dataset
-        :param clip: name of the video clip
-        :param root_dir: dataset config folder
-        """
+        # make dirs
+        dirs = [self.CONFIG_FILE]
+        for d in dirs:
+            _dir = os.path.dirname(d)
+            dir_check(_dir)
 
-        plist_path = os.path.join(root_dir,
-                                  dataset,
-                                  'subsets',
-                                  '{}.plist'.format(clip))
+    def get(self):
+        plist_path = self.CONFIG_FILE
+
         try:
             dic = load_from_plist(plist_path)
         except:
@@ -87,77 +84,53 @@ class VideoClip():
         return VideoClip(**dic)
 
     @property
+    def dataset(self) -> str:
+        """
+        Name of the dataset.
+        """
+        return self.__dataset
+
+    @property
     def name(self):
         """
         Name of the video clip.
         """
-        return self._name
+        return self.__name
 
     @property
     def annpath(self) -> str:
         """
         Path of the annotation file. 
         """
-        return self._annpath
-
-    @property
-    def anntype(self):
-        """
-        Type of annotations in this video clip.
-        canbe `'coordinate'`, `'boundingbox'`, ...
-        """
-        return self._anntype
+        return self.__annpath
 
     @property
     def order(self) -> list[int]:
         """
         X-Y order in the annotation file.
         """
-        return self._order
+        return self.__order
 
     @property
     def paras(self) -> tuple[int, int]:
         """
         [sample_step, frame_rate]
         """
-        return self._paras
+        return self.__paras
 
     @property
     def video_path(self) -> str:
         """
         Path of the video file.
         """
-        return self._video_path
+        return self.__video_path
 
     @property
     def matrix(self) -> list[float]:
         """
         transfer weights from real scales to pixels.
         """
-        return self._matrix
-
-    @property
-    def scale(self):
-        """
-        annotation scales
-        """
-        return self._scale
-
-    @property
-    def scale_vis(self):
-        """
-        scale when saving visualized images
-        """
-        return self._scale_vis
-
-    @property
-    def dimension(self):
-        """
-        Dimension of trajectories of each agent at each 
-        time step in the dataset.
-        For example, `[x, y]` -> `dimension = 2`.
-        """
-        return self._dimension
+        return self.__matrix
 
 
 class TrajMapNotFoundError(FileNotFoundError):
@@ -201,7 +174,7 @@ class VideoClipManager(BaseObject):
         self.name = name
         self.path = temp_dir
 
-        self.info: VideoClip = VideoClip.get(self.dataset, name)
+        self.info = VideoClip(name=name, dataset=self.dataset).get()
         self.custom_list = custom_list
         self.agent_count = None
         self.trajectories: list[Trajectory] = None
@@ -218,8 +191,9 @@ class VideoClipManager(BaseObject):
         A record may contains several items, where
         - `item[0]`: frame name (or called the frame id);
         - `item[1]`: agent name (or called the agent id);
-        - `item[2:M]`: dataset records, like coordinates, 
+        - `item[2:M-1]`: dataset records, like coordinates, 
             bounding boxes, and other type of trajectory series.
+        - `item[M-1]`: type of the agent
 
         :param file_name: name of the annatation file
         """
@@ -239,7 +213,7 @@ class VideoClipManager(BaseObject):
             name = agent_names[agent_index]
             index = np.where(data.T[1] == name)[0]
             _dat = np.delete(data[index], 1, axis=1)
-            agent_dict[name] = _dat.astype(np.float64)
+            agent_dict[name] = _dat[:, :-2].astype(np.float64)
 
         frame_ids = list(set(data.T[0].astype(np.int32)))
         frame_ids.sort()
