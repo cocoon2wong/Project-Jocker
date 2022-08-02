@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:28:13
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-20 21:08:24
+@LastEditTime: 2022-08-02 09:42:39
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,6 +13,8 @@ from typing import TypeVar, Union
 
 import tensorflow as tf
 from tqdm import tqdm
+
+from .utils import MAX_PRINT_LIST_LEN
 
 T = TypeVar('T')
 
@@ -120,6 +122,10 @@ class BaseObject():
 
             if type(value) == tf.Tensor:
                 value = value.numpy()
+
+            if (type(value) == list and
+                len(value) > MAX_PRINT_LIST_LEN):
+                value = value[:MAX_PRINT_LIST_LEN] + ['...']
 
             print('    - {}: {}.'.format(key, value))
 

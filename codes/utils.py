@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 20:10:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-01 20:07:53
+@LastEditTime: 2022-08-02 09:48:34
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -47,7 +47,10 @@ PRED_IMAGE = './figures/pred_small.png' if SMALL_POINTS else './figures/pred.png
 DISTRIBUTION_IMAGE = './figures/dis.png'
 
 # Log paths
-TEMP_PATH = './temp_files'
+TEMP_PATH = './temp_files/{}'
+
+# Log configs
+MAX_PRINT_LIST_LEN = 10
 
 
 def dir_check(target_dir: str) -> str:
@@ -56,7 +59,7 @@ def dir_check(target_dir: str) -> str:
     It not exist, it will make it.
     """
     if not os.path.exists(target_dir):
-        os.mkdir(target_dir)
+        os.makedirs(target_dir)
 
     return target_dir
 
