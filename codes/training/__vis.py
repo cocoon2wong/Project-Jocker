@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-02 11:31:15
+@LastEditTime: 2022-08-02 11:34:10
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -109,7 +109,6 @@ class Visualization():
         vc = cv2.VideoCapture(path)
 
         if vc.open(path):
-            vc.release()
             self._vc = vc
 
         try:
@@ -192,15 +191,18 @@ class Visualization():
         :param show_img: controls if show results in opencv window
         :draw_distrubution: controls if draw as distribution for generative models
         """
+        draw = False
         if self.video_capture:
             time = 1000 * frame_id / self.video_paras[1]
             self.video_capture.set(cv2.CAP_PROP_POS_MSEC, time - 1)
             _, f = self.video_capture.read()
+            draw = True
 
         if (f is None) and (self.scene_image is not None):
             f = self.scene_image
+            draw = True
 
-        else:
+        if not draw:
             raise FileNotFoundError(
                 'Video at `{}` NOT FOUND.'.format(self.info.video_path))
 
