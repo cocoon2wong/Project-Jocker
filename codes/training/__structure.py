@@ -394,7 +394,7 @@ class Structure(BaseObject):
         """
 
         # print training infomation
-        self.print_dataset_info(DatasetName=self.dsInfo.dataset,
+        self.print_dataset_info(DatasetName=self.dsInfo.name,
                                 DatasetSplitName=self.args.split,
                                 TrainingSets=self.dsInfo.train_sets,
                                 TestSets=self.dsInfo.test_sets,

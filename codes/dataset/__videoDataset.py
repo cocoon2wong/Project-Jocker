@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-19 11:19:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-02 09:47:50
+@LastEditTime: 2022-08-02 10:23:17
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -30,52 +30,68 @@ class Dataset():
     -------
     Manage a full trajectory prediction dataset.
     A dataset may contains several video clips.
-
     """
 
-    def __init__(self, dataset: str, split: str,
-                 root_dir=DATASET_DIR):
+    # Saving paths
+    BASE_DIR = DATASET_DIR
+    CONFIG_FILE = os.path.join(BASE_DIR, '{}', '{}.plist')
+
+    def __init__(self, name: str, split: str):
         """
         init
 
-        :param dataset: name of the image dataset
+        :param name: name of the image dataset
         :param split: split name of the dataset
         :param root_dir: dataset config folder
         """
-        split_path = os.path.join(root_dir,
-                                  dataset,
-                                  '{}.plist'.format(split))
+        split_path = self.CONFIG_FILE.format(name, split)
+
         try:
             dic = load_from_plist(split_path)
         except:
             raise FileNotFoundError(
                 'Dataset file `{}` NOT FOUND.'.format(split_path))
 
+        self.__name = dic['dataset']
+        self.__type = dic['type']
+        self.__scale = dic['scale']
+        self.__scale_vis = dic['scale_vis']
+        self.__dimension = dic['dimension']
+        self.__anntype = dic['anntype']
+
         self.train_sets: list[str] = dic['train']
         self.test_sets: list[str] = dic['test']
         self.val_sets: list[str] = dic['val']
 
-        self._anntype: str = dic['anntype']
-        self._dataset: str = dic['dataset']
-        self._dimension: int = dic['dimension']
-        self._scale: float = dic['scale']
-        self._type: str = dic['type']
-
     @property
-    def anntype(self):
-        """
-        Type of annotations in this video clip.
-        canbe `'coordinate'`, `'boundingbox'`, ...
-        """
-        return self._anntype
-
-    @property
-    def dataset(self) -> str:
+    def name(self) -> str:
         """
         Name of the video dataset.
         For example, `ETH-UCY` or `SDD`.
         """
-        return self._dataset
+        return self.__name
+
+    @property
+    def type(self) -> str:
+        """
+        Annotation type of the dataset.
+        For example, `'pixel'` or `'meter'`.
+        """
+        return self.__type
+
+    @property
+    def scale(self) -> float:
+        """
+        Global data scaling scale.
+        """
+        return self.__scale
+
+    @property
+    def scale_vis(self) -> float:
+        """
+        Video scaling when saving visualized results.
+        """
+        return self.__scale_vis
 
     @property
     def dimension(self) -> int:
@@ -83,22 +99,15 @@ class Dataset():
         Maximum dimension of trajectories recorded in this dataset.
         For example, `(x, y)` -> `dimension = 2`.
         """
-        return self._dimension
+        return self.__dimension
 
     @property
-    def scale(self) -> float:
+    def anntype(self) -> str:
         """
-        Maximum pixel length of the images.
-        For example, `weights = 1920` when `(H, W) = (1920, 1080)`.
+        Type of annotations.
+        For example, `'coordinate'` or `'boundingbox'`.
         """
-        return self._scale
-
-    @property
-    def type(self) -> str:
-        """
-        Type of the dataset, canbe `'pixel'` or `'meter'`.
-        """
-        return self._type
+        return self.__anntype
 
 
 class DatasetManager(BaseObject):
