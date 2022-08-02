@@ -2,7 +2,7 @@
  * @Author: Conghao Wong
  * @Date: 2022-07-07 21:43:30
  * @LastEditors: Conghao Wong
- * @LastEditTime: 2022-07-28 14:40:06
+ * @LastEditTime: 2022-08-02 15:50:42
  * @Description: file content
  * @Github: https://github.com/cocoon2wong
  * Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -90,12 +90,19 @@ In order to start validating the effects of our pre-trained models, please follo
    You can run the following lines to process the `ETH-UCY`, `SDD`, and `SDD_pedestrian` (a sub-dataset from SDD that only contains `"Pedestrian"` agents) dataset files:
 
    ```bash
-   python scripts/ethucy.py
-   python scripts/sdd.py
-   python scripts/sdd_pedestrian.py
+   cd Project-Jocker/dataset_original
+   python main.py
    ```
 
-3. After these steps, you can find and download our model weights file [here](https://github.com/cocoon2wong/Project-Jocker/releases), and put them into the `./weights` folder (optional).
+3. Create soft link of these folders:
+
+   ```bash
+   cd Project-Jocker
+   ln -s dataset_original/dataset_processed ./
+   ln -s dataset_original/dataset_configs ./
+   ```
+
+4. After these steps, you can find and download our model weights file [here](https://github.com/cocoon2wong/Project-Jocker/releases), and put them into the `./weights` folder (optional).
 
 You can start the quick evaluation via the following commands:
 
@@ -134,12 +141,12 @@ All test results will be saved in the `./test.log` file.
 You can view this file to check the models' test results.
 If the code runs without errors, our pre-trained models will be able to obtain the following metrics:
 
-| Models | eth | hotel | univ | zara1 | zara2 | sdd (full) |
-| --- | --- | --- | --- | --- | --- | --- |
-| V^2-Net | 0.23/0.37 | 0.10/0.16 | 0.21/0.35 | 0.19/0.30 | 0.14/0.24 | 6.82/10.63 |
+| Models         | eth       | hotel     | univ      | zara1     | zara2     | sdd (full) |
+| -------------- | --------- | --------- | --------- | --------- | --------- | ---------- |
+| V^2-Net        | 0.23/0.37 | 0.10/0.16 | 0.21/0.35 | 0.19/0.30 | 0.14/0.24 | 6.82/10.63 |
 | V^2-Net-Linear | 0.25/0.38 | 0.11/0.16 | 0.21/0.35 | 0.21/0.31 | 0.15/0.25 | 6.88/10.69 |
-| $MODEL
-| $MODEL-Linear
+| $MODEL         |
+| $MODEL-Linear  |
 
 ### Visualization
 
