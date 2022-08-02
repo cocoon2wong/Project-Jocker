@@ -2,19 +2,20 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-01 20:27:35
+@LastEditTime: 2022-08-02 11:31:15
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 from typing import Union
+
 import cv2
 import numpy as np
 import tensorflow as tf
 
 from ..args import BaseArgTable as Args
-from ..dataset import Agent, VideoClip
+from ..dataset import Agent, Dataset, VideoClip
 from ..utils import DISTRIBUTION_IMAGE, GT_IMAGE, OBS_IMAGE, PRED_IMAGE
 
 CONV_LAYER = tf.keras.layers.Conv2D(
@@ -53,7 +54,8 @@ class Visualization():
         self._paras = None
         self._scale = None
 
-        self.info: VideoClip(name=clip, dataset=dataset).get()
+        self.info = VideoClip(name=clip, dataset=dataset).get()
+        self.datasetInfo = Dataset(name=dataset, split=args.split)
         self.order = self.info.order
         self.set_video(self.info)
 
@@ -103,10 +105,21 @@ class Visualization():
 
     def set_video(self, video_info: VideoClip):
 
-        self._vc = cv2.VideoCapture(video_info.video_path)
+        path = video_info.video_path
+        vc = cv2.VideoCapture(path)
+
+        if vc.open(path):
+            vc.release()
+            self._vc = vc
+
+        try:
+            self.scene_image = cv2.imread(path)
+        except:
+            self.scene_image = None
+
         self._paras = video_info.paras
-        self._scale = video_info.scale
         self._matrix = video_info.matrix
+        self._scale = self.datasetInfo.scale_vis
 
     def real2pixel(self, real_pos):
         """
@@ -132,7 +145,7 @@ class Visualization():
             r = scale * real_pos[:, step, :]
 
             # both model and dataset support `boundingbox`
-            if self.info.anntype == 'boundingbox' and \
+            if self.datasetInfo.anntype == 'boundingbox' and \
                     self.args.anntype == 'boundingbox':
                 result = []
                 for index in range(0, self.args.dim, 2):
@@ -179,11 +192,15 @@ class Visualization():
         :param show_img: controls if show results in opencv window
         :draw_distrubution: controls if draw as distribution for generative models
         """
-        time = 1000 * frame_id / self.video_paras[1]
-        self.video_capture.set(cv2.CAP_PROP_POS_MSEC, time - 1)
-        _, f = self.video_capture.read()
+        if self.video_capture:
+            time = 1000 * frame_id / self.video_paras[1]
+            self.video_capture.set(cv2.CAP_PROP_POS_MSEC, time - 1)
+            _, f = self.video_capture.read()
 
-        if f is None:
+        if (f is None) and (self.scene_image is not None):
+            f = self.scene_image
+
+        else:
             raise FileNotFoundError(
                 'Video at `{}` NOT FOUND.'.format(self.info.video_path))
 
@@ -215,7 +232,7 @@ class Visualization():
                             color=(255, 255, 255),
                             thickness=2)
 
-        if self.info.scale_vis > 1:
+        if self.datasetInfo.scale_vis > 1:
             original_shape = f.shape
             f = cv2.resize(
                 f, (int(original_shape[1]/self.info.scale_vis), int(original_shape[0]/self.info.scale_vis)))
