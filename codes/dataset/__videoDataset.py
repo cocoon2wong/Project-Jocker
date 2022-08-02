@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-19 11:19:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-01 20:30:15
+@LastEditTime: 2022-08-02 09:47:50
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -244,7 +244,7 @@ class DatasetManager(BaseObject):
             if type(clips) == str:
                 clips = [clips]
 
-            dms = [VideoClipManager(self.args, d, temp_dir=TEMP_PATH)
+            dms = [VideoClipManager(self.args, d, temp_dir=TEMP_PATH.format(self.args.dataset))
                    for d in clips]
             return self.load_from_videoClips(dms, mode=mode)
 
