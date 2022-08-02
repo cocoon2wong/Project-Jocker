@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-27 15:47:44
+@LastEditTime: 2022-08-02 14:37:29
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -147,6 +147,8 @@ class BaseSilverballers(Structure):
         self.args._set('split', self.agent.args.split)
         self.args._set('dim', self.agent.args.dim)
         self.args._set('anntype', self.agent.args.anntype)
+        self.args._set('obs_frames', self.agent.args.obs_frames)
+        self.args._set('pred_frames', self.agent.args.pred_frames)
 
     def set_models(self, agentModel: type[BaseAgentModel],
                    handlerModel: type[BaseHandlerModel],
