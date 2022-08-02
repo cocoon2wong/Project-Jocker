@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 20:10:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-02 09:48:34
+@LastEditTime: 2022-08-02 10:03:19
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -17,7 +17,7 @@ Configs
 """
 # Basic parameters
 TIME = time.strftime('%Y%m%d-%H%M%S', time.localtime(time.time()))
-DATASET_DIR = './dataset_original/dataset_configs'
+DATASET_DIR = './dataset_configs'
 
 # Dataset configs
 INIT_POSITION = 10000

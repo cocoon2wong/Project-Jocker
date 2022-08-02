@@ -1,6 +1,7 @@
 # data and logs
 videos
 dataset_original
+dataset_configs
 dataset_processed
 logs
 vislogs

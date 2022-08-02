@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-19 10:32:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-01 20:29:51
+@LastEditTime: 2022-08-02 10:04:36
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -43,7 +43,7 @@ class VideoClip():
     """
 
     # Saving paths
-    BASE_DIR = './dataset_original/dataset_configs'
+    BASE_DIR = './dataset_configs'
     CONFIG_FILE = os.path.join(BASE_DIR, '{}', 'subsets', '{}.plist')
 
     def __init__(self, name: str,
