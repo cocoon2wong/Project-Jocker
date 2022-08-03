@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 20:10:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-02 10:03:19
+@LastEditTime: 2022-08-03 10:46:15
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,6 +11,8 @@
 import os
 import plistlib
 import time
+
+import numpy as np
 
 """
 Configs
@@ -51,6 +53,21 @@ TEMP_PATH = './temp_files/{}'
 
 # Log configs
 MAX_PRINT_LIST_LEN = 10
+
+# Visualization settings
+# color bar in BGR format
+# rgb(0, 0, 178) -> rgb(252, 0, 0) -> rgb(255, 255, 10)
+DISTRIBUTION_COLORBAR = np.column_stack([
+    np.interp(np.arange(256),
+              np.array([0, 127, 255]),
+              np.array([178, 0, 10])),
+    np.interp(np.arange(256),
+              np.array([0, 127, 255]),
+              np.array([0, 0, 255])),
+    np.interp(np.arange(256),
+              np.array([0, 127, 255]),
+              np.array([0, 252, 255])),
+])
 
 
 def dir_check(target_dir: str) -> str:

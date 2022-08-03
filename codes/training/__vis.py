@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-02 11:34:10
+@LastEditTime: 2022-08-03 10:46:26
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -15,8 +15,9 @@ import numpy as np
 import tensorflow as tf
 
 from ..args import BaseArgTable as Args
-from ..dataset import Agent, Dataset, VideoClip
-from ..utils import DISTRIBUTION_IMAGE, GT_IMAGE, OBS_IMAGE, PRED_IMAGE
+from ..dataset import Agent, VideoClip
+from ..utils import (DISTRIBUTION_COLORBAR, DISTRIBUTION_IMAGE, GT_IMAGE,
+                     OBS_IMAGE, PRED_IMAGE)
 
 CONV_LAYER = tf.keras.layers.Conv2D(
     1, (20, 20), (1, 1), 'same',
@@ -50,12 +51,14 @@ class Visualization():
     def __init__(self, args: Args, dataset: str, clip: str):
 
         self.args = args
+        self.info = VideoClip(name=clip, dataset=dataset).get()
+
         self._vc = None
         self._paras = None
-        self._scale = None
 
-        self.info = VideoClip(name=clip, dataset=dataset).get()
-        self.datasetInfo = Dataset(name=dataset, split=args.split)
+        self._scale = self.info.datasetInfo.scale
+        self._scale_vis = self.info.datasetInfo.scale_vis
+
         self.order = self.info.order
         self.set_video(self.info)
 
@@ -63,20 +66,6 @@ class Visualization():
         self.pred_file = cv2.imread(PRED_IMAGE, -1)
         self.gt_file = cv2.imread(GT_IMAGE, -1)
         self.dis_file = cv2.imread(DISTRIBUTION_IMAGE, -1)
-
-        # color bar in BGR format
-        # rgb(0, 0, 178) -> rgb(252, 0, 0) -> rgb(255, 255, 10)
-        self.color_bar = np.column_stack([
-            np.interp(np.arange(256),
-                      np.array([0, 127, 255]),
-                      np.array([178, 0, 10])),
-            np.interp(np.arange(256),
-                      np.array([0, 127, 255]),
-                      np.array([0, 0, 255])),
-            np.interp(np.arange(256),
-                      np.array([0, 127, 255]),
-                      np.array([0, 252, 255])),
-        ])
 
     @property
     def video_capture(self) -> cv2.VideoCapture:
@@ -90,11 +79,18 @@ class Visualization():
         return self._paras
 
     @property
-    def video_scale(self):
+    def scale(self):
         """
         annotation scales
         """
         return self._scale
+
+    @property
+    def scale_vis(self):
+        """
+        Video scale
+        """
+        return self._scale_vis
 
     @property
     def video_matrix(self) -> list[float]:
@@ -118,7 +114,6 @@ class Visualization():
 
         self._paras = video_info.paras
         self._matrix = video_info.matrix
-        self._scale = self.datasetInfo.scale_vis
 
     def real2pixel(self, real_pos):
         """
@@ -127,7 +122,7 @@ class Visualization():
         :param real_pos: coordinates, shape = (n, 2) or (k, n, 2)
         :return pixel_pos: coordinates in pixels
         """
-        scale = self.video_scale
+        scale = self.scale
         weights = self.video_matrix
 
         if type(real_pos) == list:
@@ -144,8 +139,8 @@ class Visualization():
             r = scale * real_pos[:, step, :]
 
             # both model and dataset support `boundingbox`
-            if self.datasetInfo.anntype == 'boundingbox' and \
-                    self.args.anntype == 'boundingbox':
+            if (self.info.datasetInfo.anntype == 'boundingbox' and
+                    self.args.anntype == 'boundingbox'):
                 result = []
                 for index in range(0, self.args.dim, 2):
                     result += [weights[0] * r.T[index+self.order[0]] + weights[1],
@@ -234,10 +229,11 @@ class Visualization():
                             color=(255, 255, 255),
                             thickness=2)
 
-        if self.datasetInfo.scale_vis > 1:
+        if self.scale_vis > 1:
             original_shape = f.shape
             f = cv2.resize(
-                f, (int(original_shape[1]/self.info.scale_vis), int(original_shape[0]/self.info.scale_vis)))
+                f, (int(original_shape[1]/self.scale_vis),
+                    int(original_shape[0]/self.scale_vis)))
 
         if show_img:
             cv2.namedWindow(self.info.name, cv2.WINDOW_NORMAL |
@@ -347,7 +343,7 @@ class Visualization():
                           anntype=anntype,
                           draw_distribution=draw_distribution,
                           dis_file=self.dis_file,
-                          color_bar=self.color_bar)
+                          color_bar=DISTRIBUTION_COLORBAR)
 
         return f
 
