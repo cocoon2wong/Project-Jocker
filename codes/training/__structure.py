@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-01 10:20:11
+@LastEditTime: 2022-08-03 10:47:15
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -17,7 +17,7 @@ from tqdm import tqdm
 from ..__base import BaseObject
 from ..args import BaseArgTable
 from ..basemodels import Model
-from ..dataset import Agent, Dataset, DatasetManager, get_inputs_by_type
+from ..dataset import Agent, DatasetManager, get_inputs_by_type
 from ..utils import dir_check
 from . import __loss as losslib
 from .__vis import Visualization
@@ -33,7 +33,7 @@ class Structure(BaseObject):
 
         self.keywords = {}
 
-        self.dsInfo: Dataset = None
+        self.manager: DatasetManager = None
         self.bar: tqdm = None
         self.leader: Structure = None
 
@@ -190,8 +190,8 @@ class Structure(BaseObject):
         :return dataset_train: train dataset, type = `tf.data.Dataset`
         :return dataset_val: val dataset, type = `tf.data.Dataset`
         """
-        dsManager = DatasetManager(self.args)
-        train_agents, test_agents = dsManager.load('auto', 'train')
+
+        train_agents, test_agents = self.manager.load('auto', 'train')
         train_data = self.load_inputs_from_agents(train_agents)
         test_data = self.load_inputs_from_agents(test_agents)
 
@@ -277,7 +277,7 @@ class Structure(BaseObject):
                              labels,
                              self.metrics_weights,
                              mode='metric',
-                             coefficient=self.dsInfo.scale)
+                             coefficient=self.manager.info.scale)
 
     def gradient_operations(self, inputs: list[tf.Tensor],
                             labels: tf.Tensor,
@@ -333,7 +333,7 @@ class Structure(BaseObject):
         Load args, load datasets, and start training or test.
         """
 
-        self.dsInfo = Dataset(self.args.dataset, self.args.split)
+        self.manager = (manager := DatasetManager(self.args))
 
         # start training if not loading any model weights
         if self.args.load == 'null':
@@ -358,31 +358,30 @@ class Structure(BaseObject):
         Run test accoding to arguments.
         """
 
-        self.dsInfo = Dataset(self.args.dataset, self.args.split)
-        dsManager = DatasetManager(self.args)
-        test_sets = self.dsInfo.test_sets
+        self.manager = (manager := DatasetManager(self.args))
+        test_sets = manager.info.test_sets
 
         # test on a single sub-dataset
         if self.args.test_mode == 'one':
             try:
                 clip = self.args.force_clip
-                agents = dsManager.load(clip, 'test')
+                agents = manager.load(clip, 'test')
 
             except:
-                clip = self.dsInfo.test_sets[0]
-                agents = dsManager.load(clip, 'test')
+                clip = test_sets[0]
+                agents = manager.load(clip, 'test')
 
             self.__test(agents, self.args.dataset, [clip])
 
         # test on all test datasets separately
         elif self.args.test_mode == 'all':
             for clip in test_sets:
-                agents = dsManager.load(clip, 'test')
+                agents = manager.load(clip, 'test')
                 self.__test(agents, self.args.dataset, [clip])
 
         # test on all test datasets together
         elif self.args.test_mode == 'mix':
-            agents = dsManager.load(test_sets, 'test')
+            agents = manager.load(test_sets, 'test')
             self.__test(agents, self.args.dataset, test_sets)
 
         else:
@@ -394,11 +393,11 @@ class Structure(BaseObject):
         """
 
         # print training infomation
-        self.print_dataset_info(DatasetName=self.dsInfo.name,
-                                DatasetSplitName=self.args.split,
-                                TrainingSets=self.dsInfo.train_sets,
-                                TestSets=self.dsInfo.test_sets,
-                                DatasetType=self.dsInfo.anntype,)
+        self.print_dataset_info(DatasetName=self.manager.info.name,
+                                DatasetSplitName=self.manager.info.split,
+                                TrainingSets=self.manager.info.train_sets,
+                                TestSets=self.manager.info.test_sets,
+                                DatasetType=self.manager.info.anntype,)
         self.print_model_info()
         self.print_train_info()
 
