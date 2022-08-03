@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-19 11:19:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 10:33:21
+@LastEditTime: 2022-08-03 16:21:12
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -19,6 +19,29 @@ class Dataset():
     -------
     Manage a full trajectory prediction dataset.
     A dataset may contains several video clips.
+    One `Dataset` object only controls on dataset split.
+
+    Properties
+    ---
+    ```python
+    # Name of the video dataset
+    (property) name: (self: Self@Dataset) -> str
+
+    # Annotation type of the dataset
+    (property) type: (self: Self@Dataset) -> str
+
+    # Global data scaling scale
+    (property) scale: (self: Self@Dataset) -> float
+
+    # Video scaling when saving visualized results
+    (property) scale_vis: (self: Self@Dataset) -> float
+
+    # Maximum dimension of trajectories recorded in this dataset
+    (property) dimension: (self: Self@Dataset) -> int
+
+    # Type of annotations
+    (property) anntype: (self: Self@Dataset) -> str
+    ```
     """
 
     # Saving paths
@@ -31,15 +54,13 @@ class Dataset():
 
         :param name: name of the image dataset
         :param split: split name of the dataset
-        :param root_dir: dataset config folder
         """
         split_path = self.CONFIG_FILE.format(name, split)
 
         try:
             dic = load_from_plist(split_path)
         except:
-            raise FileNotFoundError(
-                'Dataset file `{}` NOT FOUND.'.format(split_path))
+            raise FileNotFoundError(f'Dataset file `{split_path}` NOT FOUND.')
 
         self.__name = dic['dataset']
         self.__type = dic['type']
@@ -47,7 +68,7 @@ class Dataset():
         self.__scale_vis = dic['scale_vis']
         self.__dimension = dic['dimension']
         self.__anntype = dic['anntype']
-        
+
         self.split: str = split
         self.train_sets: list[str] = dic['train']
         self.test_sets: list[str] = dic['test']

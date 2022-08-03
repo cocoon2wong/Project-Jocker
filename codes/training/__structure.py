@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 15:09:27
+@LastEditTime: 2022-08-03 19:33:07
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,10 +13,10 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from ..__base import BaseObject
-from ..args import BaseArgTable
+from .. import dataset
+from ..args import Args
+from ..base import BaseObject
 from ..basemodels import Model
-from ..dataset import DatasetManager, AgentManager
 from ..utils import WEIGHTS_FORMAT, dir_check
 from . import __loss as losslib
 from .__vis import Visualization
@@ -27,12 +27,12 @@ class Structure(BaseObject):
     def __init__(self, terminal_args: list[str]):
         super().__init__()
 
-        self.args = BaseArgTable(terminal_args)
+        self.args = Args(terminal_args)
         self.model: Model = None
 
         self.keywords = {}
 
-        self.manager: DatasetManager = None
+        self.manager: dataset.DatasetManager = None
         self.leader: Structure = None
         self.noTraining = False
 
@@ -243,9 +243,9 @@ class Structure(BaseObject):
         """
 
         # assign agentManagers
-        self.manager = DatasetManager(self.args)
-        self.manager.set(inputs_type=self.model_inputs,
-                         labels_type=self.model_labels)
+        self.manager = dataset.DatasetManager(self.args)
+        self.manager.set_types(inputs_type=self.model_inputs,
+                               labels_type=self.model_labels)
 
         # init model
         self.model = self.create_model()
@@ -420,7 +420,8 @@ class Structure(BaseObject):
         self.print_train_results(best_epoch=best_epoch,
                                  best_metric=best_metrics)
 
-    def __test(self, agents: AgentManager, dataset: str, clips: list[str]):
+    def __test(self, agents: dataset.AgentManager,
+               dataset: str, clips: list[str]):
         """
         Test
         """
@@ -558,7 +559,7 @@ class Structure(BaseObject):
                  loss_dict))
 
     def write_test_results(self, outputs: list[tf.Tensor],
-                           agents: AgentManager,
+                           agents: dataset.AgentManager,
                            clips: list[str]):
 
         if (not self.args.draw_results in ['null', '0', '1']) and (len(clips) == 1):

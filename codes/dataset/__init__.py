@@ -1,11 +1,24 @@
 """
-@Author: Conghao Wong
-@Date: 2022-06-21 16:58:13
-@LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 15:59:03
-@Description: file content
-@Github: https://github.com/cocoon2wong
-@Copyright 2022 Conghao Wong, All Rights Reserved.
+dataset
+---
+Read data, make observations into trajectories, and split train samples
+from trajectory prediction datasets.
+
+Public Classes
+---
+```python
+# Control structure of one training sample
+(class) Agent
+
+# Control structure of one video clip
+(class) VideoClip
+
+# Manager to directly make training datasets
+(class) AgentManager
+
+# Manager to help sample training data into `AgentManager`s
+(class) DatasetManager
+```
 """
 
 from .__agent import Agent

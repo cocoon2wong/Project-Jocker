@@ -2,13 +2,13 @@
 @Author: Conghao Wong
 @Date: 2022-07-27 20:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-27 21:19:23
+@LastEditTime: 2022-08-03 19:34:26
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-from codes.args import BaseArgTable as Args
+from codes.args import Args
 
 from . import agents, handlers
 from .__args import SilverballersArgs
@@ -33,7 +33,7 @@ class SilverballersMKII(BaseSilverballers):
         self.set_models(agentModel=agent_model, handlerModel=handler_model)
 
         super().__init__(terminal_args)
-        
+
 
 __SILVERBALLERS_DICT = dict(
 

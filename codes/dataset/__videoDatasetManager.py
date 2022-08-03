@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:34:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 12:01:25
+@LastEditTime: 2022-08-03 19:32:24
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,8 +12,8 @@ import os
 import random
 from typing import Union
 
-from ..__base import BaseObject
-from ..args import BaseArgTable as Args
+from ..args import Args
+from ..base import BaseObject
 from ..utils import dir_check
 from .__agentManager import AgentManager, TrajMapNotFoundError
 from .__videoClipManager import VideoClipManager
@@ -24,7 +24,22 @@ class DatasetManager(BaseObject):
     """
     DatasetsManager
     ---------------
-    Manage all prediction training data.
+    Manage all prediction training data from one dataset split.
+
+    Public Methods
+    ---
+    ```python
+    # Set types of model inputs and labels in this dataset
+    (method) set_types: (self: Self@DatasetManager, 
+                         inputs_type: list[str], 
+                         labels_type: list[str] = None) -> None
+
+    # Load train samples in sub-datasets (i.e., video clips)
+    (method) load: (self: Self@DatasetManager,
+                    clips: str | list[str],
+                    mode: str)
+                    -> (AgentManager | tuple[AgentManager, AgentManager])
+    ```
     """
 
     def __init__(self, args: Args):
@@ -36,8 +51,14 @@ class DatasetManager(BaseObject):
         self.model_inputs = None
         self.model_labels = None
 
-    def set(self, inputs_type: list[str],
-            labels_type: list[str] = None):
+    def set_types(self, inputs_type: list[str], labels_type: list[str] = None):
+        """
+        Set types of model inputs and labels in this dataset.
+
+        :param inputs_type: a list of `str`, accept `'TRAJ'`, `'MAPPARA'`,
+            `'MAP'`, `'DEST'`, and `'GT'`
+        :param labels_type: a list of `str`, accept `'GT'` and `'DEST'`
+        """
 
         self.model_inputs = inputs_type
         if labels_type is not None:
@@ -52,7 +73,7 @@ class DatasetManager(BaseObject):
         :param video_clips: a list of video clip managers (`VideoClipManager`)
         :return all_agents: a list of train agents (`AgentManager`)
         """
-        all_agents = AgentManager([])
+        all_agents = AgentManager(self.args, [])
 
         if mode == 'train':
             random.shuffle(video_clips)
@@ -79,7 +100,10 @@ class DatasetManager(BaseObject):
                 agents = clip.sample_train_data()
                 agents.save(data_path)
             else:
-                agents = AgentManager.load(data_path)
+                agents = AgentManager.load(self.args, data_path)
+
+            agents.set_dim(self.args.dim)
+            agents.bar = self.bar
 
             if self.args.use_maps:
                 map_path = dir_check(data_path.split('.np')[0] + '_maps')
@@ -116,9 +140,8 @@ class DatasetManager(BaseObject):
 
             all_agents.append(agents)
 
-        all_agents.set(dimension=self.args.dim,
-                       inputs_type=self.model_inputs,
-                       labels_type=self.model_labels)
+        all_agents.set_types(inputs_type=self.model_inputs,
+                             labels_type=self.model_labels)
         return all_agents
 
     def load(self, clips: Union[str, list[str]], mode: str) -> Union[AgentManager, tuple[AgentManager, AgentManager]]:

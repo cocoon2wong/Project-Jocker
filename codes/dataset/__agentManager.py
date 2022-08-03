@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 15:58:06
+@LastEditTime: 2022-08-03 19:28:09
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -15,7 +15,8 @@ import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 
-from ..__base import BaseObject
+from ..args import Args
+from ..base import BaseObject
 from ..utils import MAP_HALF_SIZE
 from .__agent import Agent
 from .__maps import MapManager
@@ -80,9 +81,10 @@ class AgentManager(BaseObject):
     ```
     """
 
-    def __init__(self, agents: list[Agent]):
+    def __init__(self, args: Args, agents: list[Agent]):
 
         super().__init__()
+        self.args = args
         self.agents = agents
 
         self.model_inputs = None
@@ -92,13 +94,14 @@ class AgentManager(BaseObject):
     def append(self, target):
         self.agents += target.agents
 
-    def set(self, dimension: int,
-            inputs_type: list[str],
-            labels_type: list[str]):
-        """
-        Set prediction dimension and type of model inputs and outputs.
+    def set_dim(self, dimension: int):
+        for agent in self.agents:
+            agent.dim = dimension
 
-        :param dimension: prediction dimension
+    def set_types(self, inputs_type: list[str], labels_type: list[str]):
+        """
+        Set type of model inputs and outputs.
+
         :param inputs_type: a list of `str`, accept `'TRAJ'`, `'MAPPARA'`,
             `'MAP'`, `'DEST'`, and `'GT'`
         :param labels_type: a list of `str`, accept `'GT'` and `'DEST'`
@@ -106,9 +109,6 @@ class AgentManager(BaseObject):
 
         self.model_inputs = inputs_type
         self.model_labels = labels_type
-
-        for agent in self.agents:
-            agent.dim = dimension
 
     def get_inputs(self) -> list[tf.Tensor]:
         """
@@ -162,7 +162,7 @@ class AgentManager(BaseObject):
         np.savez(save_dir, **save_dict)
 
     @classmethod
-    def load(cls, path: str):
+    def load(cls, args: Args, path: str):
         """
         Load agents' data from saved file.
 
@@ -177,7 +177,8 @@ class AgentManager(BaseObject):
                      'happen something wrong.'),
                     level='error')
 
-        return AgentManager([Agent().load_data(v.tolist()) for v in save_dict.values()])
+        return AgentManager(args, [Agent().load_data(v.tolist())
+                                   for v in save_dict.values()])
 
     def make_maps(self, map_type: str,
                   base_path: str,
@@ -198,11 +199,11 @@ class AgentManager(BaseObject):
         :param save_centers_file: path to save the centers
         """
 
-        map_manager = MapManager(self.args, map_type, self.agents)
+        map_manager = MapManager(self.args, map_type, self._get_obs_trajs())
 
         if save_map_file:
             traj_map = map_manager.build_guidance_map(
-                agents=self.agents,
+                trajs=self._get_obs_trajs(),
                 save=os.path.join(base_path, save_map_file))
 
         social_maps = []
@@ -210,9 +211,7 @@ class AgentManager(BaseObject):
         agent_count = len(self.agents)
         for index, agent in enumerate(self.agents):
             centers.append(agent.traj[-1:, :])
-            social_maps.append(map_manager.build_social_map(
-                target_agent=agent,
-                traj_neighbors=agent.get_pred_traj_neighbor_linear()))
+            social_maps.append(map_manager.build_social_map(agent))
 
             # update timebar
             p = '{}%'.format((index+1)*100//agent_count)
@@ -270,6 +269,9 @@ class AgentManager(BaseObject):
 
         for agent, t_map, s_map in zip(self.agents, traj_map_cut, social_map):
             agent.set_map(0.5*t_map + 0.5*s_map, para)
+
+    def _get_obs_trajs(self) -> np.ndarray:
+        return np.array([a.traj for a in self.agents])
 
     def _get(self, type_name: str) -> tf.Tensor:
         """

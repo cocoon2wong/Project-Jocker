@@ -14,7 +14,7 @@ import codes as C
 import silverballers
 
 if __name__ == '__main__':
-    args = C.args.BaseArgTable(terminal_args=sys.argv)
+    args = C.args.Args(terminal_args=sys.argv)
 
     model = args.model
 

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 14:38:22
+@LastEditTime: 2022-08-03 16:57:35
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -14,7 +14,7 @@ import re
 import numpy as np
 import tensorflow as tf
 
-from ..args import BaseArgTable
+from ..args import Args
 from ..utils import CHECKPOINT_FILENAME, WEIGHTS_FORMAT
 from . import __preprocess as preprocess
 
@@ -61,7 +61,7 @@ class Model(tf.keras.Model):
     ```
     """
 
-    def __init__(self, Args: BaseArgTable,
+    def __init__(self, Args: Args,
                  structure=None,
                  *args, **kwargs):
 

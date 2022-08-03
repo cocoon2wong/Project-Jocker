@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-19 10:32:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 10:12:52
+@LastEditTime: 2022-08-03 16:10:47
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -24,15 +24,24 @@ class VideoClip():
     Properties
     -----------------
     ```python
-    >>> self.annpath        # dataset annotation file
-    >>> self.anntype        # annotation type
-    >>> self.dimension      # annotation dimension
-    >>> self.matrix         # transfer matrix from real scales to pixels
+    >>> self.dataset        # name of the dataset
     >>> self.name           # video clip name
+    >>> self.annpath        # dataset annotation file
+    >>> self.order          # X-Y order in the annotation file
     >>> self.paras          # [sample_step, frame_rate]
-    >>> self.scale          # annotation scales
-    >>> self.scale_vis      # scale when saving visualized images
-    >>> self.video_path     # video path    
+    >>> self.video_path     # video path   
+    >>> self.matrix         # transfer matrix from real scales to pixels
+    ```
+
+    Public Methods
+    ---
+    ```python
+    # Load video clip infomation from the saved `plist` file
+    (method) get: (self: Self@VideoClip) -> VideoClip
+
+    # Update dataset information (including dataset splits)
+    (method) update_datasetInfo: (self: Self@VideoClip, dataset: str | Dataset,
+                                  split: str = None) -> None
     ```
     """
 
@@ -60,9 +69,10 @@ class VideoClip():
 
         self.CONFIG_FILE = self.CONFIG_FILE.format(self.dataset, self.name)
 
+        # init dataset infomation
         self.datasetInfo = datasetInfo
         if datasetInfo is None:
-            self.update_datasetInof(dataset=dataset)
+            self.update_datasetInfo(dataset=dataset)
 
         # make dirs
         dirs = [self.CONFIG_FILE]
@@ -71,17 +81,26 @@ class VideoClip():
             dir_check(_dir)
 
     def get(self):
+        """
+        Load video clip infomation from the saved `plist` file.
+        """
         plist_path = self.CONFIG_FILE
 
         try:
             dic = load_from_plist(plist_path)
         except:
-            raise FileNotFoundError(
-                'Dataset file `{}` NOT FOUND.'.format(plist_path))
+            raise FileNotFoundError(f'Dataset file `{plist_path}` NOT FOUND.')
 
         return VideoClip(**dic)
 
-    def update_datasetInof(self, dataset: Union[str, Dataset], split: str = None):
+    def update_datasetInfo(self, dataset: Union[str, Dataset],
+                           split: str = None):
+        """
+        Update dataset information (including dataset splits).
+
+        :param dataset: name of the dataset, or the `Dataset` object
+        :param split: name of the dataset split
+        """
         if type(dataset) is str:
             if not split:
                 ds_split_dir = os.path.join(DATASET_DIR, dataset)

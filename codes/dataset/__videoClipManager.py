@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:30:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 14:53:45
+@LastEditTime: 2022-08-03 19:31:28
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,8 +12,8 @@ import os
 
 import numpy as np
 
-from ..__base import BaseObject
-from ..args import BaseArgTable as Args
+from ..args import Args
+from ..base import BaseObject
 from ..utils import INIT_POSITION, TEMP_PATH, dir_check
 from .__agentManager import AgentManager
 from .__trajectory import Trajectory
@@ -26,22 +26,23 @@ class VideoClipManager(BaseObject):
     ----------------
     Manage all training data from one video clip.
 
-    Properties
-    ----------
-    ```python
-    >>> self.args   # args
-    >>> self.name   # name
-    >>> self.dataset # name of the video dataset
-    ```
 
     Public Methods
     --------------
     ```python
-    # Sample train data from dataset
-    (method) sample_train_data: (self: DatasetManager) -> list[agent_type]
+    # Load trajectory data from the annotation txt file
+    (method) load_dataset: (self: Self@VideoClipManager) -> tuple[dict, list]
 
-    # Load dataset files
-    (method) load_data: (self: DatasetManager) -> Any
+    # Process metadata of a video clip (like csv dataset files)
+    (method) process_metadata: (self: Self@VideoClipManager) 
+        -> tuple[ndarray, ndArray, list, list]
+
+    # Make trajectories from the processed dataset files
+    (method) make_trajectories: (self: Self@VideoClipManager)
+        -> Self@VideoClipManager
+
+    # Sampling train agents from trajectories
+    (method) sample_train_data: (self: Self@VideoClipManager) -> AgentManager
     ```
     """
 
@@ -55,7 +56,6 @@ class VideoClipManager(BaseObject):
         self.name = name
 
         self.path = TEMP_PATH.format(self.dataset)
-
         self.info = VideoClip(name=name, dataset=self.dataset).get()
 
         self.custom_list = custom_list
@@ -106,7 +106,6 @@ class VideoClipManager(BaseObject):
         Process metadata of a video clip (like csv dataset 
         files) into numpy ndarray.
         """
-
         # make directories
         b = dir_check(os.path.join(dir_check(self.path), self.name))
         npy_path = os.path.join(b, 'data.npz')
@@ -185,7 +184,7 @@ class VideoClipManager(BaseObject):
 
     def sample_train_data(self) -> AgentManager:
         """
-        Sampling train samples from trajectories.
+        Sampling train agents from trajectories.
         """
 
         if self.trajectories is None:
@@ -234,4 +233,4 @@ class VideoClipManager(BaseObject):
                                                        frame_step=frame_step,
                                                        add_noise=False))
 
-        return AgentManager(train_samples)
+        return AgentManager(self.args, train_samples)

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-27 21:21:56
+@LastEditTime: 2022-08-03 19:26:19
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -16,7 +16,7 @@ from typing import Any
 from ..utils import DATASET_DIR, TIME, dir_check
 
 
-class BaseArgTable():
+class Args():
     """
     A set of args used for training or evaluating prediction models.
     """
@@ -58,7 +58,7 @@ class BaseArgTable():
         except:
             raise ValueError(
                 'Failed to load args from path {}.'.format(dir_path))
-        
+
         return self
 
     def _load_from_terminal(self, argv: list[str]):

@@ -8,7 +8,7 @@
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-from codes.args import BaseArgTable as Args
+from codes.args import Args
 
 
 class _BaseSilverballersArgs(Args):

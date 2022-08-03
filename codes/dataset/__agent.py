@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 15:38:54
+@LastEditTime: 2022-08-03 19:00:29
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -48,18 +48,18 @@ class Agent():
     ```
     """
 
-    __version__ = 5.0
+    __version__ = 6.0
 
-    _save_items = ['_traj', '_traj_future',
-                   '_traj_pred', '_traj_pred_linear',
+    _save_items = ['__version__',
+                   '_traj', '_traj_future',
+                   '_traj_pred', '_traj_linear',
+                   'real2grid', '_id',
                    '_frames', '_frames_future',
-                   '_id',
-                   'real2grid', '__version__',
                    'linear_predict',
+                   'obs_length', 'total_frame',
                    'neighbor_number',
-                   'neighbor_traj',
-                   'neighbor_traj_linear_pred',
-                   'obs_length', 'total_frame']
+                   '_traj_neighbor',
+                   '_traj_linear_neighbor']
 
     def __init__(self):
 
@@ -67,11 +67,9 @@ class Agent():
         self._traj_future: np.ndarray = None
 
         self._traj_pred: np.ndarray = None
-        self._traj_pred_linear: np.ndarray = None
+        self._traj_linear: np.ndarray = None
 
-        self._map = None
         self.real2grid = None
-
         self._id = None
 
         self._frames = []
@@ -82,10 +80,11 @@ class Agent():
         self.total_frame = 0
 
         self.neighbor_number = 0
-        self.neighbor_traj: list[np.ndarray] = []
-        self.neighbor_traj_linear_pred: list[np.ndarray] = []
+        self._traj_neighbor: np.ndarray = None
+        self._traj_linear_neighbor: np.ndarray = None
 
         self.dim = None
+        self._map = None
 
     def copy(self):
         return copy.deepcopy(self)
@@ -98,8 +97,15 @@ class Agent():
         dims = (dim, true_dim)
 
         if dims == (2, 4):
-            xl, yl, xr, yr = traj.T
-            return 0.5 * np.column_stack((xl+xr, yl+yr))
+            if traj.ndim == 3:  # (batch, steps, dim)
+                traj = np.transpose(traj, [2, 0, 1])
+            elif traj.ndim == 2:
+                traj = traj.T
+            else:
+                raise NotImplementedError
+
+            xl, yl, xr, yr = traj
+            return 0.5 * np.stack((xl+xr, yl+yr), axis=-1)
 
         elif dims == (2, 2):
             return traj
@@ -123,6 +129,13 @@ class Agent():
         historical trajectory, shape = (obs, dim)
         """
         return self.get_ndim_trajectory(self._traj, self.dim)
+
+    @property
+    def traj_neighbor(self) -> np.ndarray:
+        """
+        neighbors' historical trajectories, shape = (n, obs, dim)
+        """
+        return self.get_ndim_trajectory(self._traj_neighbor, self.dim)
 
     @property
     def pred(self) -> np.ndarray:
@@ -151,9 +164,17 @@ class Agent():
     def pred_linear(self) -> np.ndarray:
         """
         linear prediction.
-        shape = (pred, 2)
+        shape = (pred, dim)
         """
-        return self.get_ndim_trajectory(self._traj_pred_linear, self.dim)
+        return self.get_ndim_trajectory(self._traj_linear, self.dim)
+
+    @property
+    def pred_linear_neighbor(self) -> np.ndarray:
+        """
+        linear prediction of neighbors' trajectories.
+        shape = (n, pred, dim)
+        """
+        return self.get_ndim_trajectory(self._traj_linear_neighbor, self.dim)
 
     @property
     def groundtruth(self) -> np.ndarray:
@@ -223,43 +244,49 @@ class Agent():
 
         # Neighbor info
         self.clear_all_neighbor_info()
-        for _n_traj in neighbors_traj:
-            if _n_traj.max() >= INIT_POSITION:
-                index = np.where(_n_traj.T[0] < INIT_POSITION)[0]
+
+        traj_neighbor_fixed = []
+        for _n_traj in neighbors_traj.copy():
+            if _n_traj.max() == INIT_POSITION:
+                index = np.where(_n_traj.T[0] != INIT_POSITION)[0]
                 _n_traj[:index[0], :] = _n_traj[index[0]]
                 _n_traj[index[-1]:, :] = _n_traj[index[-1]]
 
-            self.neighbor_traj.append(_n_traj)
+                if _n_traj.max() == INIT_POSITION:
+                    continue
 
-        self.neighbor_number = len(neighbors_traj)
+            traj_neighbor_fixed.append(_n_traj)
+
+        self._traj_neighbor = np.array(traj_neighbor_fixed)
+        self.neighbor_number = len(traj_neighbor_fixed)
 
         if linear_predict:
             pred_frames = self.total_frame - self.obs_length
             n = self.neighbor_number
 
-            self._traj_pred_linear = linear_pred(self._traj,
-                                                 self.obs_length,
-                                                 pred_frames)
+            self._traj_linear = linear_pred(self._traj,
+                                            self.obs_length,
+                                            pred_frames)
 
-            _n_pred = linear_pred(np.concatenate(self.neighbor_traj, axis=-1),
+            _n_pred = linear_pred(np.concatenate(self._traj_neighbor, axis=-1),
                                   self.obs_length,
                                   pred_frames)
 
             _n_pred = np.reshape(_n_pred, [pred_frames, n, -1])
             _n_pred = np.transpose(_n_pred, [1, 0, 2])
-            self.neighbor_traj_linear_pred = _n_pred
+            self._traj_linear_neighbor = _n_pred
 
         return self
 
     def get_neighbor_traj(self):
-        return self.neighbor_traj
+        return self._traj_neighbor
 
     def clear_all_neighbor_info(self):
-        self.neighbor_traj = []
-        self.neighbor_traj_linear_pred = []
+        self._traj_neighbor = None
+        self._traj_linear_neighbor = None
 
     def get_pred_traj_neighbor_linear(self) -> list:
-        return self.neighbor_traj_linear_pred
+        return self._traj_linear_neighbor
 
 
 def softmax(x):

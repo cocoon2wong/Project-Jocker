@@ -2,19 +2,19 @@
 @Author: Conghao Wong
 @Date: 2022-07-15 20:13:07
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 14:59:11
+@LastEditTime: 2022-08-03 16:57:36
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-from ..args import BaseArgTable
+from ..args import Args
 from ..basemodels import Model, layers
 from ..training import Structure
 
 
 class LinearModel(Model):
-    def __init__(self, Args: BaseArgTable, structure=None, *args, **kwargs):
+    def __init__(self, Args: Args, structure=None, *args, **kwargs):
         super().__init__(Args, structure, *args, **kwargs)
 
         self.linear = layers.LinearLayerND(obs_frames=self.args.obs_frames,
