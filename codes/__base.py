@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:28:13
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-02 09:42:39
+@LastEditTime: 2022-08-03 14:53:29
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -69,6 +69,7 @@ class BaseObject():
             logger.addHandler(thandler)
 
         self.logger = logger
+        self.bar: tqdm = None
 
     def log(self, s: str, level: str = 'info'):
         """

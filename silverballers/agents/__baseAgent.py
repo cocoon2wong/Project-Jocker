@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-27 16:03:52
+@LastEditTime: 2022-08-03 12:29:58
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -73,7 +73,7 @@ class BaseAgentStructure(Structure):
     def set_model_type(self, new_type: type[BaseAgentModel]):
         self.model_type = new_type
 
-    def create_model(self, *args, **kwargs):
+    def create_model(self) -> BaseAgentModel:
         return self.model_type(self.args,
                                feature_dim=self.args.feature_dim,
                                id_depth=self.args.depth,

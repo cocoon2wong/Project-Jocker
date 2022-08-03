@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:30:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 09:56:43
+@LastEditTime: 2022-08-03 14:53:45
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,20 +11,13 @@
 import os
 
 import numpy as np
-from tqdm import tqdm
 
 from ..__base import BaseObject
 from ..args import BaseArgTable as Args
-from ..utils import INIT_POSITION, MAP_HALF_SIZE, TEMP_PATH, dir_check
-from .__agent import Agent
-from .__maps import MapManager
+from ..utils import INIT_POSITION, TEMP_PATH, dir_check
+from .__agentManager import AgentManager
 from .__trajectory import Trajectory
 from .__videoClip import VideoClip
-
-
-class TrajMapNotFoundError(FileNotFoundError):
-    def __init__(self, *args: object) -> None:
-        super().__init__(*args)
 
 
 class VideoClipManager(BaseObject):
@@ -64,11 +57,10 @@ class VideoClipManager(BaseObject):
         self.path = TEMP_PATH.format(self.dataset)
 
         self.info = VideoClip(name=name, dataset=self.dataset).get()
-        
+
         self.custom_list = custom_list
         self.agent_count = None
         self.trajectories: list[Trajectory] = None
-        self.bar: tqdm = None
 
     def load_dataset(self):
         """
@@ -191,7 +183,7 @@ class VideoClipManager(BaseObject):
         self.trajectories = trajs
         return self
 
-    def sample_train_data(self) -> list[Agent]:
+    def sample_train_data(self) -> AgentManager:
         """
         Sampling train samples from trajectories.
         """
@@ -242,58 +234,4 @@ class VideoClipManager(BaseObject):
                                                        frame_step=frame_step,
                                                        add_noise=False))
 
-        return train_samples
-
-    def make_maps(self, agents: list[Agent],
-                  map_type: str,
-                  base_path: str,
-                  save_map_file: str = None,
-                  save_social_file: str = 'socialMap.npy',
-                  save_para_file: str = 'para.txt',
-                  save_centers_file: str = 'centers.txt'):
-        """
-        Make maps for input agents, and save them in the numpy format.
-
-        :param agents: a list of agents that ready to calculate maps
-        :param base_path: base folder to save the map and map parameters
-        :param load_map_file: file name for the saved trajectory map (`.jpg` or `.png`).
-        default is `None`. When this item is `None`, MapManager will build
-        trajectory maps according to trajectories of the input agents.
-        :param save_map_file: file name to save the built traj map
-        :param save_social_file: file name to save the social map (already cut)
-        :param save_para_file: file name to save the map parameters
-        :param save_centers_file: path to save the centers
-        """
-
-        map_manager = MapManager(self.args, map_type, agents)
-
-        if save_map_file:
-            traj_map = map_manager.build_guidance_map(
-                agents=agents,
-                save=os.path.join(base_path, save_map_file))
-
-        social_maps = []
-        centers = []
-        agent_count = len(agents)
-        for index, agent in enumerate(agents):
-            centers.append(agent.traj[-1:, :])
-            social_maps.append(map_manager.build_social_map(
-                target_agent=agent,
-                traj_neighbors=agent.get_pred_traj_neighbor_linear()))
-
-            # update timebar
-            p = '{}%'.format((index+1)*100//agent_count)
-            self.update_timebar(self.bar, 'Building Maps: ' + p)
-
-        social_maps = np.array(social_maps)  # (batch, a, b)
-
-        centers = np.concatenate(centers, axis=0)
-        centers = map_manager.real2grid(centers)
-        cuts = map_manager.cut_map(social_maps,
-                                   centers,
-                                   MAP_HALF_SIZE)
-        paras = map_manager.real2grid_paras
-
-        np.savetxt(os.path.join(base_path, save_centers_file), centers)
-        np.savetxt(os.path.join(base_path, save_para_file), paras)
-        np.save(os.path.join(base_path, save_social_file), cuts)
+        return AgentManager(train_samples)

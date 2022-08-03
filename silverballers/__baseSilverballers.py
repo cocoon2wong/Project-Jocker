@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-02 14:37:29
+@LastEditTime: 2022-08-03 12:32:45
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -93,13 +93,13 @@ class BaseSilverballers(Structure):
         # set args
         self.args = SilverballersArgs(terminal_args)
         self.Loss = SilverballersLoss(self.args)
+        self.noTraining = True
 
         # set inputs and outputs
         self.set_inputs('trajs', 'maps', 'paras')
         self.set_labels('gt')
 
         # set metrics
-
         self.set_metrics(self.Loss.avgADE, self.Loss.avgFDE)
         self.set_metrics_weights(1.0, 0.0)
 
@@ -112,7 +112,8 @@ class BaseSilverballers(Structure):
         self.agent = self.agent_structure(
             terminal_args + ['--load', self.args.loada])
         self.agent.set_model_type(self.agent_model)
-        self.agent.load_best_model(self.args.loada)
+        self.agent.model = self.agent.create_model()
+        self.agent.model.load_weights_from_logDir(self.args.loada)
         self.agent.leader = self
 
         self.add_keywords(KeypointsIndex=self.agent.args.key_points,
@@ -134,7 +135,8 @@ class BaseSilverballers(Structure):
                 terminal_args + ['--load', self.args.loadb])
             self.handler.set_model_type(self.handler_model)
             self.handler.args._set('key_points', self.agent.args.key_points)
-            self.handler.load_best_model(self.args.loadb, asHandler=True)
+            self.handler.model = self.handler.create_model(asHandler=True)
+            self.handler.model.load_weights_from_logDir(self.args.loadb)
             self.handler.leader = self
 
             self.add_keywords(HandlerModelType=type(self.handler.model).__name__,
@@ -171,10 +173,6 @@ class BaseSilverballers(Structure):
 
         if handlerStructure:
             self.handler_structure = handlerStructure
-
-    def train_or_test(self):
-        self.model = self.create_model()
-        self.run_test()
 
     def create_model(self, *args, **kwargs):
         return self.silverballer_model(

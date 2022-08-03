@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:34:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 10:23:28
+@LastEditTime: 2022-08-03 12:01:25
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,15 +12,11 @@ import os
 import random
 from typing import Union
 
-import cv2
-import numpy as np
-
 from ..__base import BaseObject
 from ..args import BaseArgTable as Args
-from ..utils import MAP_HALF_SIZE, dir_check
-from .__agent import Agent
-from .__maps import MapManager
-from .__videoClipManager import TrajMapNotFoundError, VideoClipManager
+from ..utils import dir_check
+from .__agentManager import AgentManager, TrajMapNotFoundError
+from .__videoClipManager import VideoClipManager
 from .__videoDataset import Dataset
 
 
@@ -29,17 +25,6 @@ class DatasetManager(BaseObject):
     DatasetsManager
     ---------------
     Manage all prediction training data.
-
-    Public Methods
-    --------------
-    ```python
-    # Prepare train agents from `DatasetManager`s
-    (method) load_fromManagers: (self: DatasetsManager, dataset_managers: list[DatasetManager], mode='test') -> list[Agent]
-
-    # Save and load agents' data
-    (method) zip_and_save: (save_dir, agents: list[Agent]) -> None
-    (method) load_and_unzip: (cls: Type[DatasetsManager], save_dir) -> list[Agent]
-    ```
     """
 
     def __init__(self, args: Args):
@@ -47,18 +32,27 @@ class DatasetManager(BaseObject):
 
         self.args = args
         self.info = Dataset(args.dataset, args.split)
-        self.bar = None
 
-    def load_from_videoClips(self, video_clips: list[VideoClipManager],
-                             mode='test') -> list[Agent]:
+        self.model_inputs = None
+        self.model_labels = None
+
+    def set(self, inputs_type: list[str],
+            labels_type: list[str] = None):
+
+        self.model_inputs = inputs_type
+        if labels_type is not None:
+            self.model_labels = labels_type
+
+    def _load_from_videoClips(self, video_clips: list[VideoClipManager],
+                              mode='test') -> AgentManager:
         """
         Make or load train files to get train agents.
         (a list of agent managers, type = `Agent`)
 
         :param video_clips: a list of video clip managers (`VideoClipManager`)
-        :return all_agents: a list of train agents (`Agent`)
+        :return all_agents: a list of train agents (`AgentManager`)
         """
-        all_agents = []
+        all_agents = AgentManager([])
 
         if mode == 'train':
             random.shuffle(video_clips)
@@ -83,9 +77,9 @@ class DatasetManager(BaseObject):
 
             if not os.path.exists(data_path):
                 agents = clip.sample_train_data()
-                self.zip_and_save(data_path, agents)
+                agents.save(data_path)
             else:
-                agents = self.load_and_unzip(data_path)
+                agents = AgentManager.load(data_path)
 
             if self.args.use_maps:
                 map_path = dir_check(data_path.split('.np')[0] + '_maps')
@@ -94,11 +88,11 @@ class DatasetManager(BaseObject):
                 map_type = self.info.type
 
                 try:
-                    agents = self.load_maps(map_path, agents,
-                                            map_file=map_file,
-                                            social_file='socialMap.npy',
-                                            para_file='para.txt',
-                                            centers_file='centers.txt')
+                    agents.load_maps(map_path,
+                                     map_file=map_file,
+                                     social_file='socialMap.npy',
+                                     para_file='para.txt',
+                                     centers_file='centers.txt')
 
                 except TrajMapNotFoundError:
                     path = os.path.join(map_path, map_file)
@@ -108,43 +102,26 @@ class DatasetManager(BaseObject):
                     exit()
 
                 except:
-                    clip.make_maps(agents, map_type, map_path,
-                                   save_map_file='trajMap.png',
-                                   save_social_file='socialMap.npy',
-                                   save_para_file='para.txt',
-                                   save_centers_file='centers.txt')
+                    agents.make_maps(map_type, map_path,
+                                     save_map_file='trajMap.png',
+                                     save_social_file='socialMap.npy',
+                                     save_para_file='para.txt',
+                                     save_centers_file='centers.txt')
 
-                    agents = self.load_maps(map_path, agents,
-                                            map_file=map_file,
-                                            social_file='socialMap.npy',
-                                            para_file='para.txt',
-                                            centers_file='centers.txt')
+                    agents.load_maps(map_path,
+                                     map_file=map_file,
+                                     social_file='socialMap.npy',
+                                     para_file='para.txt',
+                                     centers_file='centers.txt')
 
-            all_agents += agents
+            all_agents.append(agents)
 
+        all_agents.set(dimension=self.args.dim,
+                       inputs_type=self.model_inputs,
+                       labels_type=self.model_labels)
         return all_agents
 
-    def zip_and_save(self, save_dir, agents: list[Agent]):
-        save_dict = {}
-        for index, agent in enumerate(agents):
-            save_dict[str(index)] = agent.zip_data()
-        np.savez(save_dir, **save_dict)
-
-    def load_and_unzip(self, save_dir) -> list[Agent]:
-        save_dict = np.load(save_dir, allow_pickle=True)
-
-        if save_dict['0'].tolist()['__version__'] < Agent.__version__:
-            self.log(('Saved agent managers\' version is {}, ' +
-                      'which is lower than current {}. Please delete ' +
-                      'them and re-run this program, or there could ' +
-                      'happen something wrong.').format(save_dict['0'].tolist()['__version__'],
-                                                        Agent.__version__),
-                     level='error')
-
-        return [Agent(self.args.dim).load_data(save_dict[key].tolist()) for key in save_dict.keys()]
-
-    def load(self, clips: Union[str, list[str]],
-             mode: str):
+    def load(self, clips: Union[str, list[str]], mode: str) -> Union[AgentManager, tuple[AgentManager, AgentManager]]:
         """
         Load train samples in sub-datasets (i.e., video clips).
 
@@ -160,55 +137,11 @@ class DatasetManager(BaseObject):
             train_agents = self.load(self.info.train_sets, mode='train')
             test_agents = self.load(self.info.test_sets, mode='test')
 
-            return train_agents, test_agents
+            return [train_agents, test_agents]
 
         else:
             if type(clips) == str:
                 clips = [clips]
 
             dms = [VideoClipManager(self.args, d) for d in clips]
-            return self.load_from_videoClips(dms, mode=mode)
-
-    def load_maps(self, base_path: str,
-                  agents: list[Agent],
-                  map_file: str,
-                  social_file: str,
-                  para_file: str,
-                  centers_file: str) -> list[Agent]:
-        """
-        Load maps from the base folder
-
-        :param base_path: base save folder
-        :param agents: agents to assign maps
-        :param map_file: file name for traj maps, support `.jpg` or `.png`
-        :param social_file: file name for social maps, support `.npy`
-        :param para_file: file name for map parameters, support `.txt`
-        :param centers_file: file name for centers, support `.txt`
-
-        :return agents: agents with maps
-        """
-        traj_map = cv2.imread(os.path.join(base_path, map_file))
-
-        if traj_map is None:
-            if self.args.use_extra_maps:
-                raise TrajMapNotFoundError
-            else:
-                raise FileNotFoundError
-
-        traj_map = (traj_map[:, :, 0]).astype(np.float32)/255.0
-
-        social_map = np.load(os.path.join(
-            base_path, social_file), allow_pickle=True)
-        para = np.loadtxt(os.path.join(base_path, para_file))
-        centers = np.loadtxt(os.path.join(base_path, centers_file))
-
-        batch_size = len(social_map)
-        traj_map = np.repeat(traj_map[np.newaxis, :, :], batch_size, axis=0)
-        traj_map_cut = MapManager.cut_map(traj_map,
-                                          centers,
-                                          MAP_HALF_SIZE)
-
-        for agent, t_map, s_map in zip(agents, traj_map_cut, social_map):
-            Agent.set_map(agent, 0.5*t_map + 0.5*s_map, para)
-
-        return agents
+            return self._load_from_videoClips(dms, mode=mode)

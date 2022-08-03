@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 10:47:15
+@LastEditTime: 2022-08-03 14:56:17
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,13 +12,12 @@ import os
 
 import numpy as np
 import tensorflow as tf
-from tqdm import tqdm
 
 from ..__base import BaseObject
 from ..args import BaseArgTable
 from ..basemodels import Model
-from ..dataset import Agent, DatasetManager, get_inputs_by_type
-from ..utils import dir_check
+from ..dataset import DatasetManager, AgentManager
+from ..utils import WEIGHTS_FORMAT, dir_check
 from . import __loss as losslib
 from .__vis import Visualization
 
@@ -34,8 +33,8 @@ class Structure(BaseObject):
         self.keywords = {}
 
         self.manager: DatasetManager = None
-        self.bar: tqdm = None
         self.leader: Structure = None
+        self.noTraining = False
 
         self.set_gpu()
         self.optimizer = self.set_optimizer()
@@ -134,102 +133,12 @@ class Structure(BaseObject):
         for gpu in gpus:
             tf.config.experimental.set_memory_growth(gpu, True)
 
-    def load_model_weights(self, weights_path: str,
-                           *args, **kwargs) -> Model:
-        """
-        Load already trained model weights from checkpoint files.
-        Additional parameters will be fed to `create_model` method.
-
-        :param model_path: path of model
-        :return model: loaded model
-        """
-        model = self.create_model(*args, **kwargs)
-        model.load_weights(weights_path)
-        return model
-
-    def load_best_model(self, model_path: str,
-                        *args, **kwargs) -> Model:
-        """
-        Load already trained models from saved files.
-        Additional parameters will be fed to `create_model` method.
-
-        :param model_path: target dir where your model puts in
-        :return model: model loaded
-        """
-
-        dir_list = os.listdir(model_path)
-        save_format = '.tf'
-        try:
-            name_list = [item.split(save_format)[0].split(
-                '_epoch')[0] for item in dir_list if save_format in item]
-            model_name = max(name_list, key=name_list.count)
-            base_path = os.path.join(model_path, model_name + '{}')
-
-            if 'best_ade_epoch.txt' in dir_list:
-                best_epoch = np.loadtxt(os.path.join(model_path, 'best_ade_epoch.txt'))[
-                    1].astype(int)
-                model = self.load_model_weights(base_path.format(
-                    '_epoch{}{}'.format(best_epoch, save_format)),
-                    *args, **kwargs)
-            else:
-                model = self.load_model_weights(base_path.format(save_format),
-                                                *args, **kwargs)
-
-        except:
-            model_name = name_list[0]
-            base_path = os.path.join(model_path, model_name + save_format)
-            model = self.load_model_weights(base_path, *args, **kwargs)
-
-        self.model = model
-        return model
-
-    def load_dataset(self) -> tuple[tf.data.Dataset, tf.data.Dataset]:
-        """
-        Load training and val dataset.
-
-        :return dataset_train: train dataset, type = `tf.data.Dataset`
-        :return dataset_val: val dataset, type = `tf.data.Dataset`
-        """
-
-        train_agents, test_agents = self.manager.load('auto', 'train')
-        train_data = self.load_inputs_from_agents(train_agents)
-        test_data = self.load_inputs_from_agents(test_agents)
-
-        train_dataset = tf.data.Dataset.from_tensor_slices(train_data)
-        test_dataset = tf.data.Dataset.from_tensor_slices(test_data)
-
-        train_dataset = train_dataset.shuffle(len(train_dataset),
-                                              reshuffle_each_iteration=True)
-
-        return train_dataset, test_dataset
-
-    def load_test_dataset(self, agents: list[Agent]) -> tf.data.Dataset:
-        """
-        Load test dataset.
-        """
-        test_data = self.load_inputs_from_agents(agents)
-        test_dataset = tf.data.Dataset.from_tensor_slices(test_data)
-        return test_dataset
-
-    def load_inputs_from_agents(self, agents: list[Agent]) -> list[tf.Tensor]:
-        """
-        Load model inputs and labels from agents.
-
-        :param agents: a list of `Agent` objects        
-        """
-        inputs = [get_inputs_by_type(agents, T) for T in self.model_inputs]
-        labels = [get_inputs_by_type(agents, T) for T in self.model_labels][0]
-
-        inputs.append(labels)
-        return tuple(inputs)
-
-    def create_model(self, *args, **kwargs) -> Model:
+    def create_model(self) -> Model:
         """
         Create models.
         Please *rewrite* this when training new models.
 
         :return model: created model
-        :return optimizer: training optimizer
         """
         raise NotImplementedError('MODEL is not defined!')
 
@@ -333,24 +242,29 @@ class Structure(BaseObject):
         Load args, load datasets, and start training or test.
         """
 
-        self.manager = (manager := DatasetManager(self.args))
+        # assign agentManagers
+        self.manager = DatasetManager(self.args)
+        self.manager.set(inputs_type=self.model_inputs,
+                         labels_type=self.model_labels)
 
-        # start training if not loading any model weights
-        if self.args.load == 'null':
-            self.model = self.create_model()
+        # init model
+        self.model = self.create_model()
 
+        if self.noTraining:
+            self.run_test()
+
+        elif self.args.load == 'null':
             # restore weights before training (optional)
             if self.args.restore != 'null':
-                self.load_best_model(self.args.restore)
+                self.model.load_weights_from_logDir(self.args.restore)
 
-            self.log('Start training with args = {}'.format(
-                self.args._args_runnning))
+            self.log(f'Start training with args = {self.args._args_runnning}')
             self.__train()
 
         # prepare test
         else:
-            self.log('Start test `{}`'.format(self.args.load))
-            self.load_best_model(self.args.load)
+            self.log(f'Start test `{self.args.load}`')
+            self.model.load_weights_from_logDir(self.args.load)
             self.run_test()
 
     def run_test(self):
@@ -358,7 +272,7 @@ class Structure(BaseObject):
         Run test accoding to arguments.
         """
 
-        self.manager = (manager := DatasetManager(self.args))
+        manager = self.manager
         test_sets = manager.info.test_sets
 
         # test on a single sub-dataset
@@ -418,7 +332,9 @@ class Structure(BaseObject):
         test_epochs = []
 
         # Load dataset
-        ds_train, ds_val = self.load_dataset()
+        train_agents, test_agents = self.manager.load('auto', 'train')
+        ds_train = train_agents.make_dataset(shuffle=True)
+        ds_val = test_agents.make_dataset()
         train_number = len(ds_train)
 
         # divide with batch size
@@ -472,10 +388,10 @@ class Structure(BaseObject):
                     best_metrics_dict = metrics_dict
                     best_epoch = epoch
 
-                    self.save_model_weights(os.path.join(
-                        self.args.log_dir, '{}_epoch{}.tf'.format(
-                            self.args.model_name,
-                            epoch)))
+                    self.model.save_weights(os.path.join(
+                        self.args.log_dir,
+                        f'{self.args.model_name}_epoch{epoch}' + WEIGHTS_FORMAT
+                    ))
 
                     np.savetxt(os.path.join(self.args.log_dir, 'best_ade_epoch.txt'),
                                np.array([best_metrics, best_epoch]))
@@ -504,7 +420,7 @@ class Structure(BaseObject):
         self.print_train_results(best_epoch=best_epoch,
                                  best_metric=best_metrics)
 
-    def __test(self, agents: list[Agent], dataset: str, clips: list[str]):
+    def __test(self, agents: AgentManager, dataset: str, clips: list[str]):
         """
         Test
         """
@@ -515,7 +431,7 @@ class Structure(BaseObject):
         self.print_test_info()
 
         # Load dataset
-        ds_test = self.load_test_dataset(agents)
+        ds_test = agents.make_dataset()
 
         # Run test
         outputs, labels, metrics, metrics_dict = self.__test_on_dataset(
@@ -642,7 +558,7 @@ class Structure(BaseObject):
                  loss_dict))
 
     def write_test_results(self, outputs: list[tf.Tensor],
-                           agents: list[Agent],
+                           agents: AgentManager,
                            clips: list[str]):
 
         if (not self.args.draw_results in ['null', '0', '1']) and (len(clips) == 1):
@@ -661,7 +577,7 @@ class Structure(BaseObject):
                 os.path.join(save_base_path, 'VisualTrajs')))
 
             pred_all = outputs[0].numpy()
-            for index, agent in enumerate(self.timebar(agents, 'Saving...')):
+            for index, agent in enumerate(self.timebar(agents.agents, 'Saving...')):
                 # write traj
                 agent.pred = pred_all[index]
 

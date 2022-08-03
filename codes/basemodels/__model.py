@@ -2,17 +2,20 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-20 10:32:22
+@LastEditTime: 2022-08-03 14:38:22
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
+import os
 import re
 
+import numpy as np
 import tensorflow as tf
 
 from ..args import BaseArgTable
+from ..utils import CHECKPOINT_FILENAME, WEIGHTS_FORMAT
 from . import __preprocess as preprocess
 
 MOVE = 'MOVE'
@@ -186,3 +189,19 @@ class Model(tf.keras.Model):
                              self.args.anntype)
 
         return preprocess.update((trajs,), outputs)
+
+    def load_weights_from_logDir(self, weights_dir: str):
+        all_files = os.listdir(weights_dir)
+        weights_files = [f for f in all_files
+                         if WEIGHTS_FORMAT + '.' in f]
+        weights_files.sort()
+
+        if CHECKPOINT_FILENAME in all_files:
+            p = os.path.join(weights_dir, CHECKPOINT_FILENAME)
+            epoch = int(np.loadtxt(p)[1])
+
+            weights_files = [f for f in weights_files
+                             if f'_epoch{epoch}{WEIGHTS_FORMAT}' in f]
+
+        weights_name = weights_files[-1].split('.index')[0]
+        self.load_weights(os.path.join(weights_dir, weights_name))

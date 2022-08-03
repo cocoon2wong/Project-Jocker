@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 10:44:39
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-19 11:57:27
+@LastEditTime: 2022-08-03 13:58:48
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -124,11 +124,11 @@ class Trajectory():
             dis = calculate_length(nei_pos - tar_pos)
             neighbors = neighbors[np.argsort(dis)[1:max_neighbor+1]]
 
-        nei_traj = matrix[start_frame:end_frame:frame_step, list(neighbors), :]
+        nei_traj = matrix[start_frame:obs_frame:frame_step, list(neighbors), :]
         nei_traj = np.transpose(nei_traj, [1, 0, 2])
         tar_traj = self.traj[start_frame:end_frame:frame_step, :]
 
-        return Agent(self.dim).init_data(
+        return Agent().init_data(
             id=self.id,
             target_traj=tar_traj,
             neighbors_traj=nei_traj,

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 20:10:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 10:46:15
+@LastEditTime: 2022-08-03 13:22:13
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -53,6 +53,10 @@ TEMP_PATH = './temp_files/{}'
 
 # Log configs
 MAX_PRINT_LIST_LEN = 10
+
+# Weights configs
+WEIGHTS_FORMAT = '.tf'
+CHECKPOINT_FILENAME = 'best_ade_epoch.txt'
 
 # Visualization settings
 # color bar in BGR format

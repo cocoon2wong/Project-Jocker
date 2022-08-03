@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-15 20:13:07
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 14:45:54
+@LastEditTime: 2022-08-03 14:59:11
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -34,6 +34,8 @@ class Linear(Structure):
 
         self.args._set('epochs', 3)
         self.args._set('use_maps', 0)
+
+        self.noTraining = True
 
     def create_model(self, *args, **kwargs) -> Model:
         return LinearModel(self.args)
