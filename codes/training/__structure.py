@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 14:56:17
+@LastEditTime: 2022-08-03 15:09:27
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -579,7 +579,7 @@ class Structure(BaseObject):
             pred_all = outputs[0].numpy()
             for index, agent in enumerate(self.timebar(agents.agents, 'Saving...')):
                 # write traj
-                agent.pred = pred_all[index]
+                agent._traj_pred = pred_all[index]
 
                 # draw as one image
                 tv.draw(agents=[agent],
