@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 16:46:34
+@LastEditTime: 2022-08-03 19:38:30
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -14,7 +14,7 @@ import cv2
 import numpy as np
 import tensorflow as tf
 
-from .. import dataset
+from ..dataset import Agent, VideoClip
 from ..args import Args
 from ..utils import (DISTRIBUTION_COLORBAR, DISTRIBUTION_IMAGE, GT_IMAGE,
                      OBS_IMAGE, PRED_IMAGE)
@@ -51,7 +51,7 @@ class Visualization():
     def __init__(self, args: Args, dataset: str, clip: str):
 
         self.args = args
-        self.info = dataset.VideoClip(name=clip, dataset=dataset).get()
+        self.info = VideoClip(name=clip, dataset=dataset).get()
 
         self._vc = None
         self._paras = None
@@ -99,7 +99,7 @@ class Visualization():
         """
         return self._matrix
 
-    def set_video(self, video_info: dataset.VideoClip):
+    def set_video(self, video_info: VideoClip):
 
         path = video_info.video_path
         vc = cv2.VideoCapture(path)
@@ -172,7 +172,7 @@ class Visualization():
 
         return source
 
-    def draw(self, agents: list[dataset.Agent],
+    def draw(self, agents: list[Agent],
              frame_id: Union[str, int],
              save_path='null',
              show_img=False,
@@ -245,7 +245,7 @@ class Visualization():
         else:
             cv2.imwrite(save_path, f)
 
-    def draw_video(self, agent: dataset.Agent, save_path, interp=True, indexx=0, draw_distribution=False):
+    def draw_video(self, agent: Agent, save_path, interp=True, indexx=0, draw_distribution=False):
         _, f = self.video_capture.read()
         video_shape = (f.shape[1], f.shape[0])
 
