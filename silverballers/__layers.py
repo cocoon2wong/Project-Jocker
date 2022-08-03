@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:50:44
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-22 20:39:45
+@LastEditTime: 2022-08-03 15:25:34
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -65,12 +65,17 @@ def get_transform_layers(Tname: str) -> \
     decoding trajectories.
 
     :param Tname: name of the transform, canbe
+        - `'none'`
         - `'fft'`
         - `'haar'`
         - `'db2'`
     """
 
-    if Tname == 'fft':
+    if Tname == 'none':
+        Tlayer = layers.NoneTransformLayer
+        ITlayer = layers.NoneTransformLayer
+
+    elif Tname == 'fft':
         Tlayer = layers.FFTLayer
         ITlayer = layers.IFFTLayer
 

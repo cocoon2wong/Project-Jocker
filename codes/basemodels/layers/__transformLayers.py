@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 15:47:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-22 16:22:16
+@LastEditTime: 2022-08-03 15:21:32
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -18,6 +18,8 @@ from ..wavetf import WaveTFFactory
 class _BaseTransformLayer(tf.keras.layers.Layer):
     """
     Calculate some Transform on (a batch of) trajectories.
+    Method `set_Tshape` and `kernel_function` should be re-write
+    when subclassing this class.
     """
 
     def __init__(self, Oshape: tuple[int, int],
@@ -127,6 +129,17 @@ class _BaseTransformLayer(tf.keras.layers.Layer):
         :return r: the transform of trajectories
         """
         raise NotImplementedError
+
+
+class NoneTransformLayer(_BaseTransformLayer):
+    def __init__(self, Oshape: tuple[int, int], *args, **kwargs):
+        super().__init__(Oshape, *args, **kwargs)
+
+    def set_Tshape(self) -> Union[list[int], tuple[int, int]]:
+        return [self.steps, self.channels]
+
+    def kernel_function(self, inputs: tf.Tensor, *args, **kwargs):
+        return inputs
 
 
 class FFTLayer(_BaseTransformLayer):
