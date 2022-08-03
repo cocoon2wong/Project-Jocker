@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 14:34:27
+@LastEditTime: 2022-08-03 15:38:54
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -19,9 +19,7 @@ class Agent():
     """
     Agent
     -----
-    One agent manager contains these items for one specific agent:
-    - historical trajectory: `traj`;
-    - context map: `socialMap` and `trajMap`;
+    Structure to manage data of one training sample.
 
     Properties
     ----------

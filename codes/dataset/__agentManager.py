@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 14:38:48
+@LastEditTime: 2022-08-03 15:58:06
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,11 +13,11 @@ import os
 import cv2
 import numpy as np
 import tensorflow as tf
+from tqdm import tqdm
 
 from ..__base import BaseObject
 from ..utils import MAP_HALF_SIZE
 from .__agent import Agent
-from .__io import get_inputs_by_type as get
 from .__maps import MapManager
 
 
@@ -27,6 +27,58 @@ class TrajMapNotFoundError(FileNotFoundError):
 
 
 class AgentManager(BaseObject):
+    """
+    AgentManager
+    ---
+    Structure to manage several `Agent` objects.
+
+    Public Methods
+    ---
+    ```python
+    # concat agents to this `AgentManager`
+    (method) append: (self: Self@AgentManager, target: Any) -> None
+
+    # set inputs and outputs
+    (method) set: (self: Self@AgentManager, dimension: int, 
+                   inputs_type: list[str],
+                   labels_type: list[str]) -> None
+
+    # get inputs
+    (method) get_inputs: (self: Self@AgentManager) -> list[Tensor]
+
+    # get labels
+    (method) get_labels: (self: Self@AgentManager) -> list[Tensor]
+
+    # make inputs and labels into dataset
+    (method) make_dataset: (self: Self@AgentManager, 
+                            shuffle: bool = False) -> DatasetV2
+
+    # save all agents' data
+    (method) save: (self: Self@AgentManager, save_dir: str) -> None
+
+    # load from saved agents' data
+    (method) load: (cls: Type[Self@AgentManager], path: str) -> AgentManager
+    ```
+
+    Context Map Methods
+    ---
+    ```python
+    # make context maps (both social maps and guidance maps) and save
+    (method) make_maps: (self: Self@AgentManager,
+                         map_type: str, base_path: str, 
+                         save_map_file: str = None, 
+                         save_social_file: str = 'socialMap.npy', 
+                         save_para_file: str = 'para.txt', 
+                         save_centers_file: str = 'centers.txt') -> None
+
+    #  load context maps from the saved files
+    (method) load_maps: (self: Self@AgentManager,
+                         base_path: str, map_file: str,
+                         social_file: str,
+                         para_file: str,
+                         centers_file: str) -> None
+    ```
+    """
 
     def __init__(self, agents: list[Agent]):
 
@@ -43,7 +95,15 @@ class AgentManager(BaseObject):
     def set(self, dimension: int,
             inputs_type: list[str],
             labels_type: list[str]):
-        
+        """
+        Set prediction dimension and type of model inputs and outputs.
+
+        :param dimension: prediction dimension
+        :param inputs_type: a list of `str`, accept `'TRAJ'`, `'MAPPARA'`,
+            `'MAP'`, `'DEST'`, and `'GT'`
+        :param labels_type: a list of `str`, accept `'GT'` and `'DEST'`
+        """
+
         self.model_inputs = inputs_type
         self.model_labels = labels_type
 
@@ -51,12 +111,21 @@ class AgentManager(BaseObject):
             agent.dim = dimension
 
     def get_inputs(self) -> list[tf.Tensor]:
-        return [get(self.agents, T) for T in self.model_inputs]
+        """
+        Get all model inputs from agents.
+        """
+        return [self._get(T) for T in self.model_inputs]
 
     def get_labels(self) -> list[tf.Tensor]:
-        return [get(self.agents, T) for T in self.model_labels]
+        """
+        Get all model labels from agents.
+        """
+        return [self._get(T) for T in self.model_labels]
 
     def get_inputs_and_labels(self) -> list[tf.Tensor]:
+        """
+        Get model inputs and labels (only trajectories) from all agents.
+        """
         inputs = self.get_inputs()
         labels = self.get_labels()[0]
 
@@ -64,19 +133,28 @@ class AgentManager(BaseObject):
         return tuple(inputs)
 
     def make_dataset(self, shuffle=False) -> tf.data.Dataset:
+        """
+        Get inputs from all agents and make the `tf.data.Dataset`
+        object. Note that the dataset contains both model inputs
+        and labels.
+        """
         data = self.get_inputs_and_labels()
         dataset = tf.data.Dataset.from_tensor_slices(data)
 
         if shuffle:
             dataset = dataset.shuffle(
-                len(dataset), 
+                len(dataset),
                 reshuffle_each_iteration=True
             )
 
         return dataset
 
-
     def save(self, save_dir: str):
+        """
+        Save data of all agents.
+
+        :param save_dir: directory to save agent data
+        """
         save_dict = {}
         for index, agent in enumerate(self.agents):
             save_dict[str(index)] = agent.zip_data()
@@ -85,17 +163,21 @@ class AgentManager(BaseObject):
 
     @classmethod
     def load(cls, path: str):
-        save_dict = np.load(path, allow_pickle=True)
+        """
+        Load agents' data from saved file.
 
-        if save_dict['0'].tolist()['__version__'] < Agent.__version__:
-            cls.log(('Saved agent managers\' version is {}, ' +
-                      'which is lower than current {}. Please delete ' +
-                      'them and re-run this program, or there could ' +
-                      'happen something wrong.').format(save_dict['0'].tolist()['__version__'],
-                                                        Agent.__version__),
-                     level='error')
+        :param path: file path of the saved data
+        """
+        save_dict: dict = np.load(path, allow_pickle=True)
 
-        return AgentManager([Agent().load_data(save_dict[key].tolist()) for key in save_dict.keys()])
+        if (v := save_dict['0'].tolist()['__version__']) < (v1 := Agent.__version__):
+            cls.log((f'Saved agent managers\' version is {v}, ' +
+                     f'which is lower than current {v1}. Please delete ' +
+                     'them and re-run this program, or there could ' +
+                     'happen something wrong.'),
+                    level='error')
+
+        return AgentManager([Agent().load_data(v.tolist()) for v in save_dict.values()])
 
     def make_maps(self, map_type: str,
                   base_path: str,
@@ -153,7 +235,7 @@ class AgentManager(BaseObject):
                   map_file: str,
                   social_file: str,
                   para_file: str,
-                  centers_file: str) -> list[Agent]:
+                  centers_file: str):
         """
         Load maps from the base folder
 
@@ -189,4 +271,86 @@ class AgentManager(BaseObject):
         for agent, t_map, s_map in zip(self.agents, traj_map_cut, social_map):
             agent.set_map(0.5*t_map + 0.5*s_map, para)
 
-  
+    def _get(self, type_name: str) -> tf.Tensor:
+        """
+        Get model inputs from a list of `Agent`-like objects.
+
+        :param type_name: inputs names, accept `'TRAJ'`, 
+            `'MAP'`, `'MAPPARA'`, `'DEST'`, and `'GT'`
+        :return inputs: a tensor of stacked inputs
+        """
+        if type_name == 'TRAJ':
+            call = _get_obs_traj
+        elif type_name == 'MAP':
+            call = _get_context_map
+        elif type_name == 'MAPPARA':
+            call = _get_context_map_paras
+        elif type_name == 'DEST':
+            call = _get_dest_traj
+        elif type_name == 'GT':
+            call = _get_gt_traj
+        else:
+            raise ValueError(type_name)
+
+        return call(self.agents)
+
+
+def _get_obs_traj(input_agents: list[Agent]) -> tf.Tensor:
+    """
+    Get observed trajectories from agents.
+
+    :param input_agents: a list of input agents, type = `list[Agent]`
+    :return inputs: a Tensor of observed trajectories
+    """
+    inputs = []
+    for agent in tqdm(input_agents, 'Prepare trajectories...'):
+        inputs.append(agent.traj)
+    return tf.cast(inputs, tf.float32)
+
+
+def _get_gt_traj(input_agents: list[Agent],
+                 destination=False) -> tf.Tensor:
+    """
+    Get groundtruth trajectories from agents.
+
+    :param input_agents: a list of input agents, type = `list[Agent]`
+    :return inputs: a Tensor of gt trajectories
+    """
+    inputs = []
+    for agent in tqdm(input_agents, 'Prepare groundtruth...'):
+        if destination:
+            inputs.append(np.expand_dims(agent.groundtruth[-1], 0))
+        else:
+            inputs.append(agent.groundtruth)
+
+    return tf.cast(inputs, tf.float32)
+
+
+def _get_dest_traj(input_agents: list[Agent]) -> tf.Tensor:
+    return _get_gt_traj(input_agents, destination=True)
+
+
+def _get_context_map(input_agents: list[Agent]) -> tf.Tensor:
+    """
+    Get context map from agents.
+
+    :param input_agents: a list of input agents, type = `list[Agent]`
+    :return inputs: a Tensor of maps
+    """
+    inputs = []
+    for agent in tqdm(input_agents, 'Prepare maps...'):
+        inputs.append(agent.Map)
+    return tf.cast(inputs, tf.float32)
+
+
+def _get_context_map_paras(input_agents: list[Agent]) -> tf.Tensor:
+    """
+    Get parameters of context map from agents.
+
+    :param input_agents: a list of input agents, type = `list[Agent]`
+    :return inputs: a Tensor of map paras
+    """
+    inputs = []
+    for agent in tqdm(input_agents, 'Prepare maps...'):
+        inputs.append(agent.real2grid)
+    return tf.cast(inputs, tf.float32)
