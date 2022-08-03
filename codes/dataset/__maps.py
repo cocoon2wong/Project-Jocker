@@ -2,27 +2,26 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 15:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-19 15:24:21
+@LastEditTime: 2022-08-03 19:24:36
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-from typing import Union
-
 import cv2
 import numpy as np
 
-from ..__base import BaseObject
-from ..args import BaseArgTable as Args
-from ..utils import (AVOID_SIZE, INTEREST_SIZE, MAP_HALF_SIZE,
-                     WINDOW_EXPAND_METER, WINDOW_EXPAND_PIXEL,
-                     WINDOW_SIZE_METER, WINDOW_SIZE_PIXEL)
+from ..args import Args
+from ..base import BaseObject
+from ..utils import (AVOID_SIZE, INTEREST_SIZE, WINDOW_EXPAND_METER,
+                     WINDOW_EXPAND_PIXEL, WINDOW_SIZE_METER, WINDOW_SIZE_PIXEL)
 from .__agent import Agent
-from .__trajectory import Trajectory
 
 MASK = cv2.imread('./figures/mask_circle.png')[:, :, 0]/50
 MASKS = {}
+
+DECAY_P = np.array([[0.0, 0.7, 1.0], [1.0, 1.0, 0.5]])
+DECAYS = {}
 
 
 class MapManager(BaseObject):
@@ -55,27 +54,27 @@ class MapManager(BaseObject):
 
     def __init__(self, args: Args,
                  map_type: str,
-                 agents: list[Agent] = None,
+                 init_trajs: np.ndarray = None,
                  init_manager=None):
         """
         init map manager
 
         :param args: args to init this manager
         :param agents: a list of `Agent` object to init the map
-        :param init_manager: a map manager to init this (available)
+        :param init_manager: a map manager to init this new manager (optional)
         """
 
         super().__init__()
 
         self.args = args
-        self.agents = agents
         self.map_type = map_type
 
         if init_manager:
-            self.void_map, self.W, self.b = [
-                init_manager.void_map, init_manager.W, init_manager.b]
+            self.void_map, self.W, self.b = [init_manager.void_map,
+                                             init_manager.W,
+                                             init_manager.b]
         else:
-            self.void_map, self.W, self.b = self.init_guidance_map(agents)
+            self.void_map, self.W, self.b = self.init_guidance_map(init_trajs)
 
     @property
     def real2grid_paras(self) -> np.ndarray:
@@ -86,24 +85,21 @@ class MapManager(BaseObject):
         """
         return np.stack([self.W, self.b])   # (2, 2)
 
-    def init_guidance_map(self, agents: Union[list[Agent], np.ndarray]):
+    def init_guidance_map(self, init_trajs: np.ndarray):
         """
         Init the trajectory map via a list of agents.
 
-        :param agents: a list of agents, or a batch of trajectories
+        :param init_trajs: trajectories to init the guidance map.
+            shape should be `((batch), obs, 2)`
 
         :return guidance_map: initialized trajectory map
         :return W: map parameter `W`
         :return b: map parameter `b`
         """
-        if issubclass(type(agents[0]), Agent):
-            traj = get_trajectories(agents)
-        else:
-            traj = agents
 
-        traj = np.array(traj)
+        traj = init_trajs
+
         # shape of `traj` should be [*, *, 2] or [*, 2]
-
         if len(traj.shape) == 3:
             traj = np.reshape(traj, [-1, 2])
 
@@ -130,7 +126,7 @@ class MapManager(BaseObject):
 
         return guidance_map.astype(np.float32), W, b
 
-    def build_guidance_map(self, agents: Union[list[Agent], np.ndarray],
+    def build_guidance_map(self, trajs: np.ndarray,
                            source: np.ndarray = None,
                            save: str = None) -> np.ndarray:
         """
@@ -145,18 +141,12 @@ class MapManager(BaseObject):
             source = self.void_map
 
         source = source.copy()
-        if issubclass(type(agents[0]), Agent):
-            trajs = get_trajectories(agents)
-        else:
-            trajs = agents
-
-        source = self._add_to_map(source,
-                                  self.real2grid(trajs),
-                                  amplitude=1,
-                                  radius=7,
-                                  add_mask=MASK,
-                                  decay=False,
-                                  max_limit=False)
+        source = self._add(source,
+                           self.real2grid(trajs),
+                           amplitude=[1],
+                           radius=7,
+                           add_mask=MASK,
+                           max_limit=False)
 
         source = np.minimum(source, 30)
         source = 1 - source / np.max(source)
@@ -167,7 +157,6 @@ class MapManager(BaseObject):
         return source
 
     def build_social_map(self, target_agent: Agent,
-                         traj_neighbors: np.ndarray = [],
                          source: np.ndarray = None,
                          regulation=True,
                          max_neighbor=15) -> np.ndarray:
@@ -175,7 +164,6 @@ class MapManager(BaseObject):
         Build social map
 
         :param target_agent: target `Agent` object to calculate the map
-        :param traj_neighbor: neighbors' predictions
         :param source: source map, default are zeros
         :param regulation: controls if scale the map into [0, 1]
         """
@@ -183,23 +171,19 @@ class MapManager(BaseObject):
         if type(source) == type(None):
             source = self.void_map
 
-        if not type(traj_neighbors) == np.ndarray:
-            traj_neighbors = np.array(traj_neighbors)
-
         source = source.copy()
 
-        trajs = []
-        amps = []
-        rads = []
-
         # Destination
-        trajs.append(target_agent.pred_linear)
-        amps.append(-2)
-        rads.append(INTEREST_SIZE)
+        source = self._add(target_map=source,
+                           grid_trajs=self.real2grid(target_agent.pred_linear),
+                           amplitude=[-2],
+                           radius=INTEREST_SIZE,
+                           add_mask=MASK,
+                           max_limit=False)
 
         # Interplay
+        traj_neighbors = target_agent.pred_linear_neighbor
         amp_neighbors = []
-        rads_neighbors = AVOID_SIZE * np.ones(len(traj_neighbors))
 
         vec_target = target_agent.pred_linear[-1] - target_agent.pred_linear[0]
         len_target = calculate_length(vec_target)
@@ -220,9 +204,8 @@ class MapManager(BaseObject):
 
         amp_neighbors = - cosine * velocity
 
-        amps += amp_neighbors.tolist()
-        trajs += traj_neighbors.tolist()
-        rads += rads_neighbors.tolist()
+        amps = amp_neighbors.tolist()
+        trajs = traj_neighbors.tolist()
 
         if len(trajs) > max_neighbor + 1:
             trajs = np.array(trajs)
@@ -230,13 +213,12 @@ class MapManager(BaseObject):
             index = np.argsort(dis)
             trajs = trajs[index[:max_neighbor+1]]
 
-        source = self._add_to_map(target_map=source,
-                                  grid_trajs=self.real2grid(trajs),
-                                  amplitude=amps,
-                                  radius=rads,
-                                  add_mask=MASK,
-                                  max_limit=False,
-                                  decay=True)
+        source = self._add(target_map=source,
+                           grid_trajs=self.real2grid(trajs),
+                           amplitude=amps,
+                           radius=AVOID_SIZE,
+                           add_mask=MASK,
+                           max_limit=False)
 
         if regulation:
             if (np.max(source) - np.min(source)) <= 0.01:
@@ -271,44 +253,38 @@ class MapManager(BaseObject):
 
         return np.array(cuts)
 
-    def _add_to_map(self, target_map: np.ndarray,
-                    grid_trajs: np.ndarray,
-                    amplitude: np.ndarray = 1,
-                    radius: np.ndarray = 0,
-                    add_mask=None,
-                    max_limit=False,
-                    decay=True):
-        """
-        `amplitude`: Value of each add point. Accept both `float` and `np.array` types.
-        `radius`: Raduis of each add point. Accept both `float` and `np.array` types.
-        """
+    def _add(self, target_map: np.ndarray,
+             grid_trajs: np.ndarray,
+             amplitude: np.ndarray,
+             radius: int,
+             add_mask,
+             max_limit=False):
 
         if len(grid_trajs.shape) == 2:
             grid_trajs = grid_trajs[np.newaxis, :, :]
 
-        n_traj = grid_trajs.shape[0]
-        amplitude = np.array(amplitude)
-        if not len(amplitude.shape):
-            amplitude = amplitude * \
-                np.ones([n_traj, grid_trajs.shape[-2]], dtype=np.int32)
-            radius = radius * np.ones(n_traj, dtype=np.int32)
+        n_traj, traj_len, dim = grid_trajs.shape[:3]
+
+        if not traj_len in DECAYS.keys():
+            DECAYS[traj_len] = np.interp(np.linspace(0, 1, traj_len),
+                                         DECAY_P[0],
+                                         DECAY_P[1])
+
+        if not radius in MASKS.keys():
+            MASKS[radius] = cv2.resize(add_mask, (radius*2+1, radius*2+1))
+
+        a = np.array(amplitude)[:, np.newaxis] * \
+            DECAYS[traj_len] * \
+            np.ones([n_traj, traj_len], dtype=np.int32)
+
+        points = np.reshape(grid_trajs, [-1, dim])
+        amps = np.reshape(a, [-1])
 
         target_map = target_map.copy()
-
-        if type(add_mask) == type(None):
-            add_mask = np.ones([1, 1], dtype=np.int32)
-
-        for traj, a, r in zip(grid_trajs, amplitude, radius):
-            r = int(r)
-            if not r in MASKS.keys():
-                MASKS[r] = cv2.resize(add_mask, (r*2+1, r*2+1))
-
-            add_mask = MASKS[r]
-            target_map = self._add_one_traj(target_map,
-                                            traj, a, r,
-                                            add_mask,
-                                            max_limit=max_limit,
-                                            amplitude_decay=decay)
+        target_map = self._add_one_traj(target_map,
+                                        points, amps, radius,
+                                        MASKS[radius],
+                                        max_limit=max_limit)
 
         return target_map
 
@@ -318,7 +294,7 @@ class MapManager(BaseObject):
 
         if self.args.anntype == 'coordinate':
             grid = ((traj - self.b) * self.W).astype(np.int32)
-        
+
         elif self.args.anntype == 'boundingbox':
             tl = ((traj[:, 0:2] - self.b) * self.W)
             br = ((traj[:, 2:4] - self.b) * self.W)
@@ -334,67 +310,24 @@ class MapManager(BaseObject):
                       amplitude: float,
                       radius: int,
                       add_mask: np.ndarray,
-                      max_limit=True,
-                      amplitude_decay=False,
-                      amplitude_decay_p=np.array([[0.0, 0.7, 1.0], [1.0, 1.0, 0.5]])):
-
-        if amplitude_decay:
-            amplitude = amplitude * np.interp(np.linspace(0, 1, len(traj)),
-                                              amplitude_decay_p[0],
-                                              amplitude_decay_p[1])
+                      max_limit=False):
 
         new_map = np.zeros_like(source_map)
         for pos, a in zip(traj, amplitude):
-            if (pos[0]-radius >= 0 and
-                pos[1]-radius >= 0 and
-                pos[0]+radius+1 < new_map.shape[0] and
-                    pos[1]+radius+1 < new_map.shape[1]):
+            if (pos[0]-radius >= 0
+                and pos[1]-radius >= 0
+                and pos[0]+radius+1 < new_map.shape[0]
+                    and pos[1]+radius+1 < new_map.shape[1]):
 
-                new_map[pos[0]-radius:pos[0]+radius+1, pos[1]-radius:pos[1]+radius+1] = \
-                    a * add_mask + \
-                    new_map[pos[0]-radius:pos[0]+radius +
-                            1, pos[1]-radius:pos[1]+radius+1]
+                new_map[pos[0]-radius:pos[0]+radius+1,
+                        pos[1]-radius:pos[1]+radius+1] = \
+                    a * add_mask + new_map[pos[0]-radius:pos[0]+radius+1,
+                                           pos[1]-radius:pos[1]+radius+1]
 
         if max_limit:
             new_map = np.sign(new_map)
 
         return new_map + source_map
-
-
-def get_trajectories(agents: list[Agent],
-                     return_movement=False,
-                     return_destination=False,
-                     destination_steps=3) -> list:
-    """
-    Get trajectories from input structures.
-
-    :param agents: trajectory manager, support both `Agent` and `Trajectory`
-    :param return_movement: controls if return move flag
-    :return trajs: a list of all trajectories from inputs
-    """
-    all_trajs = []
-    movement = []
-    for agent in agents:
-        if issubclass(type(agent), Agent):
-            trajs = agent.traj
-        elif issubclass(type(agent), Trajectory):
-            trajs = agent.traj[agent.start_frame:agent.end_frame]
-
-            if return_destination:
-                trajs = trajs[-destination_steps:]
-
-        if return_movement:
-            flag = True if (
-                (trajs.shape[0] == 0) or
-                (calculate_length(trajs[-1]-trajs[0]) >= return_movement)
-            ) else False
-            movement += [flag for _ in range(len(trajs))]
-
-        if type(trajs) == np.ndarray:
-            trajs = trajs.tolist()
-        all_trajs += trajs
-
-    return (all_trajs, movement) if return_movement else all_trajs
 
 
 def calculate_cosine(vec1: np.ndarray,
