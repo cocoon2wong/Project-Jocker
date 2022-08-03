@@ -2,39 +2,13 @@
 @Author: Conghao Wong
 @Date: 2021-12-21 15:19:11
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-20 10:31:58
+@LastEditTime: 2022-08-03 14:36:57
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import tensorflow as tf
-
-
-class LinearLayerND(tf.keras.layers.Layer):
-    def __init__(self, anntype: str,
-                 obs_frames: int, pred_frames: int,
-                 diff=0.95, *args, **kwargs):
-
-        super().__init__(*args, **kwargs)
-
-        self.anntype = anntype
-        self.linear = LinearLayer(obs_frames, pred_frames, diff)
-
-    def call(self, inputs, *args, **kwargs):
-
-        if self.anntype == 'coordinate':
-            res = self.linear.call(inputs)
-
-        elif self.anntype == 'boundingbox':
-            res1 = self.linear.call(inputs[:, :, 0:2])
-            res2 = self.linear.call(inputs[:, :, 2:4])
-            res = tf.concat([res1, res2], axis=-1)
-
-        else:
-            raise NotImplementedError(self.args.anntype)
-
-        return res
 
 
 class LinearLayer(tf.keras.layers.Layer):
@@ -84,6 +58,32 @@ class LinearLayer(tf.keras.layers.Layer):
         ])
 
         results = tf.transpose(results[:, :, :, 0], [1, 2, 0])
+        return results[:, -self.f:, :]
+
+
+class LinearLayerND(LinearLayer):
+    def __init__(self, obs_frames: int, pred_frames: int,
+                 diff=0.95, *args, **kwargs):
+
+        super().__init__(obs_frames, pred_frames, diff, *args, **kwargs)
+
+    def call(self, inputs: tf.Tensor, **kwargs):
+        """
+        Linear prediction
+
+        :param inputs: input trajs, shape = (batch, obs, dim)
+        :param results: linear pred, shape = (batch, pred, dim)
+        """
+        dim = inputs.shape[-1]
+
+        results = []
+        for d in tf.range(dim):
+            x = tf.gather(inputs, [d], axis=-1)
+            x = tf.cast(x, tf.float32)
+            Bx = self.W @ x
+            results.append(self.A_p @ Bx)
+
+        results = tf.concat(results, axis=-1)
         return results[:, -self.f:, :]
 
 

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-15 20:13:07
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-20 10:32:48
+@LastEditTime: 2022-08-03 14:45:54
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -17,8 +17,7 @@ class LinearModel(Model):
     def __init__(self, Args: BaseArgTable, structure=None, *args, **kwargs):
         super().__init__(Args, structure, *args, **kwargs)
 
-        self.linear = layers.LinearLayerND(anntype=Args.anntype,
-                                           obs_frames=self.args.obs_frames,
+        self.linear = layers.LinearLayerND(obs_frames=self.args.obs_frames,
                                            pred_frames=self.args.pred_frames)
 
     def call(self, inputs, training=None, *args, **kwargs):
