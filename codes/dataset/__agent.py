@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-18 09:32:20
+@LastEditTime: 2022-08-03 14:34:27
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,6 +12,8 @@ import copy
 
 import numpy as np
 
+from ..utils import INIT_POSITION
+
 
 class Agent():
     """
@@ -20,9 +22,6 @@ class Agent():
     One agent manager contains these items for one specific agent:
     - historical trajectory: `traj`;
     - context map: `socialMap` and `trajMap`;
-    - future works: activity label;
-    - future works: agent category;
-    - future works: agent preference items
 
     Properties
     ----------
@@ -35,7 +34,6 @@ class Agent():
     self.groundtruth -> np.ndarray  # agent's future trajectory (when available)
 
     self.Map  -> np.ndarray   # agent's context map
-    self.loss -> dict[str, np.ndarray]  # loss of agent's prediction
     ```
 
     Public Methods
@@ -65,12 +63,13 @@ class Agent():
                    'neighbor_traj_linear_pred',
                    'obs_length', 'total_frame']
 
-    def __init__(self, dimension: int):
-        self._traj = []
-        self._traj_future = []
+    def __init__(self):
 
-        self._traj_pred = None
-        self._traj_pred_linear = None
+        self._traj: np.ndarray = None
+        self._traj_future: np.ndarray = None
+
+        self._traj_pred: np.ndarray = None
+        self._traj_pred_linear: np.ndarray = None
 
         self._map = None
         self.real2grid = None
@@ -85,10 +84,10 @@ class Agent():
         self.total_frame = 0
 
         self.neighbor_number = 0
-        self.neighbor_traj = []
-        self.neighbor_traj_linear_pred = []
+        self.neighbor_traj: list[np.ndarray] = []
+        self.neighbor_traj_linear_pred: list[np.ndarray] = []
 
-        self.dim = dimension
+        self.dim = None
 
     def copy(self):
         return copy.deepcopy(self)
@@ -123,24 +122,16 @@ class Agent():
     @property
     def traj(self) -> np.ndarray:
         """
-        historical trajectory, shape = (obs, 2)
+        historical trajectory, shape = (obs, dim)
         """
         return self.get_ndim_trajectory(self._traj, self.dim)
-
-    @traj.setter
-    def traj(self, value):
-        self._traj = np.array(value).astype(np.float32)
 
     @property
     def pred(self) -> np.ndarray:
         """
-        predicted trajectory, shape = (pred, 2)
+        predicted trajectory, shape = (pred, dim)
         """
         return self._traj_pred
-
-    @pred.setter
-    def pred(self, value):
-        self._traj_pred = np.array(value).astype(np.float32)
 
     @property
     def frames(self) -> list:
@@ -150,10 +141,6 @@ class Agent():
         """
         return self._frames + self._frames_future
 
-    @frames.setter
-    def frames(self, value):
-        self._frames = value if isinstance(value, list) else value.tolist()
-
     @property
     def frames_future(self) -> list:
         """
@@ -162,24 +149,13 @@ class Agent():
         """
         return self._frames_future
 
-    @frames_future.setter
-    def frames_future(self, value):
-        if isinstance(value, list):
-            self._frames_future = value
-        elif isinstance(value, np.ndarray):
-            self._frames_future = value.tolist()
-
     @property
     def pred_linear(self) -> np.ndarray:
         """
         linear prediction.
         shape = (pred, 2)
         """
-        return self._traj_pred_linear
-
-    @pred_linear.setter
-    def pred_linear(self, value):
-        self._traj_pred_linear = np.array(value).astype(np.float32)
+        return self.get_ndim_trajectory(self._traj_pred_linear, self.dim)
 
     @property
     def groundtruth(self) -> np.ndarray:
@@ -188,10 +164,6 @@ class Agent():
         shape = (pred, 2)
         """
         return self.get_ndim_trajectory(self._traj_future, self.dim)
-
-    @groundtruth.setter
-    def groundtruth(self, value):
-        self._traj_future = np.array(value).astype(np.float32)
 
     @property
     def Map(self) -> np.ndarray:
@@ -218,11 +190,11 @@ class Agent():
                 setattr(self, item, zipped_data[item])
         return self
 
-    def init_data(self, id,
-                  target_traj,
-                  neighbors_traj,
-                  frames, start_frame,
-                  obs_frame, end_frame,
+    def init_data(self, id: str,
+                  target_traj: np.ndarray,
+                  neighbors_traj: np.ndarray,
+                  frames: list[int],
+                  start_frame, obs_frame, end_frame,
                   frame_step=1,
                   add_noise=False,
                   linear_predict=True):
@@ -235,49 +207,50 @@ class Agent():
         are `(end_frame - start_frame) // frame_step`.
         """
 
-        self._id = id
         self.linear_predict = linear_predict
 
         # Trajectory info
         self.obs_length = (obs_frame - start_frame) // frame_step
         self.total_frame = (end_frame - start_frame) // frame_step
 
-        # Trajectory
-        whole_traj = target_traj
-        frames_current = frames
-
         # data strengthen: noise
         if add_noise:
-            noise_curr = np.random.normal(0, 0.1, size=self.traj.shape)
-            whole_traj += noise_curr
+            target_traj += np.random.normal(0, 0.1, target_traj.shape)
 
-        self.frames = frames_current[:self.obs_length]
-        self.traj = whole_traj[:self.obs_length]
-        self.groundtruth = whole_traj[self.obs_length:]
-        self.frames_future = frames_current[self.obs_length:]
-
-        if linear_predict:
-            self.pred_linear = predict_linear_for_person(
-                self.traj, time_pred=self.total_frame)[self.obs_length:]
+        self._id = id
+        self._frames = frames[:self.obs_length]
+        self._traj = target_traj[:self.obs_length]
+        self._traj_future = target_traj[self.obs_length:]
+        self._frames_future = frames[self.obs_length:]
 
         # Neighbor info
-        self.neighbor_traj = []
-        self.neighbor_traj_linear_pred = []
-        for neighbor_traj in neighbors_traj:
-            if neighbor_traj.max() >= 5000:
-                available_index = np.where(neighbor_traj.T[0] <= 5000)[0]
-                neighbor_traj[:available_index[0],
-                              :] = neighbor_traj[available_index[0]]
-                neighbor_traj[available_index[-1]:,
-                              :] = neighbor_traj[available_index[-1]]
-            self.neighbor_traj.append(neighbor_traj)
+        self.clear_all_neighbor_info()
+        for _n_traj in neighbors_traj:
+            if _n_traj.max() >= INIT_POSITION:
+                index = np.where(_n_traj.T[0] < INIT_POSITION)[0]
+                _n_traj[:index[0], :] = _n_traj[index[0]]
+                _n_traj[index[-1]:, :] = _n_traj[index[-1]]
 
-            if linear_predict:
-                pred = predict_linear_for_person(neighbor_traj, time_pred=self.total_frame)[
-                    self.obs_length:]
-                self.neighbor_traj_linear_pred.append(pred)
+            self.neighbor_traj.append(_n_traj)
 
         self.neighbor_number = len(neighbors_traj)
+
+        if linear_predict:
+            pred_frames = self.total_frame - self.obs_length
+            n = self.neighbor_number
+
+            self._traj_pred_linear = linear_pred(self._traj,
+                                                 self.obs_length,
+                                                 pred_frames)
+
+            _n_pred = linear_pred(np.concatenate(self.neighbor_traj, axis=-1),
+                                  self.obs_length,
+                                  pred_frames)
+
+            _n_pred = np.reshape(_n_pred, [pred_frames, n, -1])
+            _n_pred = np.transpose(_n_pred, [1, 0, 2])
+            self.neighbor_traj_linear_pred = _n_pred
+
         return self
 
     def get_neighbor_traj(self):
@@ -295,33 +268,35 @@ def softmax(x):
     return np.exp(x)/np.sum(np.exp(x), axis=0)
 
 
-def __predict_linear(x, y, x_p, diff_weights=0):
+def __predict_linear(x, y, x_p, P):
+    """
+    Linear prediction
+
+    :param x: shape = (batch, obs)
+    :param y: shape = (batch, pred)
+    :param P: shape = (obs, obs)
+    """
+
+    A = np.stack([np.ones_like(x), x]).T        # (obs, 2)
+    A_p = np.stack([np.ones_like(x_p), x_p]).T  # (pred, 2)
+    Y = y.T  # (obs)
+    B = np.linalg.inv(A.T @ P @ A) @ A.T @ P @ Y
+    Y_p = A_p @ B
+    return Y_p
+
+
+def linear_pred(inputs, obs_frames, pred_frames,
+                diff_weights=0.95) -> np.ndarray:
+
     if diff_weights == 0:
-        P = np.diag(np.ones(shape=[x.shape[0]]))
+        P = np.diag(np.ones(shape=[obs_frames]))
     else:
-        P = np.diag(softmax([(i+1)**diff_weights for i in range(x.shape[0])]))
+        P = np.diag(softmax([(i+1)**diff_weights for i in range(obs_frames)]))
 
-    A = np.stack([np.ones_like(x), x]).T
-    A_p = np.stack([np.ones_like(x_p), x_p]).T
-    Y = y.T
-    B = np.matmul(np.matmul(np.matmul(np.linalg.inv(
-        np.matmul(np.matmul(A.T, P), A)), A.T), P), Y)
-    Y_p = np.matmul(A_p, B)
-    return Y_p, B
+    t = np.arange(obs_frames)
+    t_p = np.arange(obs_frames + pred_frames)
+    dim = inputs.shape[-1]
 
-
-def predict_linear_for_person(position, time_pred, different_weights=0.95) -> np.ndarray:
-    """
-    对二维坐标的最小二乘拟合
-    注意：`time_pred`中应当包含现有的长度，如`len(position)=8`, `time_pred=20`时，输出长度为20
-    """
-    time_obv = position.shape[0]
-    t = np.arange(time_obv)
-    t_p = np.arange(time_pred)
-    x = position.T[0]
-    y = position.T[1]
-
-    x_p, _ = __predict_linear(t, x, t_p, diff_weights=different_weights)
-    y_p, _ = __predict_linear(t, y, t_p, diff_weights=different_weights)
-
-    return np.stack([x_p, y_p]).T
+    inputs = np.transpose(inputs, [1, 0])
+    pred = __predict_linear(t, inputs, t_p, P)
+    return pred[obs_frames:]
