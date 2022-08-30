@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 19:00:29
+@LastEditTime: 2022-08-30 10:52:27
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,6 +13,7 @@ import copy
 import numpy as np
 
 from ..utils import INIT_POSITION
+from .__picker import Picker
 
 
 class Agent():
@@ -83,38 +84,11 @@ class Agent():
         self._traj_neighbor: np.ndarray = None
         self._traj_linear_neighbor: np.ndarray = None
 
-        self.dim = None
+        self.picker: Picker = None
         self._map = None
 
     def copy(self):
         return copy.deepcopy(self)
-
-    def get_ndim_trajectory(self, traj: np.ndarray, dim: int):
-        """
-        get the n-dim trajectory from the input.
-        """
-        true_dim = traj.shape[-1]
-        dims = (dim, true_dim)
-
-        if dims == (2, 4):
-            if traj.ndim == 3:  # (batch, steps, dim)
-                traj = np.transpose(traj, [2, 0, 1])
-            elif traj.ndim == 2:
-                traj = traj.T
-            else:
-                raise NotImplementedError
-
-            xl, yl, xr, yr = traj
-            return 0.5 * np.stack((xl+xr, yl+yr), axis=-1)
-
-        elif dims == (2, 2):
-            return traj
-
-        elif dims == (4, 4):
-            return traj
-
-        else:
-            raise NotImplementedError(dims)
 
     @property
     def id(self) -> str:
@@ -128,14 +102,14 @@ class Agent():
         """
         historical trajectory, shape = (obs, dim)
         """
-        return self.get_ndim_trajectory(self._traj, self.dim)
+        return self.picker.get(self._traj)
 
     @property
     def traj_neighbor(self) -> np.ndarray:
         """
         neighbors' historical trajectories, shape = (n, obs, dim)
         """
-        return self.get_ndim_trajectory(self._traj_neighbor, self.dim)
+        return self.picker.get(self._traj_neighbor)
 
     @property
     def pred(self) -> np.ndarray:
@@ -166,7 +140,7 @@ class Agent():
         linear prediction.
         shape = (pred, dim)
         """
-        return self.get_ndim_trajectory(self._traj_linear, self.dim)
+        return self.picker.get(self._traj_linear)
 
     @property
     def pred_linear_neighbor(self) -> np.ndarray:
@@ -174,7 +148,7 @@ class Agent():
         linear prediction of neighbors' trajectories.
         shape = (n, pred, dim)
         """
-        return self.get_ndim_trajectory(self._traj_linear_neighbor, self.dim)
+        return self.picker.get(self._traj_linear_neighbor)
 
     @property
     def groundtruth(self) -> np.ndarray:
@@ -182,7 +156,7 @@ class Agent():
         ground truth future trajectory.
         shape = (pred, 2)
         """
-        return self.get_ndim_trajectory(self._traj_future, self.dim)
+        return self.picker.get(self._traj_future)
 
     @property
     def Map(self) -> np.ndarray:

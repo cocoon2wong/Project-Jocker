@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:30:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 19:31:28
+@LastEditTime: 2022-08-30 11:29:28
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -191,7 +191,7 @@ class VideoClipManager(BaseObject):
             self.make_trajectories()
 
         sample_rate, frame_rate = self.info.paras
-        frame_step = int(0.4 / (sample_rate / frame_rate))
+        frame_step = int(self.args.interval / (sample_rate / frame_rate))
         train_samples = []
 
         for agent_index in range(self.agent_count):

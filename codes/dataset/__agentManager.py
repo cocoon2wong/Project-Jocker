@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 19:28:09
+@LastEditTime: 2022-08-30 09:59:39
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -20,6 +20,7 @@ from ..base import BaseObject
 from ..utils import MAP_HALF_SIZE
 from .__agent import Agent
 from .__maps import MapManager
+from .__picker import Picker
 
 
 class TrajMapNotFoundError(FileNotFoundError):
@@ -89,14 +90,15 @@ class AgentManager(BaseObject):
 
         self.model_inputs = None
         self.model_labels = None
-        self.dimension = None
+        self.picker: Picker = None
 
     def append(self, target):
         self.agents += target.agents
 
-    def set_dim(self, dimension: int):
+    def set_picker(self, datasetType: str, predictionType: str):
+        self.picker = Picker(datasetType, predictionType)
         for agent in self.agents:
-            agent.dim = dimension
+            agent.picker = self.picker
 
     def set_types(self, inputs_type: list[str], labels_type: list[str]):
         """

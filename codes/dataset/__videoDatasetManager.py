@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:34:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 19:32:24
+@LastEditTime: 2022-08-30 10:57:08
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -78,8 +78,8 @@ class DatasetManager(BaseObject):
         if mode == 'train':
             random.shuffle(video_clips)
 
-        self.bar = self.timebar(video_clips)
-        for clip in (self.bar):
+        self.bar: list[VideoClipManager] = self.timebar(video_clips)
+        for clip in self.bar:
             # assign time bar
             s = 'Prepare {} data in `{}`...'.format(mode, clip.name)
             self.update_timebar(self.bar, s, pos='start')
@@ -102,7 +102,9 @@ class DatasetManager(BaseObject):
             else:
                 agents = AgentManager.load(self.args, data_path)
 
-            agents.set_dim(self.args.dim)
+            dataset_type = clip.info.datasetInfo.anntype
+            prediction_type = self.args.anntype
+            agents.set_picker(dataset_type, prediction_type)
             agents.bar = self.bar
 
             if self.args.use_maps:

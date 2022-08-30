@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 19:26:19
+@LastEditTime: 2022-08-30 11:29:02
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -460,3 +460,10 @@ class Args():
         Canbe `'coordinate'` or `'boundingbox'`.
         """
         return self._get('anntype', 'coordinate', argtype='static')
+
+    @property
+    def interval(self) -> float:
+        """
+        Time interval of each sampled trajectory coordinate.
+        """
+        return self._get('interval', 0.4, argtype='static')
