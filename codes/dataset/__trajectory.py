@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 10:44:39
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 13:58:48
+@LastEditTime: 2022-08-30 17:19:19
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -32,6 +32,7 @@ class Trajectory():
     """
 
     def __init__(self, agent_id: str,
+                 agent_type: str,
                  trajectory: np.ndarray,
                  neighbors: list[list[int]],
                  frames: list[int],
@@ -41,6 +42,7 @@ class Trajectory():
         init
 
         :param agent_index: ID of the trajectory
+        :param agent_type: type of the agent
         :param neighbors: a list of lists that contain agents' ids \
             who appear in each frames. \
             index are frame indexes.
@@ -53,6 +55,7 @@ class Trajectory():
         """
 
         self._id = agent_id
+        self._type = agent_type
         self._traj = trajectory
         self._neighbors = neighbors
         self._frames = frames
@@ -72,6 +75,10 @@ class Trajectory():
     @property
     def id(self):
         return self._id
+
+    @property
+    def type(self):
+        return self._type
 
     @property
     def traj(self):
@@ -130,6 +137,7 @@ class Trajectory():
 
         return Agent().init_data(
             id=self.id,
+            type=self.type,
             target_traj=tar_traj,
             neighbors_traj=nei_traj,
             frames=self.frames[start_frame:end_frame:frame_step],

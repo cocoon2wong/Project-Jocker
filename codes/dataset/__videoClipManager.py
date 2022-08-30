@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:30:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-30 11:29:28
+@LastEditTime: 2022-08-30 17:47:18
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -82,7 +82,9 @@ class VideoClipManager(BaseObject):
         anndim = self.info.datasetInfo.dimension
 
         agent_dict = {}
-        agent_names = np.unique(agent_order := data.T[1])
+        agent_names, name_index = np.unique(agent_order := data.T[1],
+                                            return_index=True)
+        agent_types = data.T[-1][name_index]
 
         try:
             agent_ids = [int(n.split('_')[0]) for n in agent_names]
@@ -99,7 +101,7 @@ class VideoClipManager(BaseObject):
         frame_ids = list(set(data.T[0].astype(np.int32)))
         frame_ids.sort()
 
-        return agent_dict, frame_ids
+        return agent_dict, frame_ids, agent_types
 
     def process_metadata(self):
         """
@@ -120,7 +122,7 @@ class VideoClipManager(BaseObject):
 
         # or start processing and then saving
         else:
-            agent_dict, frame_ids = self.load_dataset()
+            agent_dict, frame_ids, agent_types = self.load_dataset()
             agent_names = list(agent_dict.keys())
 
             p = len(agent_names)
@@ -150,6 +152,7 @@ class VideoClipManager(BaseObject):
                 np.where(np.not_equal(data, INIT_POSITION))[0]
                 for data in matrix[:, :, 0]], dtype=object)
 
+            agent_names = list(zip(agent_names, agent_types))
             np.savez(npy_path,
                      neighbor_indexes=neighbor_indexes,
                      matrix=matrix,
@@ -172,7 +175,8 @@ class VideoClipManager(BaseObject):
 
         trajs = []
         for agent_index in range(self.agent_count):
-            trajs.append(Trajectory(agent_id=self.agent_names[agent_index],
+            trajs.append(Trajectory(agent_id=self.agent_names[agent_index][0],
+                                    agent_type=self.agent_names[agent_index][1],
                                     trajectory=self.matrix[:, agent_index, :],
                                     neighbors=self.nei_indexes,
                                     frames=self.frame_ids,

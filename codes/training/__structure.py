@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 19:33:07
+@LastEditTime: 2022-08-30 15:25:50
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -571,11 +571,9 @@ class Structure(BaseObject):
                 if self.args.load == 'null' \
                 else self.args.load
 
-            save_format = os.path.join(dir_check(os.path.join(
-                save_base_path, 'VisualTrajs')), '{}_{}.{}')
-
-            self.log('Start saving images at {}'.format(
-                os.path.join(save_base_path, 'VisualTrajs')))
+            img_dir = dir_check(os.path.join(save_base_path, 'VisualTrajs'))
+            save_format = os.path.join(img_dir, '{}_{}.{}')
+            self.log(f'Start saving images into {img_dir}...')
 
             pred_all = outputs[0].numpy()
             for index, agent in enumerate(self.timebar(agents.agents, 'Saving...')):

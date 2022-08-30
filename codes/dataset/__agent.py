@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-30 10:52:27
+@LastEditTime: 2022-08-30 17:18:56
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -49,12 +49,12 @@ class Agent():
     ```
     """
 
-    __version__ = 6.0
+    __version__ = 7.0
 
     _save_items = ['__version__',
                    '_traj', '_traj_future',
                    '_traj_pred', '_traj_linear',
-                   'real2grid', '_id',
+                   'real2grid', '_id', '_type',
                    '_frames', '_frames_future',
                    'linear_predict',
                    'obs_length', 'total_frame',
@@ -72,6 +72,7 @@ class Agent():
 
         self.real2grid = None
         self._id = None
+        self._type = None
 
         self._frames = []
         self._frames_future = []
@@ -96,6 +97,13 @@ class Agent():
         Agent ID
         """
         return self._id
+
+    @property
+    def type(self) -> str:
+        """
+        Agent type
+        """
+        return self._type
 
     @property
     def traj(self) -> np.ndarray:
@@ -184,6 +192,7 @@ class Agent():
         return self
 
     def init_data(self, id: str,
+                  type: str,
                   target_traj: np.ndarray,
                   neighbors_traj: np.ndarray,
                   frames: list[int],
@@ -211,6 +220,7 @@ class Agent():
             target_traj += np.random.normal(0, 0.1, target_traj.shape)
 
         self._id = id
+        self._type = type
         self._frames = frames[:self.obs_length]
         self._traj = target_traj[:self.obs_length]
         self._traj_future = target_traj[self.obs_length:]

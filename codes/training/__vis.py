@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 19:38:30
+@LastEditTime: 2022-08-30 17:52:15
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,9 +13,11 @@ from typing import Union
 import cv2
 import numpy as np
 import tensorflow as tf
+from matplotlib import pyplot as plt
 
-from ..dataset import Agent, VideoClip
 from ..args import Args
+from ..base import BaseObject
+from ..dataset import Agent, VideoClip
 from ..utils import (DISTRIBUTION_COLORBAR, DISTRIBUTION_IMAGE, GT_IMAGE,
                      OBS_IMAGE, PRED_IMAGE)
 
@@ -24,7 +26,7 @@ CONV_LAYER = tf.keras.layers.Conv2D(
     kernel_initializer=tf.initializers.constant(1/(20*20)))
 
 
-class Visualization():
+class Visualization(BaseObject):
     """
     Visualization
     -------------
@@ -49,6 +51,8 @@ class Visualization():
     """
 
     def __init__(self, args: Args, dataset: str, clip: str):
+
+        super().__init__()
 
         self.args = args
         self.info = VideoClip(name=clip, dataset=dataset).get()
@@ -115,7 +119,7 @@ class Visualization():
         self._paras = video_info.paras
         self._matrix = video_info.matrix
 
-    def real2pixel(self, real_pos):
+    def real2pixel(self, real_pos, return_int=True):
         """
         Transfer coordinates from real scale to pixels.
 
@@ -145,15 +149,17 @@ class Visualization():
                 for index in range(0, self.args.dim, 2):
                     result += [weights[0] * r.T[index+self.order[0]] + weights[1],
                                weights[2] * r.T[index+self.order[1]] + weights[3]]
-                result = np.column_stack(result).astype(np.int32)
+                result = np.column_stack(result)
 
             # when model only support `coordinate`
             elif self.args.anntype.startswith('coordinate'):
                 result = np.column_stack([
                     weights[0] * r.T[self.order[0]] + weights[1],
                     weights[2] * r.T[self.order[1]] + weights[3],
-                ]).astype(np.int32)
+                ])
 
+            if return_int:
+                result = result.astype(np.int32)
             all_results.append(result)
 
         return np.array(all_results)
@@ -187,6 +193,8 @@ class Visualization():
         :draw_distrubution: controls if draw as distribution for generative models
         """
         draw = False
+        f = None
+
         if self.video_capture:
             time = 1000 * frame_id / self.video_paras[1]
             self.video_capture.set(cv2.CAP_PROP_POS_MSEC, time - 1)
@@ -198,44 +206,43 @@ class Visualization():
             draw = True
 
         if not draw:
-            raise FileNotFoundError(
-                'Video at `{}` NOT FOUND.'.format(self.info.video_path))
+            # self.log(f'`Video {self.info.video_path}` not found. ' +
+            #          'Trying to draw with plt...')
+
+            return_int = False
+            plt.figure()
+            vis_func = self._visualization_plt
+            text_func = self._put_text_plt
+
+        else:
+            # self.log(f'Video {self.info.video_path} opened.')
+            return_int = True
+            vis_func = self._visualization
+            text_func = self._put_text
 
         for agent in agents:
-            obs = self.real2pixel(agent.traj)
-            pred = self.real2pixel(agent.pred)
-            gt = self.real2pixel(agent.groundtruth) \
+            obs = self.real2pixel(agent.traj, return_int)
+            pred = self.real2pixel(agent.pred, return_int)
+            gt = self.real2pixel(agent.groundtruth, return_int) \
                 if len(agent.groundtruth) else None
-            f = self._visualization(f, obs, gt, pred,
-                                    draw_distribution,
-                                    alpha=1.0)
 
-        texts = ['{}'.format(self.info.name),
-                 'frame: {}'.format(str(frame_id).zfill(6)),
-                 'agent: {}'.format(agent.id)]
+            texts = [self.info.name,
+                     f'frame: {str(frame_id).zfill(6)}',
+                     f'agent: {agent.id}',
+                     f'type: {agent.type}']
 
-        for index, text in enumerate(texts):
-            f = cv2.putText(f, text,
-                            org=(10 + 3, 40 + index * 30 + 3),
-                            fontFace=cv2.FONT_HERSHEY_COMPLEX,
-                            fontScale=0.9,
-                            color=(0, 0, 0),
-                            thickness=2)
+            f = vis_func(f, obs, gt, pred,
+                         draw_distribution=draw_distribution,
+                         alpha=1.0)
+            f = text_func(f, texts)
 
-            f = cv2.putText(f, text,
-                            org=(10, 40 + index * 30),
-                            fontFace=cv2.FONT_HERSHEY_COMPLEX,
-                            fontScale=0.9,
-                            color=(255, 255, 255),
-                            thickness=2)
-
-        if self.scale_vis > 1:
+        if draw and self.scale_vis > 1:
             original_shape = f.shape
             f = cv2.resize(
                 f, (int(original_shape[1]/self.scale_vis),
                     int(original_shape[0]/self.scale_vis)))
 
-        if show_img:
+        if draw and show_img:
             cv2.namedWindow(self.info.name, cv2.WINDOW_NORMAL |
                             cv2.WINDOW_KEEPRATIO)
             f = f.astype(np.uint8)
@@ -243,7 +250,11 @@ class Visualization():
             cv2.waitKey(80)
 
         else:
-            cv2.imwrite(save_path, f)
+            if draw:
+                cv2.imwrite(save_path, f)
+            else:
+                plt.savefig(save_path)
+                plt.close()
 
     def draw_video(self, agent: Agent, save_path, interp=True, indexx=0, draw_distribution=False):
         _, f = self.video_capture.read()
@@ -346,6 +357,45 @@ class Visualization():
                           color_bar=DISTRIBUTION_COLORBAR)
 
         return f
+
+    def _put_text(self, f: np.ndarray, texts: list[str]):
+        for index, text in enumerate(texts):
+            f = cv2.putText(f, text,
+                            org=(10 + 3, 40 + index * 30 + 3),
+                            fontFace=cv2.FONT_HERSHEY_COMPLEX,
+                            fontScale=0.9,
+                            color=(0, 0, 0),
+                            thickness=2)
+
+            f = cv2.putText(f, text,
+                            org=(10, 40 + index * 30),
+                            fontFace=cv2.FONT_HERSHEY_COMPLEX,
+                            fontScale=0.9,
+                            color=(255, 255, 255),
+                            thickness=2)
+
+        return f
+
+    def _visualization_plt(self, f,
+                           obs=None, gt=None, pred=None,
+                           **kwargs):
+
+        if obs is not None:
+            for p in np.transpose(obs, [1, 0, 2]):
+                plt.scatter(p.T[0], p.T[1], c='#287AFB')
+
+        if gt is not None:
+            for p in np.transpose(gt, [1, 0, 2]):
+                plt.scatter(p.T[0], p.T[1], c='#4CEDA7')
+
+        if pred is not None:
+            for p in np.transpose(pred, [1, 0, 2]):
+                plt.scatter(p.T[0], p.T[1], c='#F5E25F')
+
+        plt.axis('equal')
+
+    def _put_text_plt(self, f: np.ndarray, texts: list[str]):
+        plt.title(', '.join(texts))
 
 
 def ADD(source: np.ndarray,
