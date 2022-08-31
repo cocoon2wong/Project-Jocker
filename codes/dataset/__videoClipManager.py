@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:30:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-31 09:48:07
+@LastEditTime: 2022-08-31 11:00:33
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -84,7 +84,7 @@ class VideoClipManager(BaseObject):
         agent_dict = {}
         agent_names, name_index = np.unique(agent_order := data.T[1],
                                             return_index=True)
-        agent_types = data.T[-1][name_index]
+        agent_types = data.T[anndim+2][name_index]
         names_and_types = []
 
         try:

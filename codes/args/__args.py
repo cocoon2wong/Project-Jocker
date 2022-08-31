@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-31 09:52:32
+@LastEditTime: 2022-08-31 10:53:28
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -359,8 +359,9 @@ class Args():
         """
         Controls if draw visualized results on video frames.
         Accept the name of one video clip.
-        Make sure that you have put video files into `./videos`
-        according to the specific name way.
+        The codes will first try to load the video according to the path
+        saved in the `plist` file, and if successful it will draw the
+        visualization on the video, otherwise it will draw on a blank canvas.
         Note that `test_mode` will be set to `'one'` and `force_split`
         will be set to `draw_results` if `draw_results != 'null'`.
         """

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-30 17:18:56
+@LastEditTime: 2022-08-31 11:23:06
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -262,15 +262,9 @@ class Agent():
 
         return self
 
-    def get_neighbor_traj(self):
-        return self._traj_neighbor
-
     def clear_all_neighbor_info(self):
         self._traj_neighbor = None
         self._traj_linear_neighbor = None
-
-    def get_pred_traj_neighbor_linear(self) -> list:
-        return self._traj_linear_neighbor
 
 
 def softmax(x):

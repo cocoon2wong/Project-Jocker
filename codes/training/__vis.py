@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-31 10:01:32
+@LastEditTime: 2022-08-31 14:58:02
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -19,7 +19,7 @@ from ..args import Args
 from ..base import BaseObject
 from ..dataset import Agent, VideoClip
 from ..utils import (DISTRIBUTION_COLORBAR, DISTRIBUTION_IMAGE, GT_IMAGE,
-                     OBS_IMAGE, PRED_IMAGE)
+                     NEIGHBOR_IMAGE, OBS_IMAGE, PRED_IMAGE)
 
 CONV_LAYER = tf.keras.layers.Conv2D(
     1, (20, 20), (1, 1), 'same',
@@ -67,6 +67,7 @@ class Visualization(BaseObject):
         self.set_video(self.info)
 
         self.obs_file = cv2.imread(OBS_IMAGE, -1)
+        self.neighbor_file = cv2.imread(NEIGHBOR_IMAGE, -1)
         self.pred_file = cv2.imread(PRED_IMAGE, -1)
         self.gt_file = cv2.imread(GT_IMAGE, -1)
         self.dis_file = cv2.imread(DISTRIBUTION_IMAGE, -1)
@@ -126,7 +127,7 @@ class Visualization(BaseObject):
         :param real_pos: coordinates, shape = (n, 2) or (k, n, 2)
         :return pixel_pos: coordinates in pixels
         """
-        scale = self.scale
+        scale = self.scale / self.scale_vis
         weights = self.video_matrix
 
         if type(real_pos) == list:
@@ -195,27 +196,31 @@ class Visualization(BaseObject):
         draw = False
         f = None
 
+        # draw on video frames
         if self.video_capture:
             time = 1000 * frame_id / self.video_paras[1]
             self.video_capture.set(cv2.CAP_PROP_POS_MSEC, time - 1)
             _, f = self.video_capture.read()
             draw = True
 
+        # draw on the static scene image
         if (f is None) and (self.scene_image is not None):
             f = self.scene_image
             draw = True
 
-        if not draw:
-            # self.log(f'`Video {self.info.video_path}` not found. ' +
-            #          'Trying to draw with plt...')
+        # re-scale scene RGB image
+        if draw and self.scale_vis > 1:
+            x, y = f.shape[:2]
+            f = cv2.resize(f, (int(y/self.scale_vis),
+                               int(x/self.scale_vis)))
 
+        if not draw:
             return_int = False
             plt.figure()
             vis_func = self._visualization_plt
             text_func = self._put_text_plt
 
         else:
-            # self.log(f'Video {self.info.video_path} opened.')
             return_int = True
             vis_func = self._visualization
             text_func = self._put_text
@@ -223,6 +228,7 @@ class Visualization(BaseObject):
         for agent in agents:
             obs = self.real2pixel(agent.traj, return_int)
             pred = self.real2pixel(agent.pred, return_int)
+            nei = self.real2pixel(agent.traj_neighbor[1:, -1:], return_int)
             gt = self.real2pixel(agent.groundtruth, return_int) \
                 if len(agent.groundtruth) else None
 
@@ -231,16 +237,10 @@ class Visualization(BaseObject):
                      f'agent: {agent.id}',
                      f'type: {agent.type}']
 
-            f = vis_func(f, obs, gt, pred,
+            f = vis_func(f, obs, gt, pred, nei,
                          draw_distribution=draw_distribution,
                          alpha=1.0)
             f = text_func(f, texts)
-
-        if draw and self.scale_vis > 1:
-            original_shape = f.shape
-            f = cv2.resize(
-                f, (int(original_shape[1]/self.scale_vis),
-                    int(original_shape[0]/self.scale_vis)))
 
         if draw and show_img:
             cv2.namedWindow(self.info.name, cv2.WINDOW_NORMAL |
@@ -305,6 +305,7 @@ class Visualization(BaseObject):
 
     def _visualization(self, f: np.ndarray,
                        obs=None, gt=None, pred=None,
+                       neighbor=None,
                        draw_distribution: int = None,
                        alpha=1.0):
         """
@@ -314,6 +315,7 @@ class Visualization(BaseObject):
         :param obs: (optional) observations in *pixel* scale
         :param gt: (optional) ground truth in *pixel* scale
         :param pred: (optional) predictions in *pixel* scale, shape = `(steps, (K), dim)`
+        :param neighbor: (optional) observed neighbors' positions in *pixel* scale, shape = `(steps, (K), dim)`
         :param draw_distribution: controls if draw as a distribution
         :param alpha: alpha channel coefficient
         """
@@ -327,6 +329,12 @@ class Visualization(BaseObject):
                           color=(255, 255, 255),
                           width=3, alpha=alpha,
                           anntype=anntype)
+
+        if neighbor is not None:
+            f = draw_pred(f, neighbor, self.neighbor_file,
+                          width=3, alpha=alpha,
+                          anntype=anntype,
+                          draw_distribution=False)
 
         # draw ground truth future trajectories
         if gt is not None:
@@ -371,11 +379,17 @@ class Visualization(BaseObject):
 
     def _visualization_plt(self, f,
                            obs=None, gt=None, pred=None,
+                           neighbor=None,
                            **kwargs):
 
         if obs is not None:
             for p in np.transpose(obs, [1, 0, 2]):
                 plt.scatter(p.T[0], p.T[1], c='#287AFB')
+
+        # if neighbor is not None:
+        if None:
+            for p in np.transpose(neighbor, [1, 0, 2]):
+                plt.scatter(p.T[0], p.T[1], c='#CA15A9')
 
         if gt is not None:
             for p in np.transpose(gt, [1, 0, 2]):
@@ -413,7 +427,7 @@ def ADD(source: np.ndarray,
         png_mask = png[:, :, 3:4]/255
         png_file = png[:, :, :3]
     else:
-        png_mask = np.ones_like(png)
+        png_mask = np.ones_like(png[:, :, :1])
         png_file = png
 
     if x0 >= 0 and y0 >= 0 and x0 + xp <= xs and y0 + yp <= ys:

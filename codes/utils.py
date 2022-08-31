@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 20:10:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 13:22:13
+@LastEditTime: 2022-08-31 11:36:51
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -44,6 +44,7 @@ SCALE_THRESHOLD = 0.05
 # Visualization configs
 SMALL_POINTS = True
 OBS_IMAGE = './figures/obs_small.png' if SMALL_POINTS else './figures/obs.png'
+NEIGHBOR_IMAGE = './figures/neighbor_small.png' if SMALL_POINTS else './figures/neighbor.png'
 GT_IMAGE = './figures/gt_small.png' if SMALL_POINTS else './figures/gt.png'
 PRED_IMAGE = './figures/pred_small.png' if SMALL_POINTS else './figures/pred.png'
 DISTRIBUTION_IMAGE = './figures/dis.png'
