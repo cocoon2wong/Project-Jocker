@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:30:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-30 17:47:18
+@LastEditTime: 2022-08-31 09:48:07
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -85,6 +85,7 @@ class VideoClipManager(BaseObject):
         agent_names, name_index = np.unique(agent_order := data.T[1],
                                             return_index=True)
         agent_types = data.T[-1][name_index]
+        names_and_types = []
 
         try:
             agent_ids = [int(n.split('_')[0]) for n in agent_names]
@@ -93,15 +94,18 @@ class VideoClipManager(BaseObject):
             agent_order = np.arange(len(agent_names))
 
         for agent_index in agent_order:
-            name = agent_names[agent_index]
-            index = np.where(data.T[1] == name)[0]
+            _name = agent_names[agent_index]
+            _type = agent_types[agent_index]
+            names_and_types.append((_name, _type))
+
+            index = np.where(data.T[1] == _name)[0]
             _dat = np.delete(data[index], 1, axis=1)
-            agent_dict[name] = _dat[:, :anndim+1].astype(np.float64)
+            agent_dict[_name] = _dat[:, :anndim+1].astype(np.float64)
 
         frame_ids = list(set(data.T[0].astype(np.int32)))
         frame_ids.sort()
 
-        return agent_dict, frame_ids, agent_types
+        return agent_dict, frame_ids, names_and_types
 
     def process_metadata(self):
         """
@@ -109,7 +113,7 @@ class VideoClipManager(BaseObject):
         files) into numpy ndarray.
         """
         # make directories
-        b = dir_check(os.path.join(dir_check(self.path), self.name))
+        b = dir_check(os.path.join(self.path, self.name))
         npy_path = os.path.join(b, 'data.npz')
 
         # load from saved files
@@ -118,12 +122,12 @@ class VideoClipManager(BaseObject):
             matrix = dat['matrix']
             neighbor_indexes = dat['neighbor_indexes']
             frame_ids = dat['frame_ids']
-            agent_names = dat['person_ids']
+            names_and_types = dat['person_ids']
 
         # or start processing and then saving
         else:
-            agent_dict, frame_ids, agent_types = self.load_dataset()
-            agent_names = list(agent_dict.keys())
+            agent_dict, frame_ids, names_and_types = self.load_dataset()
+            agent_names = [n[0] for n in names_and_types]
 
             p = len(agent_names)
             f = len(frame_ids)
@@ -152,17 +156,16 @@ class VideoClipManager(BaseObject):
                 np.where(np.not_equal(data, INIT_POSITION))[0]
                 for data in matrix[:, :, 0]], dtype=object)
 
-            agent_names = list(zip(agent_names, agent_types))
             np.savez(npy_path,
                      neighbor_indexes=neighbor_indexes,
                      matrix=matrix,
                      frame_ids=frame_ids,
-                     person_ids=agent_names)
+                     person_ids=names_and_types)
 
         self.agent_count = matrix.shape[1]
         self.frame_number = matrix.shape[0]
 
-        return neighbor_indexes, matrix, frame_ids, agent_names
+        return neighbor_indexes, matrix, frame_ids, names_and_types
 
     def make_trajectories(self):
         """
