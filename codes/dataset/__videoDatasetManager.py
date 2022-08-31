@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:34:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-30 10:57:08
+@LastEditTime: 2022-08-31 09:56:04
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -81,7 +81,7 @@ class DatasetManager(BaseObject):
         self.bar: list[VideoClipManager] = self.timebar(video_clips)
         for clip in self.bar:
             # assign time bar
-            s = 'Prepare {} data in `{}`...'.format(mode, clip.name)
+            s = f'Prepare {mode} data in `{clip.name}`...'
             self.update_timebar(self.bar, s, pos='start')
             clip.bar = self.bar
 
@@ -89,8 +89,7 @@ class DatasetManager(BaseObject):
             if (self.args.obs_frames, self.args.pred_frames) == (8, 12):
                 f_name = 'agent'
             else:
-                f_name = 'agent_{}to{}'.format(self.args.obs_frames,
-                                               self.args.pred_frames)
+                f_name = f'agent_{self.args.obs_frames}to{self.args.pred_frames}'
 
             endstring = '' if self.args.step == 4 else str(self.args.step)
             f_name = f_name + endstring + '.npz'
@@ -122,7 +121,7 @@ class DatasetManager(BaseObject):
 
                 except TrajMapNotFoundError:
                     path = os.path.join(map_path, map_file)
-                    self.log(s := ('Trajectory map `{}`'.format(path) +
+                    self.log(s := (f'Trajectory map `{path}`' +
                                    ' not found, stop running...'),
                              level='error')
                     exit()

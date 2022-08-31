@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 12:32:45
+@LastEditTime: 2022-08-31 10:10:29
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -184,6 +184,5 @@ class BaseSilverballers(Structure):
 
     def print_test_results(self, loss_dict: dict[str, float], **kwargs):
         super().print_test_results(loss_dict, **kwargs)
-        self.log('Test with 1st sub-network `{}` and 2nd seb-network `{}` done.'.format(
-            self.args.loada,
-            self.args.loadb))
+        self.log(f'Test with 1st sub-network `{self.args.loada}` ' +
+                 f'and 2nd seb-network `{self.args.loadb}` done.')

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-08-05 15:26:57
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-28 10:58:20
+@LastEditTime: 2022-08-31 10:09:36
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -38,8 +38,8 @@ def read_comments(file) -> list[str]:
         if comments.endswith('. '):
             comments = comments[:-1]
 
-        s = '- `--{}`, type=`{}`, argtype=`{}`.\n  {}\n  The default value is `{}`.'.format(
-            name, dtype, argtype, comments, default)
+        s = (f'- `--{name}`, type=`{dtype}`, argtype=`{argtype}`.\n  ' +
+             f'{comments}\n  The default value is `{default}`.')
         results.append(s + '\n')
         print(s)
 
@@ -50,7 +50,7 @@ def update(md_file, files: list[str], titles: list[str]):
 
     new_lines = []
     for f, title in zip(files, titles):
-        new_lines += ['\n### {}\n\n'.format(title)]
+        new_lines += [f'\n### {title}\n\n']
         c = read_comments(f)
         c.sort()
         new_lines += c
@@ -61,11 +61,11 @@ def update(md_file, files: list[str], titles: list[str]):
 
     try:
         pattern = re.findall(
-            '([\s\S]*)({})([\s\S]*)({})([\s\S]*)'.format(FLAG, FLAG), lines)[0]
+            f'([\s\S]*)({FLAG})([\s\S]*)({FLAG})([\s\S]*)', lines)[0]
         all_lines = list(pattern[:2]) + new_lines + list(pattern[-2:])
 
     except:
-        flag_line = '{}\n'.format(FLAG)
+        flag_line = f'{FLAG}\n'
         all_lines = [lines, flag_line] + new_lines + [flag_line]
 
     with open(md_file, 'w+') as f:
@@ -75,7 +75,7 @@ def update(md_file, files: list[str], titles: list[str]):
 if __name__ == '__main__':
     for model in ['Silverballers']:
         files = ['./codes/args/__args.py',
-                 './{}/__args.py'.format(model)]
+                 f'./{model}/__args.py']
         titles = ['Basic args',
-                  '{} args'.format(model)]
+                  f'{model} args']
         update(TARGET_FILE.format(model), files, titles)

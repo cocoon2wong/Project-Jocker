@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-30 17:52:15
+@LastEditTime: 2022-08-31 10:01:32
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -274,13 +274,6 @@ class Visualization(BaseObject):
         obs = self.real2pixel(agent.traj)
         gt = self.real2pixel(agent.groundtruth)
         pred = self.real2pixel(agent.pred)
-
-        # # load from npy file
-        # pred = np.load('./figures/hotel_{}_stgcnn.npy'.format(indexx)).reshape([-1, 2])
-        # pred = self.real2pixel(np.column_stack([
-        #     pred.T[0],  # sr: 0,1; sgan: 1,0; stgcnn: 1,0
-        #     pred.T[1],
-        # ]), traj_weights)
 
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         VideoWriter = cv2.VideoWriter(

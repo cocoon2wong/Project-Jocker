@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-05-03 09:07:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-19 12:40:52
+@LastEditTime: 2022-08-31 10:06:43
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -33,7 +33,7 @@ def read_model_weights(base_path: str):
                 current_path, 'best_ade_epoch.txt'))[0]
 
         except:
-            print('Skip path `{}`'.format(current_path))
+            print(f'Skip path `{current_path}`')
             continue
 
         model_type = args['model']

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-27 20:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 19:34:26
+@LastEditTime: 2022-08-31 10:10:56
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -69,6 +69,6 @@ def get_model(model_name: str):
 def __get(model_name: str):
     if not model_name in __SILVERBALLERS_DICT.keys():
         raise NotImplementedError(
-            'model type `{}` is not supported.'.format(model_name))
+            f'model type `{model_name}` is not supported.')
 
     return __SILVERBALLERS_DICT[model_name]

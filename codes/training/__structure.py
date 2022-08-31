@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-30 15:25:50
+@LastEditTime: 2022-08-31 10:01:00
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -538,25 +538,22 @@ class Structure(BaseObject):
     def print_train_results(self, best_epoch: int, best_metric: float):
         self.log('Training done.')
         self.log('During training, the model reaches the best metric ' +
-                 '`{}` at epoch {}.'.format(best_metric, best_epoch))
+                 f'`{best_metric}` at epoch {best_epoch}.')
 
-        self.log(('Tensorboard file is saved at `{}`. ' +
-                  'To open this log file, please use `tensorboard ' +
-                  '--logdir {}`').format(self.args.log_dir,
-                                         self.args.log_dir))
-        self.log(('Trained model is saved at `{}`. ' +
-                  'To re-test this model, please use ' +
-                  '`python main.py --load {}`.').format(self.args.log_dir,
-                                                        self.args.log_dir))
+        self.log(f'Tensorboard file is saved at `{self.args.log_dir}`. ' +
+                 'To open this log file, please use `tensorboard ' +
+                 f'--logdir {self.args.log_dir}`')
+        self.log(f'Trained model is saved at `{self.args.log_dir}`. ' +
+                 'To re-test this model, please use ' +
+                 f'`python main.py --load {self.args.log_dir}`.')
 
     def print_test_results(self, loss_dict: dict[str, float], **kwargs):
         self.print_parameters(title='Test Results',
                               **kwargs,
                               **loss_dict)
-        self.log('split: {}, load: {}, metrics: {}'.format(
-                 self.args.split,
-                 self.args.load,
-                 loss_dict))
+        self.log(f'split: {self.args.split}, ' +
+                 f'load: {self.args.load}, ' +
+                 f'metrics: {loss_dict}')
 
     def write_test_results(self, outputs: list[tf.Tensor],
                            agents: dataset.AgentManager,
@@ -573,7 +570,7 @@ class Structure(BaseObject):
 
             img_dir = dir_check(os.path.join(save_base_path, 'VisualTrajs'))
             save_format = os.path.join(img_dir, '{}_{}.{}')
-            self.log(f'Start saving images into {img_dir}...')
+            self.log(f'Start saving images into `{img_dir}`...')
 
             pred_all = outputs[0].numpy()
             for index, agent in enumerate(self.timebar(agents.agents, 'Saving...')):
@@ -594,8 +591,7 @@ class Structure(BaseObject):
                 #     draw_distribution=self.args.draw_distribution,
                 # )
 
-            self.log('Prediction result images are saved at {}'.format(
-                os.path.join(save_base_path, 'VisualTrajs')))
+            self.log(f'Prediction result images are saved at {img_dir}')
 
 
 def append_results_to_list(results: list[tf.Tensor], target: list):

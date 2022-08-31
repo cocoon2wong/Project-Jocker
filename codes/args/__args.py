@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-30 11:29:02
+@LastEditTime: 2022-08-31 09:52:32
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -56,8 +56,7 @@ class Args():
             self._args_load = json_dict
 
         except:
-            raise ValueError(
-                'Failed to load args from path {}.'.format(dir_path))
+            raise ValueError(f'Failed to load args from `{dir_path}`.')
 
         return self
 
@@ -192,8 +191,7 @@ class Args():
 
             dataset = None
             for f in plist_files:
-                res = re.findall('{}/(.*)/({}.plist)'.format(
-                    DATASET_DIR, self.split), f)
+                res = re.findall(f'{DATASET_DIR}/(.*)/({self.split}.plist)', f)
 
                 if len(res):
                     dataset = res[0][0]

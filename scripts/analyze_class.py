@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-04-16 16:02:45
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-23 10:01:38
+@LastEditTime: 2022-08-31 10:02:54
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -40,15 +40,15 @@ def print_all_members(package):
             module = item.__module__
 
             if name != 'builtins':
-                class_name = '{}/{}'.format(module, name)
-                info = '{}_{}'.format(module, name)
-                father_info = '{}_{}'.format(father_module, father_name)
+                class_name = f'{module}/{name}'
+                info = f'{module}_{name}'
+                father_info = f'{father_module}_{father_name}'
 
                 if not class_name in name_list:
                     print(class_name)
                     print(father_info)
-                    lens.append('        {}("{}({})") --> {}("{}({})")\n'.format(
-                        father_info, father_name, father_module, info, name, module))
+                    lens.append(f'        {father_info}("{father_name}({father_module})") ' +
+                                f'--> {info}("{name}({module})")\n')
                     name_list.append(class_name)
                     info_list.append(father_info)
 

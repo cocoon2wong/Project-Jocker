@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-07-19 11:11:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-30 20:15:59
+@LastEditTime: 2022-08-31 10:04:42
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -28,7 +28,7 @@ def clean_logs(base_dir):
 
         if (fn := 'best_ade_epoch.txt') in files:
             best_epoch = np.loadtxt(os.path.join(cd, fn))[1].astype(int)
-            pattern = '_epoch{}.tf'.format(best_epoch)
+            pattern = f'_epoch{best_epoch}.tf'
 
         else:
             continue
@@ -36,11 +36,11 @@ def clean_logs(base_dir):
         for f in files:
             path = os.path.join(cd, f)
             if pattern in f:
-                print('Find {}.'.format(path))
+                print(f'Find {path}.')
 
             else:
                 if f.endswith('.tf.index') or '.tf.data' in f:
-                    print('Remove {}.'.format(path))
+                    print(f'Remove {path}.')
                     os.remove(path)
 
 
@@ -57,8 +57,9 @@ def clean_figs(base_dir):
         files = os.listdir(cd)
 
         if (fn := 'VisualTrajs') in files:
-            os.system('rm -r {}'.format(p := os.path.join(cd, fn)))
-            print('Remove {}.'.format(p))
+            p = os.path.join(cd, fn)
+            os.system(f'rm -r {p}')
+            print(f'Removed `{p}`.')
 
 
 def get_value(key: str, args: list[str]):

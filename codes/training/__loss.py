@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 19:34:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-18 20:10:48
+@LastEditTime: 2022-08-31 09:56:27
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -52,7 +52,7 @@ def apply(loss_list: list[Union[str, Any]],
         else:
             raise ValueError(loss)
 
-        loss_dict[name + '({})'.format(mode)] = coefficient * value
+        loss_dict[name + f'({mode})'] = coefficient * value
 
     if loss_weights is None:
         loss_weights = tf.ones(len(loss_dict))
