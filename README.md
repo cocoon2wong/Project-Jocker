@@ -217,6 +217,9 @@ Args with `argtype='static'` means that their values can not be changed once aft
 - `--gpu`, type=`str`, argtype=`'dynamic'`.
   Speed up training or test if you have at least one nvidia GPU. If you have no GPUs or want to run the code on your CPU, please set it to `-1`.
   The default value is `'0'`.
+- `--interval`, type=`float`, argtype=`'static'`.
+  Time interval of each sampled trajectory coordinate.
+  The default value is `0.4`.
 - `--load`, type=`str`, argtype=`'dynamic'`.
   Folder to load model. If set to `null`, it will start training new models according to other args.
   The default value is `'null'`.
@@ -275,7 +278,7 @@ Args with `argtype='static'` means that their values can not be changed once aft
   Number of style channels in `Agent` model.
   The default value is `20`.
 - `--T`, type=`str`, argtype=`'static'`.
-  Type of transformations used when encoding or decoding trajectories. It could be: - `fft`: fast fourier transform - `haar`: haar wavelet transform - `db2`: DB2 wavelet transform 
+  Type of transformations used when encoding or decoding trajectories. It could be: - `none`: no transformations - `fft`: fast fourier transform - `haar`: haar wavelet transform - `db2`: DB2 wavelet transform 
   The default value is `'fft'`.
 - `--depth`, type=`int`, argtype=`'static'`.
   Depth of the random contract id.
