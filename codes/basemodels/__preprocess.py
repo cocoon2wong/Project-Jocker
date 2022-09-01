@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:24:29
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-27 13:52:04
+@LastEditTime: 2022-09-01 09:59:57
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -175,14 +175,14 @@ def rotate_back(trajs: tf.Tensor,
 def scale(trajs: tf.Tensor,
           para_dict: dict[str, tf.Tensor],
           anntype: str,
-          ref: float = 1,
+          ref: int = -1,
           use_new_para_dict=True) -> tuple[tf.Tensor, dict[str, tf.Tensor]]:
     """
     Scale trajectories' direction vector into (x, y), where |x| <= 1, |y| <= 1.
     Reference point when scale is the `last` observation point.
 
     :param trajs: input trajectories, shape = `[(batch,) obs, 2]`
-    :param ref: reference length, default is `1`
+    :param ref: index of the reference point
     :return trajs_scaled: scaled trajectories
     :return para_dict: a dict of used parameters, contains `scale:tf.Tensor`
     """
@@ -204,6 +204,7 @@ def scale(trajs: tf.Tensor,
             raise NotImplementedError(anntype)
 
         scales = []
+        ref_points = []
         for [x, y] in order:
             vector = tf.gather(vectors, [x, y], axis=-1)
             scale = tf.linalg.norm(vector, axis=-1)
@@ -214,17 +215,20 @@ def scale(trajs: tf.Tensor,
                 scale = tf.expand_dims(scale, -1)
             scales.append(scale)
 
-        para_dict['SCALE'] = (scales, order)
+            _trajs = tf.gather(trajs, [x, y], axis=-1)
+            ref_point = tf.gather(_trajs, [ref], axis=-2)
+            ref_points.append(ref_point)
+
+        para_dict['SCALE'] = (scales, order, ref_points)
 
     else:
-        (scales, order) = para_dict['SCALE']
+        (scales, order, ref_points) = para_dict['SCALE']
 
     trajs_scaled = []
     steps = trajs.shape[-2]
-    for scale, [x, y] in zip(scales, order):
+    for scale, [x, y], ref_point in zip(scales, order, ref_points):
         _trajs = tf.gather(trajs, [x, y], axis=-1)
-        _trajs_end = tf.gather(_trajs, [steps-1], axis=-2)
-        _trajs_scaled = (_trajs - _trajs_end) / scale + _trajs_end
+        _trajs_scaled = (_trajs - ref_point) / scale + ref_point
         trajs_scaled.append(_trajs_scaled)
 
     trajs_scaled = tf.concat(trajs_scaled, axis=-1)
@@ -253,15 +257,15 @@ def scale_back(trajs: tf.Tensor,
             trajs = tf.expand_dims(trajs, -3)
 
     trajs_scaled = []
-    (scales, order) = para_dict['SCALE']
-    for scale, [x, y] in zip(scales, order):
+    (scales, order, ref_points) = para_dict['SCALE']
+    for scale, [x, y], ref_point in zip(scales, order, ref_points):
         # reshape into (batch, 1, 1, 1)
         while len(scale.shape) < 4:
             scale = tf.expand_dims(scale, -1)
 
         _trajs = tf.gather(trajs, [x, y], axis=-1)
-        _trajs_end = tf.gather(_trajs, [0], axis=-2)
-        _trajs_scaled = (_trajs - _trajs_end) * scale + _trajs_end
+        ref_point = tf.expand_dims(ref_point, axis=1)
+        _trajs_scaled = (_trajs - ref_point) * scale + ref_point
         trajs_scaled.append(_trajs_scaled)
 
     trajs_scaled = tf.concat(trajs_scaled, axis=-1)

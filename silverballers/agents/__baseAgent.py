@@ -44,7 +44,7 @@ class BaseAgentModel(Model):
                 preprocess_list += (operation,)
 
         self.set_preprocess(*preprocess_list)
-        self.set_preprocess_parameters(move=0)
+        self.set_preprocess_parameters(move=0, scale=0)
 
 
 class BaseAgentStructure(Structure):
