@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 16:57:35
+@LastEditTime: 2022-09-01 17:03:08
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -17,6 +17,7 @@ import tensorflow as tf
 from ..args import Args
 from ..utils import CHECKPOINT_FILENAME, WEIGHTS_FORMAT
 from . import __preprocess as preprocess
+from . import process
 
 MOVE = 'MOVE'
 ROTATE = 'ROTATE'
@@ -70,13 +71,10 @@ class Model(tf.keras.Model):
         self.structure = structure
 
         # preprocess
-        self._preprocess_list = []
-        self._preprocess_para = {MOVE: -1,
-                                 ROTATE: 0,
-                                 SCALE: 1,
-                                 UPSAMPLING: 4}
-
-        self._preprocess_variables = {}
+        self._process_list: list[process._BaseProcess] = []
+        self._default_process_para = {MOVE: -1,
+                                      SCALE: -1,
+                                      ROTATE: 0}
 
     def call(self, inputs,
              training=None,
@@ -106,7 +104,7 @@ class Model(tf.keras.Model):
         return self.post_process(outputs, training,
                                  inputs=inputs)
 
-    def set_preprocess(self, *args):
+    def set_preprocess(self, **kwargs):
         """
         Set pre-process methods used before training.
 
@@ -120,75 +118,49 @@ class Model(tf.keras.Model):
             - Rotate observations:
                 args in `['Rotate', ...]`
         """
-        self._preprocess_list = []
-        for item in args:
-            if not issubclass(type(item), str):
-                raise TypeError
+        for key in kwargs.keys():
+            if (value := kwargs[key]) is None:
+                continue
 
-            if re.match('.*[Mm][Oo][Vv][Ee].*', item):
-                self._preprocess_list.append(MOVE)
+            if re.match('.*[Mm][Oo][Vv][Ee].*', key):
+                s = MOVE
+                p = process.Move
 
-            elif re.match('.*[Rr][Oo][Tt].*', item):
-                self._preprocess_list.append(ROTATE)
+            elif re.match('.*[Rr][Oo][Tt].*', key):
+                s = ROTATE
+                p = process.Rotate
 
-            elif re.match('.*[Ss][Cc][Aa].*', item):
-                self._preprocess_list.append(SCALE)
+            elif re.match('.*[Ss][Cc][Aa].*', key):
+                s = SCALE
+                p = process.Scale
 
-            elif re.match('.*[Uu][Pp].*[Ss][Aa][Mm].*', item):
-                self._preprocess_list.append(UPSAMPLING)
+            else:
+                raise NotImplementedError(key)
 
-    def set_preprocess_parameters(self, **kwargs):
-        for item in kwargs.keys():
-            if not issubclass(type(item), str):
-                raise TypeError
+            if value == 'auto':
+                value = self._default_process_para[s]
 
-            if re.match('.*[Mm][Oo][Vv][Ee].*', item):
-                self._preprocess_para[MOVE] = kwargs[item]
-
-            elif re.match('.*[Rr][Oo][Tt].*', item):
-                self._preprocess_para[ROTATE] = kwargs[item]
-
-            elif re.match('.*[Ss][Cc][Aa].*', item):
-                self._preprocess_para[SCALE] = kwargs[item]
-
-            elif re.match('.*[Uu][Pp].*[Ss][Aa][Mm].*', item):
-                self._preprocess_para[UPSAMPLING] = kwargs[item]
+            self._process_list.append(p(anntype=self.args.anntype,
+                                        ref=value))
 
     def pre_process(self, tensors: list[tf.Tensor],
                     training=None,
-                    use_new_para_dict=True,
+                    use_new_paras=True,
                     *args, **kwargs) -> list[tf.Tensor]:
 
         trajs = tensors[0]
-        items = [MOVE, ROTATE, SCALE, UPSAMPLING]
-        funcs = [preprocess.move, preprocess.rotate,
-                 preprocess.scale, preprocess.upSampling]
-
-        for item, func in zip(items, funcs):
-            if item in self._preprocess_list:
-                trajs, self._preprocess_variables = func(
-                    trajs, self._preprocess_variables,
-                    self.args.anntype,
-                    self._preprocess_para[item],
-                    use_new_para_dict)
-
-        return preprocess.update((trajs,), tensors)
+        for p in self._process_list:
+            trajs = p.preprocess(trajs, use_new_paras)
+        return process.update((trajs,), tensors)
 
     def post_process(self, outputs: list[tf.Tensor],
                      training=None,
                      *args, **kwargs) -> list[tf.Tensor]:
 
         trajs = outputs[0]
-        items = [MOVE, ROTATE, SCALE, UPSAMPLING]
-        funcs = [preprocess.move_back, preprocess.rotate_back,
-                 preprocess.scale_back, preprocess.upSampling_back]
-
-        for item, func in zip(items[::-1], funcs[::-1]):
-            if item in self._preprocess_list:
-                trajs = func(trajs, self._preprocess_variables,
-                             self.args.anntype)
-
-        return preprocess.update((trajs,), outputs)
+        for p in self._process_list[::-1]:
+            trajs = p.postprocess(trajs)
+        return process.update((trajs,), outputs)
 
     def load_weights_from_logDir(self, weights_dir: str):
         all_files = os.listdir(weights_dir)

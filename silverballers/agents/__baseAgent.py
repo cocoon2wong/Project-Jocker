@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 12:29:58
+@LastEditTime: 2022-09-01 16:21:39
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -38,13 +38,16 @@ class BaseAgentModel(Model):
         self.p_index = keypoints_index
 
         # Preprocess
-        preprocess_list = ()
-        for index, operation in enumerate(['Move', 'Scale', 'Rotate']):
-            if self.args.preprocess[index] == '1':
-                preprocess_list += (operation,)
+        default_process_args = dict(move=self.args.pmove,
+                                    scale=self.args.pscale,
+                                    rotate=self.args.protate)
+        preprocess = {}
+        for index, operation in enumerate(['move', 'scale', 'rotate']):
+            if (index < len(self.args.preprocess) and
+                    self.args.preprocess[index] == '1'):
+                preprocess[operation] = default_process_args[operation]
 
-        self.set_preprocess(*preprocess_list)
-        self.set_preprocess_parameters(move=0, scale=0)
+        self.set_preprocess(**preprocess)
 
 
 class BaseAgentStructure(Structure):

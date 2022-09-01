@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:41:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 15:26:31
+@LastEditTime: 2022-09-01 16:20:33
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -44,6 +44,27 @@ class _BaseSilverballersArgs(Args):
         - the third bit: `ROTATE` trajectories.
         """
         return self._get('preprocess', '111', argtype='static')
+
+    @property
+    def pmove(self) -> int:
+        """
+        Index of the reference point when moving trajectories.
+        """
+        return self._get('pmove', 0, argtype='static')
+
+    @property
+    def pscale(self) -> int:
+        """
+        Index of the reference point when scaling trajectories.
+        """
+        return self._get('pscale', -1, argtype='static')
+
+    @property
+    def protate(self) -> float:
+        """
+        Reference degree when rotating trajectories.
+        """
+        return self._get('protate', 0.0, argtype='static')
 
     @property
     def T(self) -> str:

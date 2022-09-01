@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 12:31:55
+@LastEditTime: 2022-09-01 11:28:08
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -32,8 +32,7 @@ class BaseHandlerModel(Model):
         self.structure: Structure = structure
 
         # Preprocess
-        self.set_preprocess('move')
-        self.set_preprocess_parameters(move=-1)
+        self.set_preprocess(move=-1)
 
         # Parameters
         self.asHandler = asHandler
@@ -80,7 +79,7 @@ class BaseHandlerModel(Model):
         model_inputs_processed = self.pre_process(model_inputs, training)
         destination_processed = self.pre_process([model_inputs[-1]],
                                                  training,
-                                                 use_new_para_dict=False)
+                                                 use_new_paras=False)
 
         # only when training the single model
         if not self.asHandler:
