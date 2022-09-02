@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-01 17:03:08
+@LastEditTime: 2022-09-02 10:13:10
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -16,7 +16,6 @@ import tensorflow as tf
 
 from ..args import Args
 from ..utils import CHECKPOINT_FILENAME, WEIGHTS_FORMAT
-from . import __preprocess as preprocess
 from . import process
 
 MOVE = 'MOVE'
@@ -71,10 +70,10 @@ class Model(tf.keras.Model):
         self.structure = structure
 
         # preprocess
-        self._process_list: list[process._BaseProcess] = []
-        self._default_process_para = {MOVE: -1,
-                                      SCALE: -1,
-                                      ROTATE: 0}
+        self._process_list: list[process.BasePreProcessor] = []
+        self._default_process_para = {MOVE: Args.pmove,
+                                      SCALE: Args.pscale,
+                                      ROTATE: Args.protate}
 
     def call(self, inputs,
              training=None,

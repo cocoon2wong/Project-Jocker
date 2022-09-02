@@ -8,7 +8,7 @@
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-from .__base import _BaseProcess, update
+from .__base import BasePreProcessor, update
 from .__move import Move
 from .__rotate import Rotate
 from .__scale import Scale

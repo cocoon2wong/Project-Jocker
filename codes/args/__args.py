@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-31 10:53:28
+@LastEditTime: 2022-09-02 10:12:55
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -466,3 +466,25 @@ class Args():
         Time interval of each sampled trajectory coordinate.
         """
         return self._get('interval', 0.4, argtype='static')
+
+    @property
+    def pmove(self) -> int:
+        """
+        Index of the reference point when moving trajectories.
+        """
+        return self._get('pmove', 0, argtype='static')
+
+    @property
+    def pscale(self) -> str:
+        """
+        Index of the reference point when scaling trajectories.
+        """
+        return self._get('pscale', 'autoref', argtype='static')
+
+    @property
+    def protate(self) -> float:
+        """
+        Reference degree when rotating trajectories.
+        """
+        return self._get('protate', 0.0, argtype='static')
+    

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 10:38:49
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-01 16:38:32
+@LastEditTime: 2022-09-02 14:39:03
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,7 +13,7 @@ from typing import Union
 import tensorflow as tf
 
 
-class _BaseProcess():
+class BasePreProcessor():
 
     def __init__(self, anntype: str, ref):
 
@@ -27,6 +27,9 @@ class _BaseProcess():
         raise NotImplementedError('Please rewrite this method')
 
     def postprocess(self, trajs: tf.Tensor) -> tf.Tensor:
+        raise NotImplementedError('Please rewrite this method')
+
+    def update_paras(self, trajs: tf.Tensor) -> None:
         raise NotImplementedError('Please rewrite this method')
 
     def set_order(self, anntype: str):
