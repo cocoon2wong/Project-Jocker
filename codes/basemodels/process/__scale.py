@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 10:40:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-01 16:06:04
+@LastEditTime: 2022-09-02 09:40:54
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -43,6 +43,7 @@ class Scale(_BaseProcess):
                 tf.gather(trajs, 0, axis=-2))
 
             scales = []
+            ref_points = []
             for [x, y] in self.order:
                 vector = tf.gather(vectors, [x, y], axis=-1)
                 scale = tf.linalg.norm(vector, axis=-1)
@@ -53,17 +54,20 @@ class Scale(_BaseProcess):
                     scale = tf.expand_dims(scale, -1)
                 scales.append(scale)
 
-            self.paras = scales
+                # ref points: the `ref`-th points of observations
+                _trajs = tf.gather(trajs, [x, y], axis=-1)
+                _ref = tf.math.mod(self.ref, steps)
+                _ref_point = tf.gather(_trajs, [_ref], axis=-2)
+                ref_points.append(_ref_point)
+
+            self.paras = (scales, ref_points)
 
         else:
-            scales = self.paras
+            (scales, ref_points) = self.paras
 
         trajs_scaled = []
-        steps = trajs.shape[-2]
-        for scale, [x, y] in zip(scales, self.order):
+        for scale, ref_point, [x, y] in zip(scales, ref_points, self.order):
             _trajs = tf.gather(trajs, [x, y], axis=-1)
-            ref = tf.math.mod(self.ref, steps)
-            ref_point = tf.gather(_trajs, [ref], axis=-2)
             _trajs_scaled = (_trajs - ref_point) / scale + ref_point
             trajs_scaled.append(_trajs_scaled)
 
@@ -90,20 +94,22 @@ class Scale(_BaseProcess):
             trajs = tf.expand_dims(trajs, axis=-3)
 
         trajs_scaled = []
-        scales = self.paras
-        for scale, [x, y] in zip(scales, self.order):
+        (scales, ref_points) = self.paras
+        for scale, ref_point, [x, y] in zip(scales, ref_points, self.order):
             while scale.ndim < 4:
                 scale = tf.expand_dims(scale, -1)
 
+            while ref_point.ndim < 4:
+                ref_point = tf.expand_dims(ref_point, axis=-3)
+
             _trajs = tf.gather(trajs, [x, y], axis=-1)
-            _ref_point = tf.gather(_trajs, [0], axis=-2)
-            _trajs_scaled = (_trajs - _ref_point) * scale + _ref_point
+            _trajs_scaled = (_trajs - ref_point) * scale + ref_point
             trajs_scaled.append(_trajs_scaled)
 
         trajs_scaled = tf.concat(trajs_scaled, axis=-1)
 
         for _ in range(expands):
-            trajs_scaled = trajs_scaled[0]
+            trajs_scaled = tf.gather(trajs_scaled, 0, axis=-3)
 
         return trajs_scaled
         

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:41:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-01 16:20:33
+@LastEditTime: 2022-09-01 19:43:44
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -50,7 +50,7 @@ class _BaseSilverballersArgs(Args):
         """
         Index of the reference point when moving trajectories.
         """
-        return self._get('pmove', 0, argtype='static')
+        return self._get('pmove', -1, argtype='static')
 
     @property
     def pscale(self) -> int:
