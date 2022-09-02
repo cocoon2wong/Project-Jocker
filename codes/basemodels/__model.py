@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-02 10:13:10
+@LastEditTime: 2022-09-02 16:32:13
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -117,30 +117,24 @@ class Model(tf.keras.Model):
             - Rotate observations:
                 args in `['Rotate', ...]`
         """
-        for key in kwargs.keys():
-            if (value := kwargs[key]) is None:
-                continue
 
-            if re.match('.*[Mm][Oo][Vv][Ee].*', key):
-                s = MOVE
-                p = process.Move
+        preprocess_dict: dict[str, tuple[str, type[process.BasePreProcessor]]] = {
+            MOVE: ('.*[Mm][Oo][Vv][Ee].*', process.Move),
+            ROTATE: ('.*[Rr][Oo][Tt].*', process.Rotate),
+            SCALE: ('.*[Ss][Cc][Aa].*', process.Scale),
+        }
 
-            elif re.match('.*[Rr][Oo][Tt].*', key):
-                s = ROTATE
-                p = process.Rotate
+        for key, [pattern, processor] in preprocess_dict.items():
+            for given_key in kwargs.keys():
+                if re.match(pattern, given_key):
+                    if (value := kwargs[given_key]) is None:
+                        continue
 
-            elif re.match('.*[Ss][Cc][Aa].*', key):
-                s = SCALE
-                p = process.Scale
+                    elif value == 'auto':
+                        value = self._default_process_para[key]
 
-            else:
-                raise NotImplementedError(key)
-
-            if value == 'auto':
-                value = self._default_process_para[s]
-
-            self._process_list.append(p(anntype=self.args.anntype,
-                                        ref=value))
+                    self._process_list.append(
+                        processor(self.args.anntype, value))
 
     def pre_process(self, tensors: list[tf.Tensor],
                     training=None,
