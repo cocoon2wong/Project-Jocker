@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-05 16:00:26
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-27 13:44:46
+@LastEditTime: 2022-09-05 10:00:08
 @Description: First stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -91,8 +91,7 @@ class VAModel(BaseAgentModel):
         rep_time = self.args.K_train if training else self.args.K
         for _ in range(rep_time):
             # assign random ids and embedding -> (batch, obs, d)
-            # ids = tf.random.normal([bs, self.args.obs_frames, self.d_id])
-            ids = tf.zeros([bs, self.args.obs_frames, self.d_id])
+            ids = tf.random.normal([bs, self.args.obs_frames, self.d_id])
             id_features = self.ie.call(ids)
 
             # transformer inputs
