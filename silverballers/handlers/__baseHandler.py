@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-01 11:28:08
+@LastEditTime: 2022-09-07 10:03:41
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -72,18 +72,20 @@ class BaseHandlerModel(Model):
 
         return tf.transpose(tf.stack(p_all), [1, 0, 2, 3])
 
-    def forward(self, model_inputs: list[tf.Tensor],
+    def forward(self, inputs: list[tf.Tensor],
                 training=None,
                 *args, **kwargs):
 
-        model_inputs_processed = self.pre_process(model_inputs, training)
-        destination_processed = self.pre_process([model_inputs[-1]],
-                                                 training,
-                                                 use_new_paras=False)
+        keypoints = [inputs[-1]]
+
+        inputs_p = self.process(inputs, preprocess=True, training=training)
+        keypoints_p = self.process(inputs, preprocess=True,
+                                   update_paras=False,
+                                   training=training)
 
         # only when training the single model
         if not self.asHandler:
-            gt_processed = destination_processed[0]
+            gt_processed = keypoints_p[0]
 
             if self.key_points == 'null':
                 index = np.random.choice(np.arange(self.args.pred_frames-1),
@@ -96,22 +98,20 @@ class BaseHandlerModel(Model):
             points = tf.gather(gt_processed, index, axis=1)
             index = tf.cast(index, tf.float32)
 
-            outputs = self.call(model_inputs_processed,
+            outputs = self.call(inputs_p,
                                 keypoints=points,
                                 keypoints_index=index,
                                 training=True)
 
         # use as the second stage model
         else:
-            outputs = self.call_as_handler(model_inputs_processed,
-                                           keypoints=destination_processed[0],
+            outputs = self.call_as_handler(inputs_p,
+                                           keypoints=keypoints_p[0],
                                            keypoints_index=self.points_index,
                                            training=None)
 
-        if not type(outputs) in [list, tuple]:
-            outputs = [outputs]
-
-        return self.post_process(outputs, training, model_inputs=model_inputs)
+        outputs_p = self.process(outputs, preprocess=False, training=training)
+        return outputs_p
 
 
 class BaseHandlerStructure(Structure):

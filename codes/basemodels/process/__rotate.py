@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 11:15:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-02 14:35:41
+@LastEditTime: 2022-09-07 11:19:12
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,17 +11,19 @@
 import tensorflow as tf
 
 from ...utils import ROTATE_BIAS
-from .__base import BasePreProcessor
+from .__base import BaseProcessLayer
 
 
-class Rotate(BasePreProcessor):
+class Rotate(BaseProcessLayer):
     """
     Rotate trajectories to the referce angle.
     Default reference angle is 0.
     """
 
-    def __init__(self, anntype: str, ref):
-        super().__init__(anntype, ref)
+    def __init__(self, anntype: str, ref,
+                 *args, **kwargs):
+
+        super().__init__(anntype, ref, *args, **kwargs)
 
     def update_paras(self, trajs: tf.Tensor) -> None:
         steps = trajs.shape[-2]

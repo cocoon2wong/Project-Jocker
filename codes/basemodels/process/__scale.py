@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 10:40:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-02 14:41:01
+@LastEditTime: 2022-09-07 11:23:17
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,16 +11,17 @@
 import tensorflow as tf
 
 from ...utils import SCALE_THRESHOLD
-from .__base import BasePreProcessor
+from .__base import BaseProcessLayer
 
 
-class Scale(BasePreProcessor):
+class Scale(BaseProcessLayer):
     """
     Scale length of trajectories' direction vector into 1.
     Reference point when scale is the `last` observation point.
     """
 
-    def __init__(self, anntype: str, ref: int = -1):
+    def __init__(self, anntype: str, ref: int = -1,
+                 *args, **kwargs):
         """
         `ref` is the index of reference point when scaling.
         For example, when `ref == -1`, it will takes the last
@@ -37,7 +38,7 @@ class Scale(BasePreProcessor):
             self.auto_ref = False
             ref = int(ref)
 
-        super().__init__(anntype, ref)
+        super().__init__(anntype, ref, *args, **kwargs)
 
     def update_paras(self, trajs: tf.Tensor) -> None:
         steps = trajs.shape[-2]

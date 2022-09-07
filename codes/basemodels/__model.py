@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-02 16:32:13
+@LastEditTime: 2022-09-07 11:25:25
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -70,7 +70,7 @@ class Model(tf.keras.Model):
         self.structure = structure
 
         # preprocess
-        self._process_list: list[process.BasePreProcessor] = []
+        self.processor: process.BaseProcessLayer = None
         self._default_process_para = {MOVE: Args.pmove,
                                       SCALE: Args.pscale,
                                       ROTATE: Args.protate}
@@ -88,20 +88,13 @@ class Model(tf.keras.Model):
 
         :param inputs: input tensor (or a `list` of tensors)
         :param training: config if running as training or test mode
-        :return output: model's output. type=`list[tf.Tensor]`
+        :return outputs_p: model's output. type=`list[tf.Tensor]`
         """
 
-        inputs_processed = self.pre_process(inputs, training)
-
-        # use `self.call()` to debug
-        outputs = self(inputs_processed, training=training)
-
-        # make sure the output is a list or a tuple
-        if not type(outputs) in [list, tuple]:
-            outputs = [outputs]
-
-        return self.post_process(outputs, training,
-                                 inputs=inputs)
+        inputs_p = self.process(inputs, preprocess=True, training=training)
+        outputs = self(inputs_p, training=training)
+        outputs_p = self.process(outputs, preprocess=False, training=training)
+        return outputs_p
 
     def set_preprocess(self, **kwargs):
         """
@@ -118,12 +111,13 @@ class Model(tf.keras.Model):
                 args in `['Rotate', ...]`
         """
 
-        preprocess_dict: dict[str, tuple[str, type[process.BasePreProcessor]]] = {
+        preprocess_dict: dict[str, tuple[str, type[process.BaseProcessLayer]]] = {
             MOVE: ('.*[Mm][Oo][Vv][Ee].*', process.Move),
             ROTATE: ('.*[Rr][Oo][Tt].*', process.Rotate),
             SCALE: ('.*[Ss][Cc][Aa].*', process.Scale),
         }
 
+        process_list = []
         for key, [pattern, processor] in preprocess_dict.items():
             for given_key in kwargs.keys():
                 if re.match(pattern, given_key):
@@ -133,27 +127,26 @@ class Model(tf.keras.Model):
                     elif value == 'auto':
                         value = self._default_process_para[key]
 
-                    self._process_list.append(
-                        processor(self.args.anntype, value))
+                    process_list.append(processor(self.args.anntype, value))
 
-    def pre_process(self, tensors: list[tf.Tensor],
-                    training=None,
-                    use_new_paras=True,
-                    *args, **kwargs) -> list[tf.Tensor]:
+        self.processor = process.ProcessModel(process_list)
 
-        trajs = tensors[0]
-        for p in self._process_list:
-            trajs = p.preprocess(trajs, use_new_paras)
-        return process.update((trajs,), tensors)
+    def process(self, inputs: list[tf.Tensor],
+                preprocess: bool,
+                update_paras=True,
+                training=None,
+                *args, **kwargs) -> list[tf.Tensor]:
 
-    def post_process(self, outputs: list[tf.Tensor],
-                     training=None,
-                     *args, **kwargs) -> list[tf.Tensor]:
+        if not type(inputs) in [list, tuple]:
+            inputs = [inputs]
 
-        trajs = outputs[0]
-        for p in self._process_list[::-1]:
-            trajs = p.postprocess(trajs)
-        return process.update((trajs,), outputs)
+        if self.processor is None:
+            return inputs
+
+        inputs = self.processor.call(inputs, preprocess,
+                                     update_paras, training,
+                                     *args, **kwargs)
+        return inputs
 
     def load_weights_from_logDir(self, weights_dir: str):
         all_files = os.listdir(weights_dir)

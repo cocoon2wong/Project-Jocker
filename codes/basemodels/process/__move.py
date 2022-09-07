@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 10:38:40
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-02 11:09:17
+@LastEditTime: 2022-09-07 11:24:31
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,17 +10,19 @@
 
 import tensorflow as tf
 
-from .__base import BasePreProcessor
+from .__base import BaseProcessLayer
 
 
-class Move(BasePreProcessor):
+class Move(BaseProcessLayer):
     """
     Move a specific point to (0, 0) according to the reference time step.
     Default reference time step is the last obsetvation step.
     """
 
-    def __init__(self, anntype: str = None, ref: int = -1):
-        super().__init__(anntype, ref)
+    def __init__(self, anntype: str = None, ref: int = -1,
+                 *args, **kwargs):
+
+        super().__init__(anntype, ref, *args, **kwargs)
 
     def update_paras(self, trajs: tf.Tensor) -> None:
         ref = tf.math.mod(self.ref, trajs.shape[-2])
