@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-31 10:01:00
+@LastEditTime: 2022-09-07 15:17:06
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -316,7 +316,7 @@ class Structure(BaseObject):
         self.print_train_info()
 
         # make log directory and save current args
-        self.args._save_as_json(dir_check(self.args.log_dir))
+        self.args._save_as_json(self.args.log_dir)
 
         # open tensorboard
         tb = tf.summary.create_file_writer(self.args.log_dir)
@@ -430,6 +430,13 @@ class Structure(BaseObject):
         self.print_dataset_info(DatasetName=dataset, TestSets=clips)
         self.print_model_info()
         self.print_test_info()
+
+        # make log directory and save current args
+        if self.args.update_saved_args:
+            save_dir = self.args.load
+            self.args._set('load', 'null')
+            self.args._set('update_saved_args', 0)
+            self.args._save_as_json(save_dir)
 
         # Load dataset
         ds_test = agents.make_dataset()

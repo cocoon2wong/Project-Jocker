@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-07 10:03:41
+@LastEditTime: 2022-09-08 15:38:07
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -32,7 +32,12 @@ class BaseHandlerModel(Model):
         self.structure: Structure = structure
 
         # Preprocess
-        self.set_preprocess(move=-1)
+        preprocess = {}
+        for index, operation in enumerate(['move', 'scale', 'rotate']):
+            if self.args.preprocess[index] == '1':
+                preprocess[operation] = 'auto'
+
+        self.set_preprocess(**preprocess)
 
         # Parameters
         self.asHandler = asHandler
@@ -79,7 +84,7 @@ class BaseHandlerModel(Model):
         keypoints = [inputs[-1]]
 
         inputs_p = self.process(inputs, preprocess=True, training=training)
-        keypoints_p = self.process(inputs, preprocess=True,
+        keypoints_p = self.process(keypoints, preprocess=True,
                                    update_paras=False,
                                    training=training)
 

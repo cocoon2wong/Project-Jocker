@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-02 10:12:55
+@LastEditTime: 2022-09-08 15:39:32
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -79,8 +79,9 @@ class Args():
         self._args_runnning = dic
         return self
 
-    def _save_as_json(self, dir_path: str):
-        json_path = os.path.join(dir_path, 'args.json')
+    def _save_as_json(self, target_dir: str):
+        dir_check(target_dir)
+        json_path = os.path.join(target_dir, 'args.json')
 
         names = self._arg_list
         values = [getattr(self, s) for s in self._arg_list]
@@ -472,7 +473,7 @@ class Args():
         """
         Index of the reference point when moving trajectories.
         """
-        return self._get('pmove', 0, argtype='static')
+        return self._get('pmove', -1, argtype='static')
 
     @property
     def pscale(self) -> str:
@@ -487,4 +488,11 @@ class Args():
         Reference degree when rotating trajectories.
         """
         return self._get('protate', 0.0, argtype='static')
+
+    @property
+    def update_saved_args(self) -> int:
+        """
+        Choose if update (overwrite) json arg files or not.
+        """
+        return self._get('update_saved_args', 0, argtype='dynamic')
     
