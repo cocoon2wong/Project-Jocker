@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-31 10:10:29
+@LastEditTime: 2022-09-13 21:37:59
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -123,8 +123,9 @@ class BaseSilverballers(Structure):
 
         if self.args.loadb.startswith('l'):
             self.linear_predict = True
-            self.set_inputs('trajs')
-            self.args._set('use_maps', 0)
+            if self.agent.args.use_maps == 0:
+                self.set_inputs('trajs')
+                self.args._set('use_maps', 0)
 
             self.add_keywords(HandlerModelType='Linear Interpolation')
 

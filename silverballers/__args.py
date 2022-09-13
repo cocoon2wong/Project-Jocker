@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:41:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-02 10:12:41
+@LastEditTime: 2022-09-13 21:44:02
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -70,8 +70,6 @@ class AgentArgs(_BaseSilverballersArgs):
 
     def __init__(self, terminal_args: list[str] = None) -> None:
         super().__init__(terminal_args)
-
-        self._set('use_maps', 0)
 
     @property
     def depth(self) -> int:
