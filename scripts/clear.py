@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-07-19 11:11:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-31 10:04:42
+@LastEditTime: 2022-09-07 09:11:20
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -62,6 +62,23 @@ def clean_figs(base_dir):
             print(f'Removed `{p}`.')
 
 
+def clean_dirs(base_dir):
+    """
+    Delete all empty dirs in the `base_dir`.
+    """
+    for d in os.listdir(base_dir):
+        cd = os.path.join(base_dir, d)
+
+        if d.startswith('.') or not os.path.isdir(cd):
+            continue
+
+        files = os.listdir(cd)
+
+        if len(files) == 0:
+            os.system(f'rm -r {cd}')
+            print(f'Removed `{cd}.`')
+
+
 def get_value(key: str, args: list[str]):
     """
     `key` is started with `--`.
@@ -79,3 +96,6 @@ if __name__ == '__main__':
 
     elif '--figs' in args:
         clean_figs(get_value('--figs', args))
+
+    elif '--dirs' in args:
+        clean_dirs(get_value('--dirs', args))
