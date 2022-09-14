@@ -200,7 +200,7 @@ Args with `argtype='static'` means that their values can not be changed once aft
   Conrtols if draw distributions of predictions instead of points.
   The default value is `0`.
 - `--draw_results`, type=`str`, argtype=`'dynamic'`.
-  Controls if draw visualized results on video frames. Accept the name of one video clip. Make sure that you have put video files into `./videos` according to the specific name way. Note that `test_mode` will be set to `'one'` and `force_split` will be set to `draw_results` if `draw_results != 'null'`.
+  Controls if draw visualized results on video frames. Accept the name of one video clip. The codes will first try to load the video according to the path saved in the `plist` file, and if successful it will draw the visualization on the video, otherwise it will draw on a blank canvas. Note that `test_mode` will be set to `'one'` and `force_split` will be set to `draw_results` if `draw_results != 'null'`.
   The default value is `'null'`.
 - `--epochs`, type=`int`, argtype=`'static'`.
   Maximum training epochs.
@@ -238,9 +238,18 @@ Args with `argtype='static'` means that their values can not be changed once aft
 - `--obs_frames`, type=`int`, argtype=`'static'`.
   Observation frames for prediction.
   The default value is `8`.
+- `--pmove`, type=`int`, argtype=`'static'`.
+  Index of the reference point when moving trajectories.
+  The default value is `-1`.
 - `--pred_frames`, type=`int`, argtype=`'static'`.
   Prediction frames.
   The default value is `12`.
+- `--protate`, type=`float`, argtype=`'static'`.
+  Reference degree when rotating trajectories.
+  The default value is `0.0`.
+- `--pscale`, type=`str`, argtype=`'static'`.
+  Index of the reference point when scaling trajectories.
+  The default value is `'autoref'`.
 - `--restore`, type=`str`, argtype=`'dynamic'`.
   Path to restore the pre-trained weights before training. It will not restore any weights if `args.restore == 'null'`.
   The default value is `'null'`.
@@ -265,12 +274,12 @@ Args with `argtype='static'` means that their values can not be changed once aft
 - `--test_step`, type=`int`, argtype=`'static'`.
   Epoch interval to run validation during training. """ return self._get('test_step', 3, argtype='static') """ Trajectory Prediction Args 
   The default value is `3`.
+- `--update_saved_args`, type=`int`, argtype=`'dynamic'`.
+  Choose if update (overwrite) json arg files or not.
+  The default value is `0`.
 - `--use_extra_maps`, type=`int`, argtype=`'dynamic'`.
   Controls if uses the calculated trajectory maps or the given trajectory maps. The model will load maps from `./dataset_npz/.../agent1_maps/trajMap.png` if set it to `0`, and load from `./dataset_npz/.../agent1_maps/trajMap_load.png` if set this argument to `1`.
   The default value is `0`.
-- `--use_maps`, type=`int`, argtype=`'static'`.
-  Controls if uses the context maps to model social and physical interactions in the model.
-  The default value is `1`.
 
 ### Silverballers args
 

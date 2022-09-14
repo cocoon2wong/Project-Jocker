@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-08 15:39:32
+@LastEditTime: 2022-09-14 10:32:13
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -417,14 +417,6 @@ class Args():
         This arg only works for `Generative Models`.
         """
         return self._get('K_train', 10, argtype='static')
-
-    @property
-    def use_maps(self) -> int:
-        """
-        Controls if uses the context maps to model social
-        and physical interactions in the model.
-        """
-        return self._get('use_maps', 1, argtype='static')
 
     @property
     def use_extra_maps(self) -> int:
