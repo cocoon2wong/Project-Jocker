@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-13 21:37:59
+@LastEditTime: 2022-09-14 10:30:52
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -28,6 +28,7 @@ class BaseSilverballersModel(Model):
 
         super().__init__(Args, structure, *args, **kwargs)
 
+        # process are run in AgentModels and HandlerModels
         self.set_preprocess()
 
         self.agent = agentModel
@@ -36,6 +37,9 @@ class BaseSilverballersModel(Model):
 
         if self.linear:
             self.linear_layer = layers.LinearInterpolation()
+            self.input_type = self.agent.input_type
+        else:
+            self.input_type = self.handler.input_type[:-1]
 
     def call(self, inputs: list[tf.Tensor],
              training=None, mask=None,
@@ -95,11 +99,8 @@ class BaseSilverballers(Structure):
         self.Loss = SilverballersLoss(self.args)
         self.noTraining = True
 
-        # set inputs and outputs
-        self.set_inputs('trajs', 'maps', 'paras')
+        # set labels and metrics
         self.set_labels('gt')
-
-        # set metrics
         self.set_metrics(self.Loss.avgADE, self.Loss.avgFDE)
         self.set_metrics_weights(1.0, 0.0)
 
@@ -123,10 +124,6 @@ class BaseSilverballers(Structure):
 
         if self.args.loadb.startswith('l'):
             self.linear_predict = True
-            if self.agent.args.use_maps == 0:
-                self.set_inputs('trajs')
-                self.args._set('use_maps', 0)
-
             self.add_keywords(HandlerModelType='Linear Interpolation')
 
         else:

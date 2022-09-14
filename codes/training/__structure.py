@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-07 15:17:06
+@LastEditTime: 2022-09-14 10:23:49
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -39,55 +39,19 @@ class Structure(BaseObject):
         self.set_gpu()
         self.optimizer = self.set_optimizer()
 
+        # Set labels, loss functions, and metrics
         # You can change the following items in your subclasses
-        self.set_inputs('obs')
         self.set_labels('pred')
-
         self.set_loss('ade')
         self.set_loss_weights(1.0)
 
         self.set_metrics('ade', 'fde')
         self.set_metrics_weights(1.0, 0.0)
 
+        # Keywords to be print on the screen before training
         self.add_keywords(ModelType=self.args.model,
                           PredictionType=self.args.anntype,
                           ModelName=self.args.model_name)
-
-    def set_inputs(self, *args):
-        """
-        Set variables to input to the model.
-        Accept keywords:
-        ```python
-        historical_trajectory = ['traj', 'obs']
-        groundtruth_trajectory = ['pred', 'gt']
-        context_map = ['map']
-        context_map_paras = ['para', 'map_para']
-        destination = ['des', 'inten']
-        ```
-
-        :param input_names: type = `str`, accept several keywords
-        """
-        self.model_inputs = []
-        for item in args:
-            if 'traj' in item or \
-                    'obs' in item:
-                self.model_inputs.append('TRAJ')
-
-            elif 'para' in item or \
-                    'map_para' in item:
-                self.model_inputs.append('MAPPARA')
-
-            elif 'context' in item or \
-                    'map' in item:
-                self.model_inputs.append('MAP')
-
-            elif 'des' in item or \
-                    'inten' in item:
-                self.model_inputs.append('DEST')
-
-            elif 'gt' in item or \
-                    'pred' in item:
-                self.model_inputs.append('GT')
 
     def set_labels(self, *args):
         """
@@ -99,16 +63,16 @@ class Structure(BaseObject):
 
         :param input_names: type = `str`, accept several keywords
         """
-        self.model_labels = []
+        self.model_label_type = []
         for item in args:
             if 'traj' in item or \
                 'gt' in item or \
                     'pred' in item:
-                self.model_labels.append('GT')
+                self.model_label_type.append('GT')
 
             elif 'des' in item or \
                     'inten' in item:
-                self.model_labels.append('DEST')
+                self.model_label_type.append('DEST')
 
     def set_loss(self, *args):
         self.loss_list = [arg for arg in args]
@@ -241,17 +205,16 @@ class Structure(BaseObject):
         """
         Load args, load datasets, and start training or test.
         """
-
-        # assign agentManagers
-        self.manager = dataset.DatasetManager(self.args)
-        self.manager.set_types(inputs_type=self.model_inputs,
-                               labels_type=self.model_labels)
-
         # init model
         self.model = self.create_model()
 
+        # assign agentManagers
+        self.manager = dataset.DatasetManager(self.args)
+        self.manager.set_types(inputs_type=self.model.input_type,
+                               labels_type=self.model_label_type)
+
         if self.noTraining:
-            self.run_test()
+            self.run_test(self.manager)
 
         elif self.args.load == 'null':
             # restore weights before training (optional)
@@ -265,14 +228,14 @@ class Structure(BaseObject):
         else:
             self.log(f'Start test `{self.args.load}`')
             self.model.load_weights_from_logDir(self.args.load)
-            self.run_test()
+            self.run_test(self.manager)
 
-    def run_test(self):
+    def run_test(self, manager: dataset.DatasetManager):
         """
-        Run test accoding to arguments.
-        """
+        Run test on the given dataset.
 
-        manager = self.manager
+        :param manager: dataset's manager object
+        """
         test_sets = manager.info.test_sets
 
         # test on a single sub-dataset

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-13 21:50:02
+@LastEditTime: 2022-09-14 09:50:47
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -31,8 +31,8 @@ class BaseAgentModel(Model):
         self.args = Args
         self.structure: BaseAgentStructure = structure
 
-        # Agent model uses no maps by default
-        self.args._set('use_maps', 0)
+        # Model input types
+        self.set_inputs('obs')
 
         # Parameters
         self.d = feature_dim
@@ -63,9 +63,7 @@ class BaseAgentStructure(Structure):
                           PreprocessOptions=self.args.preprocess,
                           Transformation=self.args.T)
 
-        self.set_inputs('obs')
         self.set_labels('pred')
-
         self.set_loss(self.Loss.l2)
         self.set_loss_weights(1.0)
 

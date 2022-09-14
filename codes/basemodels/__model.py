@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-07 11:25:25
+@LastEditTime: 2022-09-14 09:45:33
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -69,6 +69,10 @@ class Model(tf.keras.Model):
         self.args = Args
         self.structure = structure
 
+        # Model inputs
+        self.input_type: list[str] = []
+        self.set_inputs('obs')
+
         # preprocess
         self.processor: process.BaseProcessLayer = None
         self._default_process_para = {MOVE: Args.pmove,
@@ -95,6 +99,42 @@ class Model(tf.keras.Model):
         outputs = self(inputs_p, training=training)
         outputs_p = self.process(outputs, preprocess=False, training=training)
         return outputs_p
+
+    def set_inputs(self, *args):
+        """
+        Set variables to input to the model.
+        Accept keywords:
+        ```python
+        historical_trajectory = ['traj', 'obs']
+        groundtruth_trajectory = ['pred', 'gt']
+        context_map = ['map']
+        context_map_paras = ['para', 'map_para']
+        destination = ['des', 'inten']
+        ```
+
+        :param input_names: type = `str`, accept several keywords
+        """
+        self.input_type = []
+        for item in args:
+            if 'traj' in item or \
+                    'obs' in item:
+                self.input_type.append('TRAJ')
+
+            elif 'para' in item or \
+                    'map_para' in item:
+                self.input_type.append('MAPPARA')
+
+            elif 'context' in item or \
+                    'map' in item:
+                self.input_type.append('MAP')
+
+            elif 'des' in item or \
+                    'inten' in item:
+                self.input_type.append('DEST')
+
+            elif 'gt' in item or \
+                    'pred' in item:
+                self.input_type.append('GT')
 
     def set_preprocess(self, **kwargs):
         """

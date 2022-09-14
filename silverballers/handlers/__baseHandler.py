@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-08 15:38:07
+@LastEditTime: 2022-09-14 09:34:07
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -31,13 +31,8 @@ class BaseHandlerModel(Model):
 
         self.structure: Structure = structure
 
-        # Preprocess
-        preprocess = {}
-        for index, operation in enumerate(['move', 'scale', 'rotate']):
-            if self.args.preprocess[index] == '1':
-                preprocess[operation] = 'auto'
-
-        self.set_preprocess(**preprocess)
+        # GT in the inputs is only used when training
+        self.set_inputs('trajs', 'maps', 'paras', 'gt')
 
         # Parameters
         self.asHandler = asHandler
@@ -48,6 +43,14 @@ class BaseHandlerModel(Model):
         if self.asHandler or key_points != 'null':
             pi = [int(i) for i in key_points.split('_')]
             self.points_index = tf.cast(pi, tf.float32)
+
+        # Preprocess
+        preprocess = {}
+        for index, operation in enumerate(['move', 'scale', 'rotate']):
+            if self.args.preprocess[index] == '1':
+                preprocess[operation] = 'auto'
+
+        self.set_preprocess(**preprocess)
 
     def call_as_handler(self, inputs: list[tf.Tensor],
                         keypoints: tf.Tensor,
@@ -132,10 +135,7 @@ class BaseHandlerStructure(Structure):
         self.add_keywords(NumberOfKeyoints=self.args.points,
                           Transformation=self.args.T)
 
-        # GT in the inputs is only used when training
-        self.set_inputs('trajs', 'maps', 'paras', 'gt')
         self.set_labels('gt')
-
         self.set_loss(self.Loss.l2)
         self.set_loss_weights(1.0)
 

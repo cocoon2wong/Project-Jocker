@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:34:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-31 09:56:04
+@LastEditTime: 2022-09-14 10:03:47
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -48,8 +48,8 @@ class DatasetManager(BaseObject):
         self.args = args
         self.info = Dataset(args.dataset, args.split)
 
-        self.model_inputs = None
-        self.model_labels = None
+        self.model_input_type: list[str] = None
+        self.model_label_type: list[str] = None
 
     def set_types(self, inputs_type: list[str], labels_type: list[str] = None):
         """
@@ -60,9 +60,9 @@ class DatasetManager(BaseObject):
         :param labels_type: a list of `str`, accept `'GT'` and `'DEST'`
         """
 
-        self.model_inputs = inputs_type
+        self.model_input_type = inputs_type
         if labels_type is not None:
-            self.model_labels = labels_type
+            self.model_label_type = labels_type
 
     def _load_from_videoClips(self, video_clips: list[VideoClipManager],
                               mode='test') -> AgentManager:
@@ -106,7 +106,7 @@ class DatasetManager(BaseObject):
             agents.set_picker(dataset_type, prediction_type)
             agents.bar = self.bar
 
-            if self.args.use_maps:
+            if 'MAP' in self.model_input_type:
                 map_path = dir_check(data_path.split('.np')[0] + '_maps')
                 map_file = ('trajMap.png' if not self.args.use_extra_maps
                             else 'trajMap_load.png')
@@ -141,8 +141,8 @@ class DatasetManager(BaseObject):
 
             all_agents.append(agents)
 
-        all_agents.set_types(inputs_type=self.model_inputs,
-                             labels_type=self.model_labels)
+        all_agents.set_types(inputs_type=self.model_input_type,
+                             labels_type=self.model_label_type)
         return all_agents
 
     def load(self, clips: Union[str, list[str]], mode: str) -> Union[AgentManager, tuple[AgentManager, AgentManager]]:
