@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-14 09:34:07
+@LastEditTime: 2022-09-14 10:42:07
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -51,6 +51,13 @@ class BaseHandlerModel(Model):
                 preprocess[operation] = 'auto'
 
         self.set_preprocess(**preprocess)
+
+    def call(self, inputs: list[tf.Tensor],
+             keypoints: tf.Tensor,
+             keypoints_index: tf.Tensor,
+             training=None, mask=None):
+
+        raise NotImplementedError
 
     def call_as_handler(self, inputs: list[tf.Tensor],
                         keypoints: tf.Tensor,

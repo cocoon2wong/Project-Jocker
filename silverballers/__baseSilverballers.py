@@ -2,20 +2,20 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-14 10:30:52
+@LastEditTime: 2022-09-14 15:18:57
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import tensorflow as tf
-from codes.basemodels import Model, layers
+from codes.basemodels import Model
 from codes.training import Structure
 
 from .__args import SilverballersArgs
 from .__loss import SilverballersLoss
 from .agents import BaseAgentModel, BaseAgentStructure
-from .handlers import BaseHandlerModel, BaseHandlerStructure
+from .handlers import BaseHandlerModel, BaseHandlerStructure, LinearHandlerModel
 
 
 class BaseSilverballersModel(Model):
@@ -28,48 +28,35 @@ class BaseSilverballersModel(Model):
 
         super().__init__(Args, structure, *args, **kwargs)
 
-        # process are run in AgentModels and HandlerModels
+        # processes are run in AgentModels and HandlerModels
         self.set_preprocess()
 
+        # Layers
         self.agent = agentModel
         self.handler = handlerModel
-        self.linear = not self.handler
 
-        if self.linear:
-            self.linear_layer = layers.LinearInterpolation()
-            self.input_type = self.agent.input_type
-        else:
-            self.input_type = self.handler.input_type[:-1]
+        # Set model inputs
+        a_type = self.agent.input_type
+        h_type = self.handler.input_type[:-1]
+        self.input_type = list(set(a_type + h_type))
+        self.agent_input_index = self.get_input_index(a_type)
+        self.handler_input_index = self.get_input_index(h_type)
+
+    def get_input_index(self, input_type: list[str]):
+        return [self.input_type.index(t) for t in input_type]
 
     def call(self, inputs: list[tf.Tensor],
              training=None, mask=None,
              *args, **kwargs):
 
-        outputs = self.agent.forward(inputs)
+        # call the first stage model
+        agent_inputs = [inputs[i] for i in self.agent_input_index]
+        agent_proposals = self.agent.forward(agent_inputs)[0]
 
-        # obtain shape parameters
-        batch, Kc = outputs[0].shape[:2]
-        pos = self.agent.structure.Loss.p_index
-
-        # shape = (batch, Kc, n, 2)
-        proposals = outputs[0]
-        current_inputs = inputs
-
-        if self.linear:
-            # Piecewise linear interpolation
-            pos = tf.cast(pos, tf.float32)
-            pos = tf.concat([[-1], pos], axis=0)
-            obs = current_inputs[0][:, tf.newaxis, -1:, :]
-            proposals = tf.concat([tf.repeat(obs, Kc, 1), proposals], axis=-2)
-
-            final_results = self.linear_layer.call(index=pos, value=proposals)
-
-        else:
-            # call the second stage model
-            handler_inputs = [inp for inp in current_inputs]
-            handler_inputs.append(proposals)
-            final_results = self.handler.forward(handler_inputs)[0]
-
+        # call the second stage model
+        handler_inputs = [inputs[i] for i in self.handler_input_index]
+        handler_inputs.append(agent_proposals)
+        final_results = self.handler.forward(handler_inputs)[0]
         return (final_results,)
 
 
@@ -109,37 +96,37 @@ class BaseSilverballers(Structure):
             raise ('`Agent` or `Handler` not found!' +
                    ' Please specific their paths via `--loada` or `--loadb`.')
 
-        # assign stage-1 models
-        self.agent = self.agent_structure(
-            terminal_args + ['--load', self.args.loada])
-        self.agent.set_model_type(self.agent_model)
-        self.agent.model = self.agent.create_model()
-        self.agent.model.load_weights_from_logDir(self.args.loada)
-        self.agent.leader = self
+        # config second-stage model
+        if self.args.loadb.startswith('l'):
+            handler_args = None
+            handler_type = LinearHandlerModel
+            handler_path = None
+        else:
+            handler_args = terminal_args + ['--load', self.args.loadb]
+            handler_type = self.handler_model
+            handler_path = self.args.loadb
+
+        # assign substructures
+        self.agent = self.substructure(self.agent_structure,
+                                       args=(terminal_args +
+                                             ['--load', self.args.loada]),
+                                       model=self.agent_model,
+                                       load=self.args.loada)
+
+        self.handler = self.substructure(self.handler_structure,
+                                         args=handler_args,
+                                         model=handler_type,
+                                         create_args=dict(asHandler=True),
+                                         load=handler_path,
+                                         key_points=self.agent.args.key_points)
 
         self.add_keywords(KeypointsIndex=self.agent.args.key_points,
-                          AgentModelType=type(self.agent.model).__name__,
+                          AgentModelType=self.agent_model.__name__,
                           AgentModelPath=self.args.loada,
-                          AgentTransformation=self.agent.args.T)
-
-        if self.args.loadb.startswith('l'):
-            self.linear_predict = True
-            self.add_keywords(HandlerModelType='Linear Interpolation')
-
-        else:
-            # assign stage-2 models
-            self.linear_predict = False
-            self.handler = self.handler_structure(
-                terminal_args + ['--load', self.args.loadb])
-            self.handler.set_model_type(self.handler_model)
-            self.handler.args._set('key_points', self.agent.args.key_points)
-            self.handler.model = self.handler.create_model(asHandler=True)
-            self.handler.model.load_weights_from_logDir(self.args.loadb)
-            self.handler.leader = self
-
-            self.add_keywords(HandlerModelType=type(self.handler.model).__name__,
-                              HandlerModelPath=self.args.loadb,
-                              HandlerTransformation=self.handler.args.T)
+                          AgentTransformation=self.agent.args.T,
+                          HandlerModelType=handler_type.__name__,
+                          HandlerModelPath=handler_path,
+                          HandlerTransformation=self.handler.args.T)
 
         if self.args.batch_size > self.agent.args.batch_size:
             self.args._set('batch_size', self.agent.args.batch_size)
@@ -149,6 +136,38 @@ class BaseSilverballers(Structure):
         self.args._set('anntype', self.agent.args.anntype)
         self.args._set('obs_frames', self.agent.args.obs_frames)
         self.args._set('pred_frames', self.agent.args.pred_frames)
+
+    def substructure(self, structure: type[BaseAgentStructure],
+                     args: list[str],
+                     model: type[BaseAgentModel],
+                     create_args: dict = {},
+                     load: str = None,
+                     **kwargs):
+        """
+        Init a sub-structure (which contains its corresponding model).
+
+        :param structure: class name of the training structure
+        :param args: args to init the training structure
+        :param model: class name of the model
+        :param create_args: args to create the model, and they will be fed
+            to the `structure.create_model` method
+        :param load: path to load model weights
+        :param **kwargs: a series of force-args that will be assigned to
+            the structure's args
+        """
+
+        struct = structure(args)
+        for key in kwargs.keys():
+            struct.args._set(key, kwargs[key])
+
+        struct.set_model_type(model)
+        struct.model = struct.create_model(**create_args)
+        struct.leader = self
+
+        if load:
+            struct.model.load_weights_from_logDir(load)
+
+        return struct
 
     def set_models(self, agentModel: type[BaseAgentModel],
                    handlerModel: type[BaseHandlerModel],
@@ -176,7 +195,7 @@ class BaseSilverballers(Structure):
         return self.silverballer_model(
             self.args,
             agentModel=self.agent.model,
-            handlerModel=None if self.linear_predict else self.handler.model,
+            handlerModel=self.handler.model,
             structure=self,
             *args, **kwargs)
 
