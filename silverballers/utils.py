@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-27 20:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-31 10:10:56
+@LastEditTime: 2022-09-13 21:33:58
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -38,6 +38,9 @@ class SilverballersMKII(BaseSilverballers):
 __SILVERBALLERS_DICT = dict(
 
     # Agent Structures and Models
+
+    # MSN
+    msna=[agents.MSNAlpha, agents.MSNAlphaModel],
 
     # V^2-Net
     va=[agents.VA, agents.VAModel],

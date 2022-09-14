@@ -71,6 +71,11 @@ Packages:
         keras.engine.base_layer_Layer("Layer(keras.engine.base_layer)") --> codes.basemodels.transformer._transformer_Encoder("Encoder(codes.basemodels.transformer._transformer)")
         keras.engine.base_layer_Layer("Layer(keras.engine.base_layer)") --> codes.basemodels.transformer._transformer_DecoderLayer("DecoderLayer(codes.basemodels.transformer._transformer)")
         keras.engine.base_layer_Layer("Layer(keras.engine.base_layer)") --> codes.basemodels.transformer._transformer_Decoder("Decoder(codes.basemodels.transformer._transformer)")
+        codes.basemodels.process.__base_BaseProcessLayer("BaseProcessLayer(codes.basemodels.process.__base)") --> codes.basemodels.process.__scale_Scale("Scale(codes.basemodels.process.__scale)")
+        keras.engine.base_layer_Layer("Layer(keras.engine.base_layer)") --> codes.basemodels.process.__base_BaseProcessLayer("BaseProcessLayer(codes.basemodels.process.__base)")
+        codes.basemodels.process.__base_BaseProcessLayer("BaseProcessLayer(codes.basemodels.process.__base)") --> codes.basemodels.process.__rotate_Rotate("Rotate(codes.basemodels.process.__rotate)")
+        codes.basemodels.process.__base_BaseProcessLayer("BaseProcessLayer(codes.basemodels.process.__base)") --> codes.basemodels.process.__move_Move("Move(codes.basemodels.process.__move)")
+        keras.engine.training_Model("Model(keras.engine.training)") --> codes.basemodels.process.__base_ProcessModel("ProcessModel(codes.basemodels.process.__base)")
         typing__Final("_Final(typing)") --> typing_TypeVar("TypeVar(typing)")
 ```
 ```mermaid
@@ -98,6 +103,8 @@ Packages:
         silverballers.agents.__baseAgent_BaseAgentStructure("BaseAgentStructure(silverballers.agents.__baseAgent)") --> silverballers.agents.__agent47B_Agent47B("Agent47B(silverballers.agents.__agent47B)")
         silverballers.agents.__baseAgent_BaseAgentModel("BaseAgentModel(silverballers.agents.__baseAgent)") --> silverballers.agents.__Valpha_VAModel("VAModel(silverballers.agents.__Valpha)")
         silverballers.agents.__baseAgent_BaseAgentStructure("BaseAgentStructure(silverballers.agents.__baseAgent)") --> silverballers.agents.__Valpha_VA("VA(silverballers.agents.__Valpha)")
+        silverballers.agents.__baseAgent_BaseAgentModel("BaseAgentModel(silverballers.agents.__baseAgent)") --> silverballers.agents.__MSNalpha_MSNAlphaModel("MSNAlphaModel(silverballers.agents.__MSNalpha)")
+        silverballers.agents.__baseAgent_BaseAgentStructure("BaseAgentStructure(silverballers.agents.__baseAgent)") --> silverballers.agents.__MSNalpha_MSNAlpha("MSNAlpha(silverballers.agents.__MSNalpha)")
         silverballers.__baseSilverballers_BaseSilverballers("BaseSilverballers(silverballers.__baseSilverballers)") --> silverballers.__silverballers_V("V(silverballers.__silverballers)")
         codes.basemodels.__model_Model("Model(codes.basemodels.__model)") --> silverballers.__baseSilverballers_BaseSilverballersModel("BaseSilverballersModel(silverballers.__baseSilverballers)")
         silverballers.__baseSilverballers_BaseSilverballers("BaseSilverballers(silverballers.__baseSilverballers)") --> silverballers.utils_SilverballersMKII("SilverballersMKII(silverballers.utils)")

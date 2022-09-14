@@ -10,4 +10,5 @@
 
 from .__baseHandler import BaseHandlerModel, BaseHandlerStructure
 from .__burnwoodC import BurnwoodC, BurnwoodCModel
+from .__linear import LinearHandlerModel
 from .__Vbeta import VB, VBModel
