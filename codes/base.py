@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:28:13
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-15 10:37:57
+@LastEditTime: 2022-09-15 11:04:24
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -154,6 +154,9 @@ class __SecondaryBar(BaseObject):
                  pos: str = 'end'):
 
         super().__init__()
+
+        if not '__getitem__' in item.__dir__():
+            item = list(item)
 
         self.item = item
         self.bar = bar
