@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-14 10:38:00
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-14 15:21:41
+@LastEditTime: 2022-09-15 10:43:52
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -36,6 +36,7 @@ class LinearHandlerModel(BaseHandlerModel):
         self.set_inputs('obs', 'gt')
         self.set_preprocess()
         self.linear = layers.LinearInterpolation()
+        self.accept_batchK_inputs = True
 
     def call(self, inputs: list[tf.Tensor],
              keypoints: tf.Tensor,
@@ -45,9 +46,14 @@ class LinearHandlerModel(BaseHandlerModel):
         # Unpack inputs
         trajs = inputs[0]
 
+        if keypoints.ndim == 4:     # (batch, K, steps, dim)
+            K = keypoints.shape[-3]
+            trajs = tf.repeat(trajs[:, tf.newaxis], K, axis=-3)
+
         # Concat keypoints with the last observed point
         keypoints_index = tf.concat([[-1], keypoints_index], axis=0)
-        keypoints = tf.concat([trajs[:, -1:, :], keypoints], axis=1)
+        obs_position = tf.gather(trajs, [self.args.obs_frames-1], axis=-2)
+        keypoints = tf.concat([obs_position, keypoints], axis=-2)
 
         # Calculate linear interpolation -> (batch, pred, 2)
         linear = self.linear.call(keypoints_index, keypoints)
