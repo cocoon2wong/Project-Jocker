@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-14 10:42:07
+@LastEditTime: 2022-09-15 10:39:37
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,6 +10,7 @@
 
 import numpy as np
 import tensorflow as tf
+from codes.base import SecondaryBar
 from codes.basemodels import Model
 from codes.training import Structure
 
@@ -39,6 +40,7 @@ class BaseHandlerModel(Model):
         self.d = feature_dim
         self.points = points
         self.key_points = key_points
+        self.accept_batchK_inputs = False
 
         if self.asHandler or key_points != 'null':
             pi = [int(i) for i in key_points.split('_')]
@@ -72,20 +74,23 @@ class BaseHandlerModel(Model):
         :param keypoints_index: index of predicted keypoints, shape is `(n_k)`
         """
 
-        p_all = []
-        K = keypoints.shape[1]
+        if not self.accept_batchK_inputs:
+            p_all = []
+            for k in SecondaryBar(range(keypoints.shape[1]),
+                                  bar=self.structure.leader.bar,
+                                  desc='Running Stage-2 Sub-Network...'):
 
-        for k in range(K):
-            # set timebar
-            p = 'Calculating: {}%'.format((k+1)*100//K)
-            self.structure.update_timebar(self.structure.leader.bar, p)
+                # single shape is (batch, pred, 2)
+                p_all.append(self.call(inputs=inputs,
+                                       keypoints=keypoints[:, k, :, :],
+                                       keypoints_index=keypoints_index))
 
-            # single shape is (batch, pred, 2)
-            p_all.append(self.call(inputs=inputs,
-                                   keypoints=keypoints[:, k, :, :],
-                                   keypoints_index=keypoints_index))
+            return tf.transpose(tf.stack(p_all), [1, 0, 2, 3])
 
-        return tf.transpose(tf.stack(p_all), [1, 0, 2, 3])
+        else:
+            return self.call(inputs=inputs,
+                             keypoints=keypoints,
+                             keypoints_index=keypoints_index)
 
     def forward(self, inputs: list[tf.Tensor],
                 training=None,

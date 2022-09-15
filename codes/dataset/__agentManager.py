@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-30 09:59:39
+@LastEditTime: 2022-09-15 10:36:57
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -16,7 +16,7 @@ import tensorflow as tf
 from tqdm import tqdm
 
 from ..args import Args
-from ..base import BaseObject
+from ..base import BaseObject, SecondaryBar
 from ..utils import MAP_HALF_SIZE
 from .__agent import Agent
 from .__maps import MapManager
@@ -210,14 +210,12 @@ class AgentManager(BaseObject):
 
         social_maps = []
         centers = []
-        agent_count = len(self.agents)
-        for index, agent in enumerate(self.agents):
+        for agent in SecondaryBar(self.agents,
+                                  bar=self.bar,
+                                  desc='Building Maps...'):
+
             centers.append(agent.traj[-1:, :])
             social_maps.append(map_manager.build_social_map(agent))
-
-            # update timebar
-            p = '{}%'.format((index+1)*100//agent_count)
-            self.update_timebar(self.bar, 'Building Maps: ' + p)
 
         social_maps = np.array(social_maps)  # (batch, a, b)
 

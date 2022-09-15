@@ -2,14 +2,14 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:28:13
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-31 09:52:11
+@LastEditTime: 2022-09-15 10:37:57
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import logging
-from typing import TypeVar, Union
+from typing import Iterable, TypeVar, Union
 
 import tensorflow as tf
 from tqdm import tqdm
@@ -98,6 +98,13 @@ class BaseObject():
 
     @staticmethod
     def update_timebar(timebar: tqdm, item: Union[str, dict], pos='end'):
+        """
+        Update the tqdm timebar.
+
+        :param timebar: the tqdm object to be updated
+        :param item: string or dict to update
+        :param pos: position, canbe `'end'` or `'start'`
+        """
         if timebar is None:
             return timebar
 
@@ -138,3 +145,54 @@ class BaseObject():
         bar = (''.join('=' * (int(percent * total_length) - 1))
                + '>')
         return bar
+
+
+class __SecondaryBar(BaseObject):
+
+    def __init__(self, item: Iterable, bar: tqdm,
+                 desc: str = 'Calculating:',
+                 pos: str = 'end'):
+
+        super().__init__()
+
+        self.item = item
+        self.bar = bar
+        self.desc = desc + ' {}%'
+        self.pos = pos
+
+        self.max = len(item)
+        self.count = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.count >= self.max:
+            raise StopIteration
+
+        # get value
+        value = self.item[self.count]
+        self.count += 1
+
+        # update timebar
+        percent = (self.count * 100) // self.max
+        self.update_timebar(timebar=self.bar,
+                            item=self.desc.format(percent),
+                            pos=self.pos)
+
+        return value
+
+
+# It is only used for type-hinting
+def SecondaryBar(item: T, bar: tqdm,
+                 desc: str = 'Calculating:',
+                 pos: str = 'end') -> T:
+    """
+    Init
+
+    :param item: an iterable object
+    :param bar: the "main" tqdm timebar to be updated
+    :param desc: text to show on the main timebar
+    :param pos: text position, can be `'start'` or `'end'`
+    """
+    return __SecondaryBar(item, bar, desc, pos)

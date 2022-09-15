@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:30:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-31 11:00:33
+@LastEditTime: 2022-09-15 10:37:28
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,7 +13,7 @@ import os
 import numpy as np
 
 from ..args import Args
-from ..base import BaseObject
+from ..base import BaseObject, SecondaryBar
 from ..utils import INIT_POSITION, TEMP_PATH, dir_check
 from .__agentManager import AgentManager
 from .__trajectory import Trajectory
@@ -133,23 +133,21 @@ class VideoClipManager(BaseObject):
             f = len(frame_ids)
 
             # agent_name -> agent_index
-            name_dict = dict(zip(agent_names, np.arange(p)))
+            name_dict: dict[str, int] = dict(zip(agent_names, np.arange(p)))
 
             # frame_id -> frame_index
-            frame_dict = dict(zip(frame_ids, np.arange(f)))
+            frame_dict: dict[int, int] = dict(zip(frame_ids, np.arange(f)))
 
             # init the matrix
             dim = agent_dict[agent_names[0]].shape[-1] - 1
             matrix = INIT_POSITION * np.ones([f, p, dim])
 
-            for name, index in name_dict.items():
-
-                p = '{}%'.format((index+1)*100/len(name_dict))
-                self.update_timebar(self.bar, 'Processing dataset: ' + p)
+            for name, index in SecondaryBar(name_dict.items(),
+                                            bar=self.bar,
+                                            desc='Processing dataset...'):
 
                 frame_id = agent_dict[name].T[0].astype(np.int32)
                 frame_index = [frame_dict[fi] for fi in frame_id]
-
                 matrix[frame_index, index, :] = agent_dict[name][:, 1:]
 
             neighbor_indexes = np.array([
@@ -201,11 +199,9 @@ class VideoClipManager(BaseObject):
         frame_step = int(self.args.interval / (sample_rate / frame_rate))
         train_samples = []
 
-        for agent_index in range(self.agent_count):
-
-            # update timebar
-            p = '{}%'.format((agent_index + 1)*100//self.agent_count)
-            self.update_timebar(self.bar, 'Prepare train data: ' + p)
+        for agent_index in SecondaryBar(range(self.agent_count),
+                                        bar=self.bar,
+                                        desc='Process dataset files...'):
 
             trajectory = self.trajectories[agent_index]
             start_frame = trajectory.start_frame
