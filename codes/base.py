@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:28:13
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-15 11:04:24
+@LastEditTime: 2022-09-19 14:46:20
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -167,6 +167,7 @@ class __SecondaryBar(BaseObject):
         self.count = 0
 
     def __iter__(self):
+        self.count = 0
         return self
 
     def __next__(self):

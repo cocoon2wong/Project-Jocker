@@ -80,13 +80,14 @@ Packages:
 ```
 ```mermaid
     graph LR
-        keras.engine.base_layer_Layer("Layer(keras.engine.base_layer)") --> silverballers.__layers_OuterLayer("OuterLayer(silverballers.__layers)")
+        silverballers.handlers.__baseHandler_BaseHandlerModel("BaseHandlerModel(silverballers.handlers.__baseHandler)") --> silverballers.handlers.__linear_LinearHandlerModel("LinearHandlerModel(silverballers.handlers.__linear)")
         builtins_object("object(builtins)") --> builtins_type("type(builtins)")
         silverballers.__args__BaseSilverballersArgs("_BaseSilverballersArgs(silverballers.__args)") --> silverballers.__args_HandlerArgs("HandlerArgs(silverballers.__args)")
+        codes.basemodels.__model_Model("Model(codes.basemodels.__model)") --> silverballers.handlers.__baseHandler_BaseHandlerModel("BaseHandlerModel(silverballers.handlers.__baseHandler)")
+        keras.engine.base_layer_Layer("Layer(keras.engine.base_layer)") --> silverballers.__layers_OuterLayer("OuterLayer(silverballers.__layers)")
         silverballers.handlers.__baseHandler_BaseHandlerModel("BaseHandlerModel(silverballers.handlers.__baseHandler)") --> silverballers.handlers.__burnwoodC_BurnwoodCModel("BurnwoodCModel(silverballers.handlers.__burnwoodC)")
         silverballers.handlers.__baseHandler_BaseHandlerStructure("BaseHandlerStructure(silverballers.handlers.__baseHandler)") --> silverballers.handlers.__burnwoodC_BurnwoodC("BurnwoodC(silverballers.handlers.__burnwoodC)")
         codes.training.__structure_Structure("Structure(codes.training.__structure)") --> silverballers.handlers.__baseHandler_BaseHandlerStructure("BaseHandlerStructure(silverballers.handlers.__baseHandler)")
-        codes.basemodels.__model_Model("Model(codes.basemodels.__model)") --> silverballers.handlers.__baseHandler_BaseHandlerModel("BaseHandlerModel(silverballers.handlers.__baseHandler)")
         codes.base_BaseObject("BaseObject(codes.base)") --> codes.training.__structure_Structure("Structure(codes.training.__structure)")
         builtins_object("object(builtins)") --> silverballers.__loss_SilverballersLoss("SilverballersLoss(silverballers.__loss)")
         keras.engine.training_Model("Model(keras.engine.training)") --> codes.basemodels.__model_Model("Model(codes.basemodels.__model)")
