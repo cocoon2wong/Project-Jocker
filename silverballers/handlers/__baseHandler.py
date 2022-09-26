@@ -77,7 +77,7 @@ class BaseHandlerModel(Model):
         if not self.accept_batchK_inputs:
             p_all = []
             for k in SecondaryBar(range(keypoints.shape[1]),
-                                  bar=self.structure.leader.bar,
+                                  manager=self.structure.leader,
                                   desc='Running Stage-2 Sub-Network...'):
 
                 # single shape is (batch, pred, 2)

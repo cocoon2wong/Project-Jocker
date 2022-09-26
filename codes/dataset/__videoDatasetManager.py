@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:34:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-14 10:03:47
+@LastEditTime: 2022-09-26 15:34:37
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,15 +12,14 @@ import os
 import random
 from typing import Union
 
-from ..args import Args
-from ..base import BaseObject
+from ..base import BaseManager
 from ..utils import dir_check
 from .__agentManager import AgentManager, TrajMapNotFoundError
 from .__videoClipManager import VideoClipManager
 from .__videoDataset import Dataset
 
 
-class DatasetManager(BaseObject):
+class DatasetManager(BaseManager):
     """
     DatasetsManager
     ---------------
@@ -42,12 +41,10 @@ class DatasetManager(BaseObject):
     ```
     """
 
-    def __init__(self, args: Args):
-        super().__init__()
+    def __init__(self, manager: BaseManager):
+        super().__init__(manager.args, manager)
 
-        self.args = args
-        self.info = Dataset(args.dataset, args.split)
-
+        self.info = Dataset(self.args.dataset, self.args.split)
         self.model_input_type: list[str] = None
         self.model_label_type: list[str] = None
 
@@ -73,17 +70,15 @@ class DatasetManager(BaseObject):
         :param video_clips: a list of video clip managers (`VideoClipManager`)
         :return all_agents: a list of train agents (`AgentManager`)
         """
-        all_agents = AgentManager(self.args, [])
+        all_agents = AgentManager(manager=self)
 
         if mode == 'train':
             random.shuffle(video_clips)
 
-        self.bar: list[VideoClipManager] = self.timebar(video_clips)
-        for clip in self.bar:
+        for clip in self.timebar(video_clips):
             # assign time bar
             s = f'Prepare {mode} data in `{clip.name}`...'
-            self.update_timebar(self.bar, s, pos='start')
-            clip.bar = self.bar
+            self.update_timebar(s, pos='start')
 
             base_dir = os.path.join(clip.path, clip.name)
             if (self.args.obs_frames, self.args.pred_frames) == (8, 12):
@@ -95,16 +90,17 @@ class DatasetManager(BaseObject):
             f_name = f_name + endstring + '.npz'
             data_path = os.path.join(base_dir, f_name)
 
+            agents = AgentManager(manager=self)
             if not os.path.exists(data_path):
-                agents = clip.sample_train_data()
+                new_agents = clip.sample_train_data()
                 agents.save(data_path)
+                agents.load(new_agents)
             else:
-                agents = AgentManager.load(self.args, data_path)
+                agents.load(data_path)
 
             dataset_type = clip.info.datasetInfo.anntype
             prediction_type = self.args.anntype
             agents.set_picker(dataset_type, prediction_type)
-            agents.bar = self.bar
 
             if 'MAP' in self.model_input_type:
                 map_path = dir_check(data_path.split('.np')[0] + '_maps')
@@ -167,5 +163,5 @@ class DatasetManager(BaseObject):
             if type(clips) == str:
                 clips = [clips]
 
-            dms = [VideoClipManager(self.args, d) for d in clips]
+            dms = [VideoClipManager(self, d) for d in clips]
             return self._load_from_videoClips(dms, mode=mode)

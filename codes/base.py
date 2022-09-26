@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:28:13
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-19 14:46:20
+@LastEditTime: 2022-09-26 15:52:49
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -15,13 +15,14 @@ import tensorflow as tf
 from tqdm import tqdm
 
 from .utils import MAX_PRINT_LIST_LEN
+from .args import Args
 
 T = TypeVar('T')
 
 
-class BaseObject():
+class _BaseManager():
     """
-    BaseObject
+    BaseManager
     ----------
     Base class for all structures.
 
@@ -92,36 +93,29 @@ class BaseObject():
 
         return s
 
-    @staticmethod
-    def timebar(inputs: T, text='') -> T:
-        return tqdm(inputs, desc=text)
+    def timebar(self, inputs: T, text='') -> T:
+        self.bar = tqdm(inputs, desc=text)
+        return self.bar
 
-    @staticmethod
-    def update_timebar(timebar: tqdm, item: Union[str, dict], pos='end'):
+    def update_timebar(self, item: Union[str, dict], pos='end'):
         """
         Update the tqdm timebar.
 
-        :param timebar: the tqdm object to be updated
         :param item: string or dict to update
         :param pos: position, canbe `'end'` or `'start'`
         """
-        if timebar is None:
-            return timebar
-
         if pos == 'end':
             if type(item) is str:
-                timebar.set_postfix_str(item)
+                self.bar.set_postfix_str(item)
             elif type(item) is dict:
-                timebar.set_postfix(item)
+                self.bar.set_postfix(item)
             else:
                 raise ValueError(item)
 
         elif pos == 'start':
-            timebar.set_description(item)
+            self.bar.set_description(item)
         else:
             raise NotImplementedError(pos)
-
-        return timebar
 
     @staticmethod
     def print_parameters(title='null', **kwargs):
@@ -147,9 +141,43 @@ class BaseObject():
         return bar
 
 
-class __SecondaryBar(BaseObject):
+# It is used for type-hinting
+class BaseManager(_BaseManager):
+    """
+    BaseManager
+    ----------
+    Base class for all structures.
 
-    def __init__(self, item: Iterable, bar: tqdm,
+    Public Methods
+    --------------
+    ```python
+    # log information
+    (method) log: (self: BaseObject, s: str, level: str = 'info') -> None
+
+    # print parameters with the format
+    (method) print_parameters: (title='null', **kwargs) -> None
+
+    # timebar
+    (method) log_timebar: (inputs, text='', return_enumerate=True) -> (enumerate | tqdm)
+    ```
+    """
+
+    def __init__(self, args: Args = None,
+                 manager: _BaseManager = None):
+
+        super().__init__()
+        self.args: Args = args
+        self.manager: _BaseManager = manager
+        self.members: list[_BaseManager] = []
+
+        if manager:
+            self.manager.members.append(self)
+
+
+class __SecondaryBar(BaseManager):
+
+    def __init__(self, item: Iterable,
+                 manager: BaseManager,
                  desc: str = 'Calculating:',
                  pos: str = 'end'):
 
@@ -159,7 +187,7 @@ class __SecondaryBar(BaseObject):
             item = list(item)
 
         self.item = item
-        self.bar = bar
+        self.target = manager
         self.desc = desc + ' {}%'
         self.pos = pos
 
@@ -180,23 +208,23 @@ class __SecondaryBar(BaseObject):
 
         # update timebar
         percent = (self.count * 100) // self.max
-        self.update_timebar(timebar=self.bar,
-                            item=self.desc.format(percent),
-                            pos=self.pos)
+        self.target.update_timebar(item=self.desc.format(percent),
+                                   pos=self.pos)
 
         return value
 
 
 # It is only used for type-hinting
-def SecondaryBar(item: T, bar: tqdm,
+def SecondaryBar(item: T,
+                 manager: BaseManager,
                  desc: str = 'Calculating:',
                  pos: str = 'end') -> T:
     """
     Init
 
     :param item: an iterable object
-    :param bar: the "main" tqdm timebar to be updated
+    :param manager: target manager object to be updated
     :param desc: text to show on the main timebar
     :param pos: text position, can be `'start'` or `'end'`
     """
-    return __SecondaryBar(item, bar, desc, pos)
+    return __SecondaryBar(item, manager, desc, pos)

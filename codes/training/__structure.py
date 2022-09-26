@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-14 10:23:49
+@LastEditTime: 2022-09-26 16:03:56
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,26 +13,24 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from .. import dataset
+from ..dataset import DatasetManager, AgentManager
 from ..args import Args
-from ..base import BaseObject
+from ..base import BaseManager
 from ..basemodels import Model
 from ..utils import WEIGHTS_FORMAT, dir_check
 from . import __loss as losslib
 from .__vis import Visualization
 
 
-class Structure(BaseObject):
+class Structure(BaseManager):
 
-    def __init__(self, terminal_args: list[str]):
-        super().__init__()
+    def __init__(self, args: list[str] = None):
+        super().__init__(Args(args), manager=None)
 
-        self.args = Args(terminal_args)
         self.model: Model = None
-
         self.keywords = {}
 
-        self.manager: dataset.DatasetManager = None
+        self.dsmanager: DatasetManager = None
         self.leader: Structure = None
         self.noTraining = False
 
@@ -150,7 +148,7 @@ class Structure(BaseObject):
                              labels,
                              self.metrics_weights,
                              mode='metric',
-                             coefficient=self.manager.info.scale)
+                             coefficient=self.dsmanager.info.scale)
 
     def gradient_operations(self, inputs: list[tf.Tensor],
                             labels: tf.Tensor,
@@ -209,12 +207,12 @@ class Structure(BaseObject):
         self.model = self.create_model()
 
         # assign agentManagers
-        self.manager = dataset.DatasetManager(self.args)
-        self.manager.set_types(inputs_type=self.model.input_type,
-                               labels_type=self.model_label_type)
+        self.dsmanager = DatasetManager(manager=self)
+        self.dsmanager.set_types(inputs_type=self.model.input_type,
+                                 labels_type=self.model_label_type)
 
         if self.noTraining:
-            self.run_test(self.manager)
+            self.run_test(self.dsmanager)
 
         elif self.args.load == 'null':
             # restore weights before training (optional)
@@ -228,9 +226,9 @@ class Structure(BaseObject):
         else:
             self.log(f'Start test `{self.args.load}`')
             self.model.load_weights_from_logDir(self.args.load)
-            self.run_test(self.manager)
+            self.run_test(self.dsmanager)
 
-    def run_test(self, manager: dataset.DatasetManager):
+    def run_test(self, manager: DatasetManager):
         """
         Run test on the given dataset.
 
@@ -240,14 +238,8 @@ class Structure(BaseObject):
 
         # test on a single sub-dataset
         if self.args.test_mode == 'one':
-            try:
-                clip = self.args.force_clip
-                agents = manager.load(clip, 'test')
-
-            except:
-                clip = test_sets[0]
-                agents = manager.load(clip, 'test')
-
+            clip = self.args.force_clip
+            agents = manager.load(clip, 'test')
             self.__test(agents, self.args.dataset, [clip])
 
         # test on all test datasets separately
@@ -270,11 +262,11 @@ class Structure(BaseObject):
         """
 
         # print training infomation
-        self.print_dataset_info(DatasetName=self.manager.info.name,
-                                DatasetSplitName=self.manager.info.split,
-                                TrainingSets=self.manager.info.train_sets,
-                                TestSets=self.manager.info.test_sets,
-                                DatasetType=self.manager.info.anntype,)
+        self.print_dataset_info(DatasetName=self.dsmanager.info.name,
+                                DatasetSplitName=self.dsmanager.info.split,
+                                TrainingSets=self.dsmanager.info.train_sets,
+                                TestSets=self.dsmanager.info.test_sets,
+                                DatasetType=self.dsmanager.info.anntype,)
         self.print_model_info()
         self.print_train_info()
 
@@ -295,7 +287,7 @@ class Structure(BaseObject):
         test_epochs = []
 
         # Load dataset
-        train_agents, test_agents = self.manager.load('auto', 'train')
+        train_agents, test_agents = self.dsmanager.load('auto', 'train')
         ds_train = train_agents.make_dataset(shuffle=True)
         ds_val = test_agents.make_dataset()
         train_number = len(ds_train)
@@ -305,11 +297,10 @@ class Structure(BaseObject):
             self.args.epochs).batch(self.args.batch_size)
 
         # start training
-        self.bar = self.timebar(ds_train, text='Training...')
-        batch_number = len(self.bar)
+        batch_number = len(ds_train)
 
         epochs = []
-        for batch_id, dat in enumerate(self.bar):
+        for batch_id, dat in enumerate(self.timebar(ds_train, text='Training...')):
 
             epoch = (batch_id * self.args.batch_size) // train_number
 
@@ -369,7 +360,7 @@ class Structure(BaseObject):
                 if issubclass(type(value), tf.Tensor):
                     loss_dict[key] = value.numpy()
 
-            self.update_timebar(self.bar, loss_dict, pos='end')
+            self.update_timebar(loss_dict, pos='end')
 
             # Write tensorboard
             with tb.as_default():
@@ -383,7 +374,7 @@ class Structure(BaseObject):
         self.print_train_results(best_epoch=best_epoch,
                                  best_metric=best_metrics)
 
-    def __test(self, agents: dataset.AgentManager,
+    def __test(self, agents: AgentManager,
                dataset: str, clips: list[str]):
         """
         Test
@@ -433,14 +424,10 @@ class Structure(BaseObject):
         metrics_dict_all = {}
 
         # divide with batch size
-        ds_batch = ds.batch(self.args.batch_size)
+        ds = ds.batch(self.args.batch_size)
 
-        # do not show time bar when training
-        if show_timebar:
-            self.bar = self.timebar(ds_batch, 'Test...')
-            timebar = self.bar
-        else:
-            timebar = ds_batch
+        # hide time bar when training
+        timebar = self.timebar(ds, 'Test...') if show_timebar else ds
 
         test_numbers = []
         for dat in timebar:
@@ -526,13 +513,13 @@ class Structure(BaseObject):
                  f'metrics: {loss_dict}')
 
     def write_test_results(self, outputs: list[tf.Tensor],
-                           agents: dataset.AgentManager,
+                           agents: AgentManager,
                            clips: list[str]):
 
         if (not self.args.draw_results in ['null', '0', '1']) and (len(clips) == 1):
             # draw results on video frames
             clip = clips[0]
-            tv = Visualization(self.args, self.args.dataset, clip)
+            tv = Visualization(self, self.args.dataset, clip)
 
             save_base_path = dir_check(self.args.log_dir) \
                 if self.args.load == 'null' \
@@ -547,19 +534,26 @@ class Structure(BaseObject):
                 # write traj
                 agent._traj_pred = pred_all[index]
 
-                # draw as one image
-                tv.draw(agents=[agent],
-                        frame_id=agent.frames[self.args.obs_frames],
-                        save_path=save_format.format(clip, index, 'jpg'),
-                        show_img=False,
-                        draw_distribution=self.args.draw_distribution)
+                d = self.args.draw_distribution
+                if d >= 100:
+                    d -= 100
+                    save_video = True
+                else:
+                    save_video = False
 
-                # # draw as one video
-                # tv.draw_video(
-                #     agent,
-                #     save_path=save_format.format(index, 'avi'),
-                #     draw_distribution=self.args.draw_distribution,
-                # )
+                # vis on scene images
+                if not save_video:
+                    tv.figure(agents=[agent],
+                              frame_id=agent.frames[self.args.obs_frames],
+                              save_path=save_format.format(clip, index, 'jpg'),
+                              show_img=False,
+                              draw_distribution=d)
+
+                # vis on the video clip
+                else:
+                    tv.video(agent=agent,
+                             save_path=save_format.format(clip, index, 'avi'),
+                             draw_distribution=d)
 
             self.log(f'Prediction result images are saved at {img_dir}')
 

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:30:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-15 10:37:28
+@LastEditTime: 2022-09-26 15:32:21
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,15 +12,14 @@ import os
 
 import numpy as np
 
-from ..args import Args
-from ..base import BaseObject, SecondaryBar
+from ..base import BaseManager, SecondaryBar
 from ..utils import INIT_POSITION, TEMP_PATH, dir_check
-from .__agentManager import AgentManager
+from .__agent import Agent
 from .__trajectory import Trajectory
 from .__videoClip import VideoClip
 
 
-class VideoClipManager(BaseObject):
+class VideoClipManager(BaseManager):
     """
     VideoClipManager
     ----------------
@@ -46,13 +45,12 @@ class VideoClipManager(BaseObject):
     ```
     """
 
-    def __init__(self, args: Args, name: str,
+    def __init__(self, manager: BaseManager, name: str,
                  custom_list: list[np.ndarray] = []):
 
-        super().__init__()
+        super().__init__(manager.args, manager)
 
-        self.args = args
-        self.dataset = args.dataset
+        self.dataset = self.args.dataset
         self.name = name
 
         self.path = TEMP_PATH.format(self.dataset)
@@ -143,7 +141,7 @@ class VideoClipManager(BaseObject):
             matrix = INIT_POSITION * np.ones([f, p, dim])
 
             for name, index in SecondaryBar(name_dict.items(),
-                                            bar=self.bar,
+                                            manager=self,
                                             desc='Processing dataset...'):
 
                 frame_id = agent_dict[name].T[0].astype(np.int32)
@@ -187,7 +185,7 @@ class VideoClipManager(BaseObject):
         self.trajectories = trajs
         return self
 
-    def sample_train_data(self) -> AgentManager:
+    def sample_train_data(self) -> list[Agent]:
         """
         Sampling train agents from trajectories.
         """
@@ -200,7 +198,7 @@ class VideoClipManager(BaseObject):
         train_samples = []
 
         for agent_index in SecondaryBar(range(self.agent_count),
-                                        bar=self.bar,
+                                        manager=self,
                                         desc='Process dataset files...'):
 
             trajectory = self.trajectories[agent_index]
@@ -236,4 +234,4 @@ class VideoClipManager(BaseObject):
                                                        frame_step=frame_step,
                                                        add_noise=False))
 
-        return AgentManager(self.args, train_samples)
+        return train_samples

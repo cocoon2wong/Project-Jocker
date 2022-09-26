@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-31 11:23:06
+@LastEditTime: 2022-09-26 15:27:42
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -130,7 +130,7 @@ class Agent():
     def frames(self) -> list:
         """
         a list of frame index during observation and prediction time.
-        shape = (obs + pred, 2)
+        shape = (obs + pred)
         """
         return self._frames + self._frames_future
 
@@ -138,7 +138,7 @@ class Agent():
     def frames_future(self) -> list:
         """
         a list of frame index during prediction time.
-        shape = (pred, 2)
+        shape = (pred)
         """
         return self._frames_future
 

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-14 10:32:13
+@LastEditTime: 2022-09-26 16:12:20
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -372,6 +372,15 @@ class Args():
     def draw_distribution(self) -> int:
         """
         Conrtols if draw distributions of predictions instead of points.
+        If `draw_distribution == 0`, it will draw results as normal coordinates;
+        If `draw_distribution == 1`, it will draw results from all future time
+        steps together in the distribution way;
+        If `draw_distribution == 2`, it will draw all results in the distribution
+        way, and points from different time steps will be drawn with different colors.
+
+        If `draw_distribution` received a `3-bit-like` digit (a integer value that
+        bigger than 100, like `101` and `102`), the results
+        will be saved on the video clip. 
         """
         return self._get('draw_distribution', 0, argtype='dynamic')
 

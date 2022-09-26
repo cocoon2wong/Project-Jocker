@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 15:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 19:24:36
+@LastEditTime: 2022-09-26 15:30:40
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,8 +11,7 @@
 import cv2
 import numpy as np
 
-from ..args import Args
-from ..base import BaseObject
+from ..base import BaseManager
 from ..utils import (AVOID_SIZE, INTEREST_SIZE, WINDOW_EXPAND_METER,
                      WINDOW_EXPAND_PIXEL, WINDOW_SIZE_METER, WINDOW_SIZE_PIXEL)
 from .__agent import Agent
@@ -24,7 +23,7 @@ DECAY_P = np.array([[0.0, 0.7, 1.0], [1.0, 1.0, 0.5]])
 DECAYS = {}
 
 
-class MapManager(BaseObject):
+class MapManager(BaseManager):
     """
     Map Manager
     -----------
@@ -52,21 +51,13 @@ class MapManager(BaseObject):
     ```
     """
 
-    def __init__(self, args: Args,
+    def __init__(self, manager: BaseManager,
                  map_type: str,
                  init_trajs: np.ndarray = None,
                  init_manager=None):
-        """
-        init map manager
 
-        :param args: args to init this manager
-        :param agents: a list of `Agent` object to init the map
-        :param init_manager: a map manager to init this new manager (optional)
-        """
+        super().__init__(manager.args, manager)
 
-        super().__init__()
-
-        self.args = args
         self.map_type = map_type
 
         if init_manager:
@@ -162,6 +153,7 @@ class MapManager(BaseObject):
                          max_neighbor=15) -> np.ndarray:
         """
         Build social map
+        TODO: Social maps for M-dimensional trajectories
 
         :param target_agent: target `Agent` object to calculate the map
         :param source: source map, default are zeros
@@ -292,17 +284,7 @@ class MapManager(BaseObject):
         if not type(traj) == np.ndarray:
             traj = np.array(traj)
 
-        if self.args.anntype == 'coordinate':
-            grid = ((traj - self.b) * self.W).astype(np.int32)
-
-        elif self.args.anntype == 'boundingbox':
-            tl = ((traj[:, 0:2] - self.b) * self.W)
-            br = ((traj[:, 2:4] - self.b) * self.W)
-            grid = ((tl + br)/2).astype(np.int32)
-
-        else:
-            raise NotImplementedError(self.args.anntype)
-
+        grid = ((traj - self.b) * self.W).astype(np.int32)
         return grid
 
     def _add_one_traj(self, source_map: np.ndarray,

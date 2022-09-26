@@ -2,21 +2,21 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-15 10:36:57
+@LastEditTime: 2022-09-26 15:29:52
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import os
+from typing import Union
 
 import cv2
 import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 
-from ..args import Args
-from ..base import BaseObject, SecondaryBar
+from ..base import BaseManager, SecondaryBar
 from ..utils import MAP_HALF_SIZE
 from .__agent import Agent
 from .__maps import MapManager
@@ -28,7 +28,7 @@ class TrajMapNotFoundError(FileNotFoundError):
         super().__init__(*args)
 
 
-class AgentManager(BaseObject):
+class AgentManager(BaseManager):
     """
     AgentManager
     ---
@@ -82,12 +82,10 @@ class AgentManager(BaseObject):
     ```
     """
 
-    def __init__(self, args: Args, agents: list[Agent]):
+    def __init__(self, manager: BaseManager):
+        super().__init__(manager.args, manager)
 
-        super().__init__()
-        self.args = args
-        self.agents = agents
-
+        self.agents: list[Agent] = []
         self.model_inputs = None
         self.model_labels = None
         self.picker: Picker = None
@@ -163,24 +161,33 @@ class AgentManager(BaseObject):
 
         np.savez(save_dir, **save_dict)
 
-    @classmethod
-    def load(cls, args: Args, path: str):
+    def load(self, path: Union[str, list[Agent]]):
         """
         Load agents' data from saved file.
 
         :param path: file path of the saved data
         """
-        save_dict: dict = np.load(path, allow_pickle=True)
+        if not type(path) in [str, list]:
+            raise ValueError(path)
 
-        if (v := save_dict['0'].tolist()['__version__']) < (v1 := Agent.__version__):
-            cls.log((f'Saved agent managers\' version is {v}, ' +
+        if type(path) == list:
+            self.agents = path
+            return
+
+        saved: dict = np.load(path, allow_pickle=True)
+        if not len(saved):
+            s = f'Please delete file {path} and re-run the program.'
+            self.log(s, level='error')
+            raise FileNotFoundError(s)
+
+        if (v := saved['0'].tolist()['__version__']) < (v1 := Agent.__version__):
+            self.log((f'Saved agent managers\' version is {v}, ' +
                      f'which is lower than current {v1}. Please delete ' +
-                     'them and re-run this program, or there could ' +
-                     'happen something wrong.'),
-                    level='error')
+                      'them and re-run this program, or there could ' +
+                      'happen something wrong.'),
+                     level='error')
 
-        return AgentManager(args, [Agent().load_data(v.tolist())
-                                   for v in save_dict.values()])
+        self.agents = [Agent().load_data(v.tolist()) for v in saved.values()]
 
     def make_maps(self, map_type: str,
                   base_path: str,
@@ -201,7 +208,7 @@ class AgentManager(BaseObject):
         :param save_centers_file: path to save the centers
         """
 
-        map_manager = MapManager(self.args, map_type, self._get_obs_trajs())
+        map_manager = MapManager(self, map_type, self._get_obs_trajs())
 
         if save_map_file:
             traj_map = map_manager.build_guidance_map(
@@ -211,7 +218,7 @@ class AgentManager(BaseObject):
         social_maps = []
         centers = []
         for agent in SecondaryBar(self.agents,
-                                  bar=self.bar,
+                                  manager=self.manager,
                                   desc='Building Maps...'):
 
             centers.append(agent.traj[-1:, :])

@@ -2,15 +2,13 @@
 @Author: Conghao Wong
 @Date: 2022-08-30 09:52:17
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-30 15:05:53
+@LastEditTime: 2022-09-26 15:15:28
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import numpy as np
-
-from ..base import BaseObject
 
 
 class _BaseAnnType():
@@ -87,7 +85,7 @@ class _3DBoundingboxWithRotate(_BaseAnnType):
             raise NotImplementedError
 
 
-class Picker(BaseObject):
+class Picker():
     """
     Picker
     ---
