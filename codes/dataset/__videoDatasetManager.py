@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:34:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-26 15:34:37
+@LastEditTime: 2022-09-26 16:39:08
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -93,8 +93,8 @@ class DatasetManager(BaseManager):
             agents = AgentManager(manager=self)
             if not os.path.exists(data_path):
                 new_agents = clip.sample_train_data()
-                agents.save(data_path)
                 agents.load(new_agents)
+                agents.save(data_path)
             else:
                 agents.load(data_path)
 

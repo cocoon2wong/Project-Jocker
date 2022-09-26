@@ -141,7 +141,7 @@ class VideoClipManager(BaseManager):
             matrix = INIT_POSITION * np.ones([f, p, dim])
 
             for name, index in SecondaryBar(name_dict.items(),
-                                            manager=self,
+                                            manager=self.manager,
                                             desc='Processing dataset...'):
 
                 frame_id = agent_dict[name].T[0].astype(np.int32)
@@ -198,7 +198,7 @@ class VideoClipManager(BaseManager):
         train_samples = []
 
         for agent_index in SecondaryBar(range(self.agent_count),
-                                        manager=self,
+                                        manager=self.manager,
                                         desc='Process dataset files...'):
 
             trajectory = self.trajectories[agent_index]
