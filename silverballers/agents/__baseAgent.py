@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-14 09:50:47
+@LastEditTime: 2022-09-29 16:22:27
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -83,9 +83,5 @@ class BaseAgentStructure(Structure):
 
     def print_test_results(self, loss_dict: dict[str, float], **kwargs):
         super().print_test_results(loss_dict, **kwargs)
-        s = 'python main.py --model sb{} --loada {} --loadb l'
-        s = s.format(self.args.model.split('agent')[-1],
-                     self.args.load)
-
-        self.log('You can run `{}` to '.format(s) +
-                 'start the silverballers evaluation.')
+        s = f'python main.py --model MKII --loada {self.args.load} --loadb l'
+        self.log(f'You can run `{s}` to start the silverballers evaluation.')
