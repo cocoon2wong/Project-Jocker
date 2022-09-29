@@ -13,13 +13,13 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from ..dataset import DatasetManager, AgentManager
 from ..args import Args
 from ..base import BaseManager
 from ..basemodels import Model
+from ..dataset import AgentManager, DatasetManager
 from ..utils import WEIGHTS_FORMAT, dir_check
+from ..vis import Visualization
 from . import __loss as losslib
-from .__vis import Visualization
 
 
 class Structure(BaseManager):
