@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-29 18:19:34
+@LastEditTime: 2022-09-29 19:58:13
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -25,98 +25,37 @@ DRAW_ON_EMPTY = 2
 
 
 class Visualization(BaseManager):
-    """
-    Visualization
-    -------------
-    Visualize results on video datasets
-
-    Properties
-    ----------
-    ```python
-    >>> self.video_capture  # Video capture
-    >>> self.video_paras    # a list of [sample_step, frame_rate]
-    >>> self.video_weights  # weights to tansfer real scale to pixel
-    ```
-
-    Methods
-    -------
-    ```python
-    # setup video parameters
-    >>> self.set_video(video_capture, video_paras, video_weights)
-
-    # transfer coordinates from real scale to pixels
-    >>> self.real2pixel(real_pos)
-    """
 
     def __init__(self, manager: BaseManager, dataset: str, clip: str):
         super().__init__(manager.args, manager)
 
+        # Get information of the video clip
         self.info = VideoClip(name=clip, dataset=dataset).get()
 
-        self._vc = None
-        self._paras = None
+        # Try to open the video
+        path = self.info.video_path
+        vc = cv2.VideoCapture(path)
+        self._vc = vc if vc.open(path) else None
 
-        self._scale = self.info.datasetInfo.scale
-        self._scale_vis = self.info.datasetInfo.scale_vis
+        # Try to read the scene image
+        try:
+            self.scene_image = cv2.imread(path)
+        except:
+            self.scene_image = None
 
-        self.order = self.info.order
-        self.set_video(self.info)
+        # annotation helper
+        self.helper = get_helper(self.args.anntype)
 
+        # Read png files
         self.obs_file = cv2.imread(OBS_IMAGE, -1)
         self.neighbor_file = cv2.imread(NEIGHBOR_IMAGE, -1)
         self.pred_file = cv2.imread(PRED_IMAGE, -1)
         self.gt_file = cv2.imread(GT_IMAGE, -1)
         self.dis_file = cv2.imread(DISTRIBUTION_IMAGE, -1)
 
-        self.helper = get_helper(self.args.anntype)
-
     @property
     def video_capture(self) -> cv2.VideoCapture:
         return self._vc
-
-    @property
-    def video_paras(self):
-        """
-        [sample_step, frame_rate]
-        """
-        return self._paras
-
-    @property
-    def scale(self):
-        """
-        annotation scales
-        """
-        return self._scale
-
-    @property
-    def scale_vis(self):
-        """
-        Video scale
-        """
-        return self._scale_vis
-
-    @property
-    def video_matrix(self) -> list[float]:
-        """
-        transfer weights from real scales to pixels.
-        """
-        return self._matrix
-
-    def set_video(self, video_info: VideoClip):
-
-        path = video_info.video_path
-        vc = cv2.VideoCapture(path)
-
-        if vc.open(path):
-            self._vc = vc
-
-        try:
-            self.scene_image = cv2.imread(path)
-        except:
-            self.scene_image = None
-
-        self._paras = video_info.paras
-        self._matrix = video_info.matrix
 
     def get_image(self, frame: int) -> np.ndarray:
         """
@@ -124,7 +63,7 @@ class Visualization(BaseManager):
 
         :param frame: frame number of the image
         """
-        time = 1000 * frame / self.video_paras[1]
+        time = 1000 * frame / self.info.paras[1]
         self.video_capture.set(cv2.CAP_PROP_POS_MSEC, time - 1)
         _, f = self.video_capture.read()
         f = self.rescale(f)
@@ -141,6 +80,10 @@ class Visualization(BaseManager):
         pred = self.real2pixel(agent.pred, integer)
         gt = self.real2pixel(agent.groundtruth, integer)
         nei = self.real2pixel(agent.traj_neighbor[:, -1], integer)
+
+        if pred.ndim == 2:
+            pred = pred[np.newaxis]
+
         return obs, pred, gt, nei
 
     def real2pixel(self, real_pos, integer=True):
@@ -150,26 +93,26 @@ class Visualization(BaseManager):
         :param real_pos: coordinates, shape = (n, 2) or (k, n, 2)
         :return pixel_pos: coordinates in pixels
         """
-        scale = self.scale / self.scale_vis
-        weights = self.video_matrix
+        scale = self.info.datasetInfo.scale / self.info.datasetInfo.scale_vis
+        weights = self.info.matrix
 
         if type(real_pos) == list:
             real_pos = np.array(real_pos)
 
-        real = scale * self.helper.picker.get(real_pos)
-        pixel = [weights[0] * real.T[self.order[0]].T + weights[1],
-                 weights[2] * real.T[self.order[1]].T + weights[3]]
-        pixel = np.stack(pixel, axis=-1)
+        w = [weights[0], weights[2]]
+        b = [weights[1], weights[3]]
+
+        real = scale * real_pos
+        pixel = self.helper.picker.real2pixel2d(real, w, b, self.info.order)
 
         if integer:
             pixel = pixel.astype(np.int32)
         return pixel
 
     def rescale(self, f: np.ndarray):
-        if self.scale_vis > 1:
+        if (s := self.info.datasetInfo.scale_vis) > 1:
             x, y = f.shape[:2]
-            f = cv2.resize(f, (int(y/self.scale_vis),
-                               int(x/self.scale_vis)))
+            f = cv2.resize(f, (int(y/s), int(x/s)))
         return f
 
     def draw(self, agent: Agent,
@@ -208,7 +151,7 @@ class Visualization(BaseManager):
                 video_shape = (f.shape[1], f.shape[0])
                 VideoWriter = cv2.VideoWriter(save_name + '.mp4',
                                               cv2.VideoWriter_fourcc(*'mp4v'),
-                                              self.video_paras[1],
+                                              self.info.paras[1],
                                               video_shape)
 
         elif (f is None) and (self.scene_image is not None):
@@ -296,8 +239,8 @@ class Visualization(BaseManager):
         :param source: image file
         :param obs: (optional) observations in *pixel* scale
         :param gt: (optional) ground truth in *pixel* scale
-        :param pred: (optional) predictions in *pixel* scale, shape = `(steps, (K), dim)`
-        :param neighbor: (optional) observed neighbors' positions in *pixel* scale, shape = `(steps, (K), dim)`
+        :param pred: (optional) predictions in *pixel* scale, shape = `(K, steps, dim)`
+        :param neighbor: (optional) observed neighbors' positions in *pixel* scale, shape = `(batch, dim)`
         :param draw_distribution: controls if draw as a distribution
         :param alpha: alpha channel coefficient
         """
@@ -308,9 +251,11 @@ class Visualization(BaseManager):
             if draw_dis:
                 f = self.helper.draw_dis(f, pred, self.dis_file, alpha=0.8)
             else:
-                pred = np.reshape(pred, [-1, 2])
-                f = self.helper.draw_traj(
-                    f, pred, self.pred_file, draw_lines=False)
+                for pred_k in pred:
+                    f = self.helper.draw_traj(
+                        f, pred_k, self.pred_file,
+                        draw_lines=False,
+                        color=255 * np.random.rand(3))
 
         if neighbor is not None:
             f = self.helper.draw_traj(
