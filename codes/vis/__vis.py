@@ -2,31 +2,29 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-29 09:50:15
+@LastEditTime: 2022-09-29 18:19:34
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-from typing import Union
-
 import cv2
 import numpy as np
-import tensorflow as tf
 from matplotlib import pyplot as plt
 
-from ..args import Args
-from ..base import BaseObject
+from ..base import BaseManager, SecondaryBar
 from ..dataset import Agent, VideoClip
-from ..utils import (DISTRIBUTION_COLORBAR, DISTRIBUTION_IMAGE, GT_IMAGE,
-                     NEIGHBOR_IMAGE, OBS_IMAGE, PRED_IMAGE)
+from ..utils import (DISTRIBUTION_IMAGE, DRAW_TEXT_IN_IMAGES,
+                     DRAW_TEXT_IN_VIDEOS, GT_IMAGE, NEIGHBOR_IMAGE, OBS_IMAGE,
+                     PRED_IMAGE)
+from .__helper import ADD, get_helper
 
-CONV_LAYER = tf.keras.layers.Conv2D(
-    1, (20, 20), (1, 1), 'same',
-    kernel_initializer=tf.initializers.constant(1/(20*20)))
+DRAW_ON_VIDEO = 0
+DRAW_ON_IMAGE = 1
+DRAW_ON_EMPTY = 2
 
 
-class Visualization(BaseObject):
+class Visualization(BaseManager):
     """
     Visualization
     -------------
@@ -50,11 +48,9 @@ class Visualization(BaseObject):
     >>> self.real2pixel(real_pos)
     """
 
-    def __init__(self, args: Args, dataset: str, clip: str):
+    def __init__(self, manager: BaseManager, dataset: str, clip: str):
+        super().__init__(manager.args, manager)
 
-        super().__init__()
-
-        self.args = args
         self.info = VideoClip(name=clip, dataset=dataset).get()
 
         self._vc = None
@@ -71,6 +67,8 @@ class Visualization(BaseObject):
         self.pred_file = cv2.imread(PRED_IMAGE, -1)
         self.gt_file = cv2.imread(GT_IMAGE, -1)
         self.dis_file = cv2.imread(DISTRIBUTION_IMAGE, -1)
+
+        self.helper = get_helper(self.args.anntype)
 
     @property
     def video_capture(self) -> cv2.VideoCapture:
@@ -120,7 +118,32 @@ class Visualization(BaseObject):
         self._paras = video_info.paras
         self._matrix = video_info.matrix
 
-    def real2pixel(self, real_pos, return_int=True):
+    def get_image(self, frame: int) -> np.ndarray:
+        """
+        Get a frame from the video
+
+        :param frame: frame number of the image
+        """
+        time = 1000 * frame / self.video_paras[1]
+        self.video_capture.set(cv2.CAP_PROP_POS_MSEC, time - 1)
+        _, f = self.video_capture.read()
+        f = self.rescale(f)
+        return f
+
+    def get_text(self, frame: int, agent: Agent) -> list[str]:
+        return [self.info.name,
+                f'frame: {str(frame).zfill(6)}',
+                f'agent: {agent.id}',
+                f'type: {agent.type}']
+
+    def get_trajectories(self, agent: Agent, integer=True):
+        obs = self.real2pixel(agent.traj, integer)
+        pred = self.real2pixel(agent.pred, integer)
+        gt = self.real2pixel(agent.groundtruth, integer)
+        nei = self.real2pixel(agent.traj_neighbor[:, -1], integer)
+        return obs, pred, gt, nei
+
+    def real2pixel(self, real_pos, integer=True):
         """
         Transfer coordinates from real scale to pixels.
 
@@ -133,185 +156,144 @@ class Visualization(BaseObject):
         if type(real_pos) == list:
             real_pos = np.array(real_pos)
 
-        if len(real_pos.shape) == 2:
-            real_pos = real_pos[np.newaxis, :, :]
+        real = scale * self.helper.picker.get(real_pos)
+        pixel = [weights[0] * real.T[self.order[0]].T + weights[1],
+                 weights[2] * real.T[self.order[1]].T + weights[3]]
+        pixel = np.stack(pixel, axis=-1)
 
-        d = self.args.dim
+        if integer:
+            pixel = pixel.astype(np.int32)
+        return pixel
 
-        all_results = []
-        for step in range(real_pos.shape[1]):
-            # position at one step, shape = (k, d)
-            r = scale * real_pos[:, step, :]
-
-            # both model and dataset support `boundingbox`
-            if (self.info.datasetInfo.anntype == 'boundingbox' and
-                    self.args.anntype == 'boundingbox'):
-                result = []
-                for index in range(0, self.args.dim, 2):
-                    result += [weights[0] * r.T[index+self.order[0]] + weights[1],
-                               weights[2] * r.T[index+self.order[1]] + weights[3]]
-                result = np.column_stack(result)
-
-            # when model only support `coordinate`
-            elif self.args.anntype.startswith('coordinate'):
-                result = np.column_stack([
-                    weights[0] * r.T[self.order[0]] + weights[1],
-                    weights[2] * r.T[self.order[1]] + weights[3],
-                ])
-
-            if return_int:
-                result = result.astype(np.int32)
-            all_results.append(result)
-
-        return np.array(all_results)
-
-    @staticmethod
-    def add_png_value(source, png, position, alpha=1.0):
-        yc, xc = position
-        xp, yp, _ = png.shape
-        xs, ys, _ = source.shape
-        x0, y0 = [xc-xp//2, yc-yp//2]
-
-        if x0 >= 0 and y0 >= 0 and x0 + xp <= xs and y0 + yp <= ys:
-            source[x0:x0+xp, y0:y0+yp, :3] = \
-                source[x0:x0+xp, y0:y0+yp, :3] + \
-                png[:, :, :3] * alpha * png[:, :, 3:]/255
-
-        return source
-
-    def draw(self, agents: list[Agent],
-             frame_id: Union[str, int],
-             save_path='null',
-             show_img=False,
-             draw_distribution=False):
-        """
-        Draw trajecotries on images.
-
-        :param agents: a list of agent managers (`Agent`)
-        :param frame_id: name of the frame to draw on
-        :param save_path: save path
-        :param show_img: controls if show results in opencv window
-        :draw_distrubution: controls if draw as distribution for generative models
-        """
-        draw = False
-        f = None
-
-        # draw on video frames
-        if self.video_capture:
-            time = 1000 * frame_id / self.video_paras[1]
-            self.video_capture.set(cv2.CAP_PROP_POS_MSEC, time - 1)
-            _, f = self.video_capture.read()
-            draw = True
-
-        # draw on the static scene image
-        if (f is None) and (self.scene_image is not None):
-            f = self.scene_image
-            draw = True
-
-        # re-scale scene RGB image
-        if draw and self.scale_vis > 1:
+    def rescale(self, f: np.ndarray):
+        if self.scale_vis > 1:
             x, y = f.shape[:2]
             f = cv2.resize(f, (int(y/self.scale_vis),
                                int(x/self.scale_vis)))
+        return f
 
-        if not draw:
-            return_int = False
-            plt.figure()
+    def draw(self, agent: Agent,
+             frames: list[int],
+             save_name: str,
+             draw_dis=False,
+             interp=True,
+             save_as_images=False):
+        """
+        Draw trajectories on the video.
+
+        :param agent: the agent object (`Agent`) to visualize
+        :param frames: frames of current observation steps
+        :param save_name: name to save the output video, which does not contain
+            the file format
+        :param draw_dis: choose if to draw trajectories as
+            distributions or single dots
+        :param interp: choose whether to draw the full video or only
+            draw on the sampled time steps
+        :param save_as_images: choose if to save as an image or a video clip
+        """
+        f = None
+        state = None
+
+        # draw on video frames
+        if self.video_capture:
+            f = self.get_image(frames[0])
+
+        if f is not None:
+            state = DRAW_ON_VIDEO
+            vis_func = self.vis
+            text_func = self.text
+            integer = True
+
+            if not save_as_images:
+                video_shape = (f.shape[1], f.shape[0])
+                VideoWriter = cv2.VideoWriter(save_name + '.mp4',
+                                              cv2.VideoWriter_fourcc(*'mp4v'),
+                                              self.video_paras[1],
+                                              video_shape)
+
+        elif (f is None) and (self.scene_image is not None):
+            state = DRAW_ON_IMAGE
+            vis_func = self.vis
+            text_func = self.text
+            integer = True
+            f = self.scene_image
+
+        else:
+            state = DRAW_ON_EMPTY
+            integer = False
             vis_func = self._visualization_plt
             text_func = self._put_text_plt
+            plt.figure()
 
+        if f is not None:
+            f_empty = np.zeros((f.shape[0], f.shape[1], 4))
         else:
-            return_int = True
-            vis_func = self._visualization
-            text_func = self._put_text
+            f_empty = None
 
-        for agent in agents:
-            obs = self.real2pixel(agent.traj, return_int)
-            pred = self.real2pixel(agent.pred, return_int)
-            nei = self.real2pixel(agent.traj_neighbor[1:, -1:], return_int)
-            gt = self.real2pixel(agent.groundtruth, return_int) \
-                if len(agent.groundtruth) else None
-
-            texts = [self.info.name,
-                     f'frame: {str(frame_id).zfill(6)}',
-                     f'agent: {agent.id}',
-                     f'type: {agent.type}']
-
-            f = vis_func(f, obs, gt, pred, nei,
-                         draw_distribution=draw_distribution,
-                         alpha=1.0)
-            f = text_func(f, texts)
-
-        if draw and show_img:
-            cv2.namedWindow(self.info.name, cv2.WINDOW_NORMAL |
-                            cv2.WINDOW_KEEPRATIO)
-            f = f.astype(np.uint8)
-            cv2.imshow(self.info.name, f)
-            cv2.waitKey(80)
-
-        else:
-            if draw:
-                cv2.imwrite(save_path, f)
-            else:
-                plt.savefig(save_path)
-                plt.close()
-
-    def draw_video(self, agent: Agent, save_path, interp=True, indexx=0, draw_distribution=False):
-        _, f = self.video_capture.read()
-        video_shape = (f.shape[1], f.shape[0])
-
-        frame_list = (np.array(agent.frame_list).astype(
-            np.float32)).astype(np.int32)
-        frame_list_original = frame_list
-
+        # interpolate frames
         if interp:
-            frame_list = np.array(
-                [index for index in range(frame_list[0], frame_list[-1]+1)])
+            frames = np.arange(frames[0], frames[-1]+1)
 
-        video_list = []
-        times = 1000 * frame_list / self.video_paras[1]
+        agent_frames = agent.frames
+        obs_len = agent.obs_length
+        obs, pred, gt, nei = self.get_trajectories(agent, integer)
 
-        obs = self.real2pixel(agent.traj)
-        gt = self.real2pixel(agent.groundtruth)
-        pred = self.real2pixel(agent.pred)
+        if save_as_images:
+            frame = frames[0]
+            f = vis_func(f, obs, gt, pred, nei, draw_dis=draw_dis)
+            f = text_func(f, self.get_text(frame, agent))
 
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        VideoWriter = cv2.VideoWriter(
-            save_path, fourcc, self.video_paras[1], video_shape)
+            if DRAW_TEXT_IN_IMAGES:
+                cv2.imwrite(save_name + f'_{frame}.jpg', f)
+            return
 
-        for time, frame in zip(times, frame_list):
-            self.video_capture.set(cv2.CAP_PROP_POS_MSEC, time - 1)
-            _, f = self.video_capture.read()
+        f_pred = vis_func(f_empty, pred=pred, draw_dis=draw_dis)
+        f_others = np.zeros_like(f_pred)
 
-            # draw observations
-            for obs_step in range(agent.obs_length):
-                if frame >= frame_list_original[obs_step]:
-                    f = ADD(
-                        f, self.obs_file, obs[obs_step])
+        for frame in SecondaryBar(frames,
+                                  manager=self.manager,
+                                  desc='Processing frames...'):
+            # get new scene image
+            if state == DRAW_ON_VIDEO:
+                f = self.get_image(frame)
+            elif state == DRAW_ON_IMAGE:
+                f = self.scene_image.copy()
+            elif state == DRAW_ON_EMPTY:
+                f = None
+            else:
+                raise ValueError(state)
+
+            if frame in agent_frames:
+                step = agent_frames.index(frame)
+                if step < obs_len:
+                    start, end = [max(0, step-1), step+1]
+                    f_others = vis_func(f_others, obs=obs[start:end])
+                else:
+                    step -= obs_len
+                    start, end = [max(0, step-1), step+1]
+                    f_others = vis_func(f_others, gt=gt[start:end])
 
             # draw predictions
-            if frame >= frame_list_original[agent.obs_length]:
-                f = self._visualization(
-                    f, pred=pred, draw_distribution=draw_distribution)
+            if frame > agent_frames[obs_len-1]:
+                f = vis_func(f, background=f_pred)
 
-            # draw GTs
-            for gt_step in range(agent.obs_length, agent.total_frame):
-                if frame >= frame_list_original[gt_step]:
-                    f = ADD(
-                        f, self.gt_file, gt[gt_step - agent.obs_length])
+            # draw observations and groundtruths
+            f = vis_func(f, background=f_others)
 
-            video_list.append(f)
+            if DRAW_TEXT_IN_VIDEOS:
+                f = text_func(f, self.get_text(frame, agent))
+
             VideoWriter.write(f)
 
-    def _visualization(self, f: np.ndarray,
-                       obs=None, gt=None, pred=None,
-                       neighbor=None,
-                       draw_distribution: int = None,
-                       alpha=1.0):
+    def vis(self, source: np.ndarray,
+            obs=None, gt=None, pred=None,
+            neighbor=None,
+            background: np.ndarray = None,
+            draw_dis: int = 0):
         """
         Draw one agent's observations, predictions, and groundtruths.
 
-        :param f: image file
+        :param source: image file
         :param obs: (optional) observations in *pixel* scale
         :param gt: (optional) ground truth in *pixel* scale
         :param pred: (optional) predictions in *pixel* scale, shape = `(steps, (K), dim)`
@@ -319,47 +301,39 @@ class Visualization(BaseObject):
         :param draw_distribution: controls if draw as a distribution
         :param alpha: alpha channel coefficient
         """
-        f_original = f.copy()
-        f = np.zeros([f.shape[0], f.shape[1], 4])
-        anntype = self.args.anntype
-
-        # draw observations
-        if obs is not None:
-            f = draw_traj(f, obs, self.obs_file,
-                          color=(255, 255, 255),
-                          width=3, alpha=alpha,
-                          anntype=anntype)
-
-        if neighbor is not None:
-            f = draw_pred(f, neighbor, self.neighbor_file,
-                          width=3, alpha=alpha,
-                          anntype=anntype,
-                          draw_distribution=False)
-
-        # draw ground truth future trajectories
-        if gt is not None:
-            f = draw_traj(f, gt, self.gt_file,
-                          color=(255, 255, 255),
-                          width=3, alpha=alpha,
-                          anntype=anntype)
-
-        # add video image
-        f = ADD(f_original, f,
-                [f.shape[1]//2, f.shape[0]//2],
-                alpha)
+        f = np.zeros([source.shape[0], source.shape[1], 4])
 
         # draw predicted trajectories
         if pred is not None:
-            f = draw_pred(f, pred, self.pred_file,
-                          width=3, alpha=alpha,
-                          anntype=anntype,
-                          draw_distribution=draw_distribution,
-                          dis_file=self.dis_file,
-                          color_bar=DISTRIBUTION_COLORBAR)
+            if draw_dis:
+                f = self.helper.draw_dis(f, pred, self.dis_file, alpha=0.8)
+            else:
+                pred = np.reshape(pred, [-1, 2])
+                f = self.helper.draw_traj(
+                    f, pred, self.pred_file, draw_lines=False)
 
+        if neighbor is not None:
+            f = self.helper.draw_traj(
+                f, neighbor, self.neighbor_file, draw_lines=False)
+
+        if obs is not None:
+            f = self.helper.draw_traj(f, obs, self.obs_file)
+
+        if gt is not None:
+            f = self.helper.draw_traj(f, gt, self.gt_file)
+
+        # draw background image
+        if background is not None:
+            f = ADD(background, f, [f.shape[1]//2, f.shape[0]//2])
+
+        # add original image
+        f = ADD(source, f, [f.shape[1]//2, f.shape[0]//2])
         return f
 
-    def _put_text(self, f: np.ndarray, texts: list[str]):
+    def text(self, f: np.ndarray, texts: list[str]) -> np.ndarray:
+        """
+        Put text on one image
+        """
         for index, text in enumerate(texts):
             f = cv2.putText(f, text,
                             org=(10 + 3, 40 + index * 30 + 3),
@@ -405,51 +379,6 @@ class Visualization(BaseObject):
         plt.title(', '.join(texts))
 
 
-def ADD(source: np.ndarray,
-        png: np.ndarray,
-        position: np.ndarray,
-        alpha=1.0):
-    """
-    Add a png file to the source image
-
-    :param source: source image, shape = `(H, W, 3)` or `(H, W, 4)`
-    :param png: png image, shape = `(H, W, 3)` or `(H, W, 4)`
-    :param position: pixel-level position in the source image, shape = `(2)`
-    :param alpha: transparency
-    """
-
-    yc, xc = position
-    xp, yp, _ = png.shape
-    xs, ys, _ = source.shape
-    x0, y0 = [xc-xp//2, yc-yp//2]
-
-    if png.shape[-1] == 4:
-        png_mask = png[:, :, 3:4]/255
-        png_file = png[:, :, :3]
-    else:
-        png_mask = np.ones_like(png[:, :, :1])
-        png_file = png
-
-    if x0 >= 0 and y0 >= 0 and x0 + xp <= xs and y0 + yp <= ys:
-        source[x0:x0+xp, y0:y0+yp, :3] = \
-            (1.0 - alpha * png_mask) * source[x0:x0+xp, y0:y0+yp, :3] + \
-            alpha * png_mask * png_file
-
-        if source.shape[-1] == 4:
-            source[x0:x0+xp, y0:y0+yp, 3:4] = \
-                np.minimum(source[x0:x0+xp, y0:y0+yp, 3:4] +
-                           255 * alpha * png_mask, 255)
-    return source
-
-
-def __draw_single_coordinate(source, coor: np.ndarray, png_file,
-                             color, width, alpha):
-    """
-    shape of `coor` is `(2)`
-    """
-    return ADD(source, png_file, (coor[1], coor[0]), alpha)
-
-
 def __draw_single_boundingbox(source, box: np.ndarray, png_file,
                               color, width, alpha):
     """
@@ -461,30 +390,6 @@ def __draw_single_boundingbox(source, box: np.ndarray, png_file,
                   pt2=(x2, y2),
                   color=color,
                   thickness=width)
-    return source
-
-
-def __draw_traj_coordinates(source, trajs, png_file,
-                            color, width, alpha):
-    """
-    shape of `trajs` is `(steps, 2)`
-    """
-    trajs = np.column_stack([trajs.T[1], trajs.T[0]])
-
-    if len(trajs) >= 2:
-        for left, right in zip(trajs[:-1], trajs[1:]):
-            # draw lines
-            cv2.line(img=source,
-                     pt1=(left[0], left[1]),
-                     pt2=(right[0], right[1]),
-                     color=color, thickness=width)
-
-            # draw points
-            source[:, :, 3] = alpha * 255 * source[:, :, 0]/color[0]
-            source = ADD(source, png_file, left)
-
-    # draw the last point
-    source = ADD(source, png_file, trajs[-1])
     return source
 
 
@@ -503,122 +408,4 @@ def __draw_traj_boundingboxes(source, trajs, png_file,
         source = ADD(source, png_file,
                      ((box[1]+box[3])//2, (box[0]+box[2])//2))
 
-    return source
-
-
-def draw_traj(source, trajs, png_file,
-              color=(255, 255, 255),
-              width=3, alpha=1.0,
-              anntype='coordinate'):
-    """
-    Draw lines and points.
-    `color` in (B, G, R)
-
-    :param source: a ndarray that contains the image, shape = `(H, W, 4)`
-    :param trajs: trajectories, shape = `(steps, (1), dim)`
-    :param png_file: a ndarray that contains the png icon, shape = `(H, W, 4)`
-    :param width:
-    :param alpha:
-    :param anntype: annotation type, canbe `'coordinate'` or `'boundingbox'`
-    """
-    if (len(s := trajs.shape) == 3) and (s[1] == 1):
-        trajs = trajs[:, 0, :]
-
-    if anntype == 'coordinate':
-        source = __draw_traj_coordinates(source, trajs, png_file,
-                                         color, width, alpha)
-
-    elif anntype == 'boundingbox':
-        source = __draw_traj_boundingboxes(source, trajs, png_file,
-                                           color, width, alpha)
-
-    else:
-        raise ValueError(anntype)
-
-    return source
-
-
-def draw_pred(source, pred: np.ndarray, png_file,
-              width, alpha,
-              anntype: str,
-              draw_distribution: int,
-              dis_file=None, color_bar=None):
-    """
-    shape of `pred` is `(steps, (K), dim)`
-    """
-
-    f = source
-    dim = pred.shape[-1]
-    background = np.zeros(f.shape[:2] + (4,))
-
-    if draw_distribution == 1:
-        f1 = draw_dis(background, pred.reshape([-1, 2]),
-                      dis_file, color_bar,
-                      alpha=0.5)
-
-    elif draw_distribution == 2:
-        all_steps = pred.shape[0]
-        for index, step in enumerate(pred):
-            f1 = draw_dis(background, step, dis_file,
-                          index/all_steps * color_bar,
-                          alpha=1.0)
-
-    if draw_distribution > 0:
-        f_smooth = CONV_LAYER(np.transpose(f1.astype(np.float32), [2, 0, 1])[
-            :, :, :, np.newaxis]).numpy()
-        f_smooth = np.transpose(f_smooth[:, :, :, 0], [1, 2, 0])
-        f1 = f_smooth
-
-        return ADD(f, f1,
-                   [f.shape[1]//2, f.shape[0]//2],
-                   alpha=0.8)
-
-    else:
-        if pred.ndim == 2:
-            pred = pred[:, np.newaxis, :]
-
-        if anntype == 'coordinate':
-            draw_func = __draw_single_coordinate
-        elif anntype == 'boundingbox':
-            draw_func = __draw_single_boundingbox
-        else:
-            raise ValueError(anntype)
-
-        for pred_k in np.transpose(pred, [1, 0, 2]):
-            color = (np.random.randint(0, 256),
-                     np.random.randint(0, 256),
-                     np.random.randint(0, 256))
-
-            for p in pred_k:
-                source = draw_func(source, p, png_file,
-                                   color=color,
-                                   width=3, alpha=alpha)
-
-        return source
-
-
-def draw_dis(source, trajs, png_file, color_bar: np.ndarray, alpha=1.0):
-    dis = np.zeros([source.shape[0], source.shape[1], 3])
-    for p in trajs:
-        dis = Visualization.add_png_value(dis, png_file, (p[1], p[0]), alpha)
-    dis = dis[:, :, -1]
-
-    if not dis.max() == 0:
-        dis = dis ** 0.2
-        alpha_channel = (255 * dis/dis.max()).astype(np.int32)
-        color_map = color_bar[alpha_channel]
-        distribution = np.concatenate(
-            [color_map, np.expand_dims(alpha_channel, -1)], axis=-1)
-        source = ADD(
-            source, distribution, [source.shape[1]//2, source.shape[0]//2], alpha)
-
-    return source
-
-
-def draw_relation(source, points, png_file, color=(255, 255, 255), width=2):
-    left = points[0]
-    right = points[1]
-    cv2.line(source, (left[0], left[1]), (right[0], right[1]), color, width)
-    source = ADD(source, png_file, left)
-    source = ADD(source, png_file, right)
     return source

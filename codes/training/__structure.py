@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-26 16:03:56
+@LastEditTime: 2022-09-29 18:15:52
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -387,10 +387,7 @@ class Structure(BaseManager):
 
         # make log directory and save current args
         if self.args.update_saved_args:
-            save_dir = self.args.load
-            self.args._set('load', 'null')
-            self.args._set('update_saved_args', 0)
-            self.args._save_as_json(save_dir)
+            self.args._save_as_json(self.args.load)
 
         # Load dataset
         ds_test = agents.make_dataset()
@@ -516,7 +513,10 @@ class Structure(BaseManager):
                            agents: AgentManager,
                            clips: list[str]):
 
-        if (not self.args.draw_results in ['null', '0', '1']) and (len(clips) == 1):
+        if (((self.args.draw_results != 'null') or
+             (self.args.draw_videos != 'null'))
+                and len(clips) == 1):
+
             # draw results on video frames
             clip = clips[0]
             tv = Visualization(self, self.args.dataset, clip)
@@ -526,34 +526,36 @@ class Structure(BaseManager):
                 else self.args.load
 
             img_dir = dir_check(os.path.join(save_base_path, 'VisualTrajs'))
-            save_format = os.path.join(img_dir, '{}_{}.{}')
+            save_format = os.path.join(img_dir, clip + '_{}')
             self.log(f'Start saving images into `{img_dir}`...')
 
             pred_all = outputs[0].numpy()
-            for index, agent in enumerate(self.timebar(agents.agents, 'Saving...')):
+
+            if self.args.draw_index == 'all':
+                agent_indexes = list(range(len(pred_all)))
+            else:
+                _indexes = self.args.draw_index.split('_')
+                agent_indexes = [int(i) for i in _indexes]
+
+            for index in self.timebar(agent_indexes, 'Saving...'):
                 # write traj
+                agent = agents.agents[index]
                 agent._traj_pred = pred_all[index]
 
                 d = self.args.draw_distribution
                 if d >= 100:
                     d -= 100
-                    save_video = True
+                    save_image = False
+                    frames = agent.frames
                 else:
-                    save_video = False
+                    save_image = True
+                    frames = [agent.frames[self.args.obs_frames-1]]
 
-                # vis on scene images
-                if not save_video:
-                    tv.figure(agents=[agent],
-                              frame_id=agent.frames[self.args.obs_frames],
-                              save_path=save_format.format(clip, index, 'jpg'),
-                              show_img=False,
-                              draw_distribution=d)
-
-                # vis on the video clip
-                else:
-                    tv.video(agent=agent,
-                             save_path=save_format.format(clip, index, 'avi'),
-                             draw_distribution=d)
+                tv.draw(agent=agent,
+                        frames=frames,
+                        save_name=save_format.format(index),
+                        draw_dis=d,
+                        save_as_images=save_image)
 
             self.log(f'Prediction result images are saved at {img_dir}')
 

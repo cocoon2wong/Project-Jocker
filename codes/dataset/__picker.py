@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-30 09:52:17
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-26 15:15:28
+@LastEditTime: 2022-09-29 11:27:12
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -34,7 +34,9 @@ class _BaseAnnType():
             raise ValueError(f'Transfer from {T_c} to {T} is not supported.')
 
         else:
-            if traj.ndim == 3:      # (batch, steps, dim)
+            if traj.ndim == 4:       # (batch, steps, K, dim)
+                _traj = np.transpose(traj, [3, 0, 1, 2])
+            elif traj.ndim == 3:      # (batch, steps, dim)
                 _traj = np.transpose(traj, [2, 0, 1])
             elif traj.ndim == 2:    # (steps, dim)
                 _traj = traj.T

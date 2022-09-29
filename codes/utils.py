@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 20:10:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-31 11:36:51
+@LastEditTime: 2022-09-29 18:20:57
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -73,6 +73,11 @@ DISTRIBUTION_COLORBAR = np.column_stack([
               np.array([0, 127, 255]),
               np.array([0, 252, 255])),
 ])
+
+# Whether draw lines in images
+DRAW_LINES = False
+DRAW_TEXT_IN_VIDEOS = False
+DRAW_TEXT_IN_IMAGES = True
 
 
 def dir_check(target_dir: str) -> str:
