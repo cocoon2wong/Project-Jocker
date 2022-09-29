@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-14 20:29:05
+@LastEditTime: 2022-09-29 18:58:30
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -123,6 +123,7 @@ class BaseSilverballers(Structure):
         if self.args.batch_size > self.agent.args.batch_size:
             self.args._set('batch_size', self.agent.args.batch_size)
 
+        self.args._set('dataset', self.agent.args.dataset)
         self.args._set('split', self.agent.args.split)
         self.args._set('dim', self.agent.args.dim)
         self.args._set('anntype', self.agent.args.anntype)
