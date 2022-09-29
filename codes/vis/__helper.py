@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-29 09:53:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-29 18:17:20
+@LastEditTime: 2022-09-29 20:02:36
 @Description: png content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -126,7 +126,6 @@ class CoordinateHelper(BaseVisHelper):
                          pt1=(left[0], left[1]),
                          pt2=(right[0], right[1]),
                          color=color, thickness=width)
-                cv2.line()
                 source[:, :, -1] = 255 * np.sign(source[:, :, 0])
 
         # draw points
@@ -141,6 +140,40 @@ class BoundingboxHelper(BaseVisHelper):
         super().__init__()
 
         self.picker = Picker('boundingbox', 'coordinate')
+
+    def draw_single(self, source: np.ndarray,
+                    inputs: np.ndarray,
+                    png: np.ndarray,
+                    color=(255, 255, 255),
+                    width=3,
+                    draw_center=True):
+
+        (y1, x1, y2, x2) = inputs[:4]
+        color = tuple([int(c) for c in color])
+        cv2.rectangle(img=source,
+                      pt1=(x1, y1),
+                      pt2=(x2, y2),
+                      color=color,
+                      thickness=width)
+        source[:, :, -1] = 255 * np.sign(source[:, :, 0])
+
+        if draw_center:
+            center = ((x1 + x2)//2, (y1 + y2)//2)
+            source = ADD(source, png, center)
+
+        return source
+
+    def draw_traj(self, source: np.ndarray,
+                  inputs: np.ndarray,
+                  png: np.ndarray,
+                  color=(255, 255, 255),
+                  width=3,
+                  draw_lines=True):
+
+        for box in inputs:
+            source = self.draw_single(
+                source, box, png, color, width, draw_center=draw_lines)
+        return source
 
 
 def get_helper(anntype: str) -> BaseVisHelper:
