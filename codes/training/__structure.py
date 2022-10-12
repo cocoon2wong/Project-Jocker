@@ -55,6 +55,7 @@ class Structure(BaseManager):
             self.metrics.set({self.metrics.ADE: 1.0,
                               self.metrics.FDE: 0.0,
                               self.metrics.AIoU: 0.0,
+                              self.metrics.HIoU: 0.0,
                               self.metrics.FIoU: 0.0})
         else:
             self.metrics.set({self.metrics.ADE: 1.0,

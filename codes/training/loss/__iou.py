@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 10:50:35
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-12 18:58:41
+@LastEditTime: 2022-10-12 19:38:37
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -24,7 +24,8 @@ def AIoU(outputs: list[tf.Tensor],
     if pred.ndim == 3:
         pred = pred[:, tf.newaxis, :, :]
 
-    GT = GT[:, tf.newaxis, :, :]
+    K = pred.shape[-3]
+    GT = tf.repeat(GT[:, tf.newaxis, :, :], K, axis=-3)
 
     # (batch, K, steps)
     iou = __IoU_single_2Dbox(pred, GT)
@@ -35,23 +36,28 @@ def AIoU(outputs: list[tf.Tensor],
 
 def FIoU(outputs: list[tf.Tensor],
          GT: tf.Tensor,
-         coe: float = 1.0) -> tf.Tensor:
+         coe: float = 1.0,
+         index: int = -1,
+         length: int = 1) -> tf.Tensor:
     """
     Calculate the IoU on the final prediction time step.
     It is only used for models with `anntype == 'boundingbox'`.
     Each dimension of the predictions should be `(xl, yl, xr, yr)`.
     """
     pred = outputs[0]
-    return AIoU([pred[..., -1:, :]], GT[..., -1:, :])
+    steps = pred.shape[-2]
+    index = tf.math.mod(index, steps)
+    return AIoU([pred[..., index:index+length, :]],
+                GT[..., index:index+length, :])
 
 
 def __IoU_single_2Dbox(box1: tf.Tensor, box2: tf.Tensor) -> tf.Tensor:
     """
     Calculate IoU on pred and GT.
-    pred and GT must have the same shape.
+    Boxes must have the same shape.
 
-    :param pred: shape = (..., 4)
-    :param GT: shape = (..., 4)
+    :param box1: shape = (..., 4)
+    :param box2: shape = (..., 4)
     """
 
     # box1:
@@ -78,13 +84,11 @@ def __IoU_single_2Dbox(box1: tf.Tensor, box2: tf.Tensor) -> tf.Tensor:
 
 def __get_len_1Dbox(box1: tf.Tensor, box2: tf.Tensor):
     """
-    Shape of each box should be `(..., 2)`
+    Shape of each box should be `(..., 2)`.
+    Boxes should have the same shape.
     """
     len1 = tf.abs(box1[..., 0] - box1[..., 1])
     len2 = tf.abs(box2[..., 0] - box2[..., 1])
-
-    K = len1.shape[-2]
-    len2 = tf.repeat(len2, K, axis=-2)
 
     len_all = [len1, len2]
     for i in [0, 1]:

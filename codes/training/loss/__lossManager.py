@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 11:13:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-12 13:09:29
+@LastEditTime: 2022-10-12 19:12:10
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -187,4 +187,16 @@ class LossManager(BaseManager):
              coe: float = 1.0,
              *args, **kwargs):
 
-        return FIoU(outputs, labels, coe=1.0)
+        return FIoU(outputs, labels, coe=1.0, index=-1)
+
+    def HIoU(self, outputs: list[tf.Tensor],
+             labels: tf.Tensor,
+             coe: float = 1.0,
+             *args, **kwargs):
+
+        s = self.args.pred_frames
+        length = 2 if s % 2 == 0 else 1
+        index = s//2 - 1
+
+        return FIoU(outputs, labels, coe=1.0,
+                    index=index, length=length)
