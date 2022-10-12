@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-12 13:15:16
+@LastEditTime: 2022-10-12 13:50:24
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -25,7 +25,13 @@ from .loss import LossManager
 class Structure(BaseManager):
 
     def __init__(self, args: list[str] = None):
-        super().__init__(Args(args), manager=None)
+        
+        if issubclass(type(args), Args):
+            init_args = args
+        else:
+            init_args = Args(args)
+
+        super().__init__(args=init_args, manager=None)
 
         self.model: Model = None
         self.keywords = {}

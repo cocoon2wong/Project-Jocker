@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-12 13:19:20
+@LastEditTime: 2022-10-12 13:56:52
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,7 +12,7 @@ import tensorflow as tf
 from codes.basemodels import Model
 from codes.training import Structure
 
-from .__args import SilverballersArgs
+from .__args import SilverballersArgs, AgentArgs
 from .agents import BaseAgentModel, BaseAgentStructure
 from .handlers import (BaseHandlerModel, BaseHandlerStructure,
                        LinearHandlerModel)
@@ -79,16 +79,31 @@ class BaseSilverballers(Structure):
     silverballer_model = BaseSilverballersModel
 
     def __init__(self, terminal_args: list[str]):
-        super().__init__(terminal_args)
 
-        # set args
+        # load args
         self.args = SilverballersArgs(terminal_args)
-        self.noTraining = True
 
         # check weights
         if 'null' in [self.args.loada, self.args.loadb]:
             raise ('`Agent` or `Handler` not found!' +
                    ' Please specific their paths via `--loada` or `--loadb`.')
+
+        # load basic args from the saved agent model
+        agent_args = AgentArgs(terminal_args + ['--load', self.args.loada])
+
+        if self.args.batch_size > agent_args.batch_size:
+            self.args._set('batch_size', agent_args.batch_size)
+
+        self.args._set('dataset', agent_args.dataset)
+        self.args._set('split', agent_args.split)
+        self.args._set('dim', agent_args.dim)
+        self.args._set('anntype', agent_args.anntype)
+        self.args._set('obs_frames', agent_args.obs_frames)
+        self.args._set('pred_frames', agent_args.pred_frames)
+
+        # init the structure
+        super().__init__(self.args)
+        self.noTraining = True
 
         # config second-stage model
         if self.args.loadb.startswith('l'):
@@ -113,16 +128,6 @@ class BaseSilverballers(Structure):
                                          create_args=dict(asHandler=True),
                                          load=handler_path,
                                          key_points=self.agent.args.key_points)
-
-        if self.args.batch_size > self.agent.args.batch_size:
-            self.args._set('batch_size', self.agent.args.batch_size)
-
-        self.args._set('dataset', self.agent.args.dataset)
-        self.args._set('split', self.agent.args.split)
-        self.args._set('dim', self.agent.args.dim)
-        self.args._set('anntype', self.agent.args.anntype)
-        self.args._set('obs_frames', self.agent.args.obs_frames)
-        self.args._set('pred_frames', self.agent.args.pred_frames)
 
         # set labels
         self.set_labels('gt')

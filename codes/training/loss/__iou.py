@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 10:50:35
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-12 13:12:02
+@LastEditTime: 2022-10-12 13:53:25
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -24,15 +24,14 @@ def AIoU(outputs: list[tf.Tensor],
     if pred.ndim == 3:
         pred = pred[:, tf.newaxis, :, :]
 
-    all_iou = []
-    for k in range(pred.shape[1]):
-        all_iou.append(__IoU_single(pred[:, k, :, :], GT))
+    K = pred.shape[1]
+    GT = tf.repeat(GT[:, tf.newaxis, :, :], K, axis=-3)
 
-    all_iou = tf.stack(all_iou)     # (K, batch, steps)
-    all_iou = tf.reduce_max(all_iou, axis=0)
-    all_iou = tf.reduce_mean(all_iou, axis=-1)
-
-    return tf.reduce_mean(all_iou)
+    # (batch, K, steps)
+    iou = __IoU_single_2Dbox(pred, GT)
+    iou = tf.reduce_mean(iou, axis=-1)
+    iou = tf.reduce_max(iou, axis=1)
+    return tf.reduce_mean(iou)
 
 
 def FIoU(outputs: list[tf.Tensor],
@@ -47,7 +46,7 @@ def FIoU(outputs: list[tf.Tensor],
     return AIoU([pred[..., -1:, :]], GT[..., -1:, :])
 
 
-def __IoU_single(pred: tf.Tensor, GT: tf.Tensor) -> tf.Tensor:
+def __IoU_single_2Dbox(box1: tf.Tensor, box2: tf.Tensor) -> tf.Tensor:
     """
     Calculate IoU on pred and GT.
     pred and GT must have the same shape.
@@ -56,35 +55,33 @@ def __IoU_single(pred: tf.Tensor, GT: tf.Tensor) -> tf.Tensor:
     :param GT: shape = (..., 4)
     """
 
-    # (..., 8)
-    s = tf.shape(pred)[:-1]
-    dat = tf.concat([pred, GT], axis=-1)
+    # (0,   1,   2,   3,   4,   5,   6,   7  )
+    # (xl1, yl1, xr1, yrl, xl2, yl2, xr2, yr2)
+    dat = tf.concat([box1, box2], axis=-1)
 
-    x1 = tf.gather(pred, [0, 2], axis=-1)
-    x2 = tf.gather(GT, [0, 2], axis=-1)
-    x1_len = tf.abs(x1[..., 0] - x1[..., 1])
-    x2_len = tf.abs(x2[..., 0] - x2[..., 1])
+    len1_x, len2_x, len_inter_x = \
+        __get_len_1Dbox(tf.gather(dat, [0, 2], axis=-1),
+                        tf.gather(dat, [4, 6], axis=-1))
 
-    x_sorted = tf.sort(tf.gather(dat, [0, 2, 4, 6], axis=-1), axis=-1)
-    x_len_all = tf.abs(x_sorted[..., 0] - x_sorted[..., -1])
+    len1_y, len2_y, len_inter_y = \
+        __get_len_1Dbox(tf.gather(dat, [1, 3], axis=-1),
+                        tf.gather(dat, [5, 7], axis=-1))
 
-    x_len_inter = x1_len + x2_len - x_len_all
-    x_len_inter = tf.maximum(0, x_len_inter)
-
-    y1 = tf.gather(pred, [1, 3], axis=-1)
-    y2 = tf.gather(GT, [1, 3], axis=-1)
-    y1_len = tf.abs(y1[..., 0] - y1[..., 1])
-    y2_len = tf.abs(y2[..., 0] - y2[..., 1])
-
-    y_sorted = tf.sort(tf.gather(dat, [1, 3, 5, 7], axis=-1), axis=-1)
-    y_len_all = tf.abs(y_sorted[..., 0] - y_sorted[..., -1])
-
-    y_len_inter = y1_len + y2_len - y_len_all
-    y_len_inter = tf.maximum(0, y_len_inter)
-
-    s_inter = x_len_inter * y_len_inter
-    s_all = x1_len * y1_len + x2_len * y2_len
-
+    s_inter = len_inter_x * len_inter_y
+    s_all = len1_x * len1_y + len2_x * len2_y
     iou = s_inter / (s_all - s_inter)
-
     return iou
+
+
+def __get_len_1Dbox(box1: tf.Tensor, box2: tf.Tensor):
+    """
+    Shape of each box should be `(..., 2)`
+    """
+    len1 = tf.abs(box1[..., 0] - box1[..., 1])
+    len2 = tf.abs(box2[..., 0] - box2[..., 1])
+
+    x_sorted = tf.sort(tf.concat([box1, box2], axis=-1))
+    len_all = tf.abs(x_sorted[..., 0] - x_sorted[..., -1])
+    len_inter = tf.maximum(len1 + len2 - len_all, 0.0)
+
+    return len1, len2, len_inter
