@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-27 20:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-13 21:33:58
+@LastEditTime: 2022-10-12 12:45:27
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -20,12 +20,12 @@ class SilverballersMKII(BaseSilverballers):
 
     def __init__(self, terminal_args: list[str]):
 
-        self.args = SilverballersArgs(terminal_args)
-        minimal_agent_args = Args()._load_from_json(self.args.loada)
+        min_args = SilverballersArgs(terminal_args)
+        minimal_agent_args = Args()._load_from_json(min_args.loada)
         agent_model = get_model(minimal_agent_args.model)
 
-        if not self.args.loadb.startswith('l'):
-            minimal_handler_args = Args()._load_from_json(self.args.loadb)
+        if not min_args.loadb.startswith('l'):
+            minimal_handler_args = Args()._load_from_json(min_args.loadb)
             handler_model = get_model(minimal_handler_args.model)
         else:
             handler_model = None

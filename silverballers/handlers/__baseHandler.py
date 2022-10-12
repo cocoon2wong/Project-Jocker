@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-15 10:39:37
+@LastEditTime: 2022-10-12 12:59:37
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -15,7 +15,6 @@ from codes.basemodels import Model
 from codes.training import Structure
 
 from ..__args import HandlerArgs
-from ..__loss import SilverballersLoss
 
 
 class BaseHandlerModel(Model):
@@ -142,25 +141,20 @@ class BaseHandlerStructure(Structure):
         super().__init__(terminal_args)
 
         self.args = HandlerArgs(terminal_args)
-        self.Loss = SilverballersLoss(self.args)
 
         self.add_keywords(NumberOfKeyoints=self.args.points,
                           Transformation=self.args.T)
 
         self.set_labels('gt')
-        self.set_loss(self.Loss.l2)
-        self.set_loss_weights(1.0)
+        self.loss.set({self.loss.l2: 1.0})
 
         if self.args.key_points == 'null':
-            self.set_metrics(self.Loss.avgADE,
-                             self.Loss.avgFDE)
-            self.set_metrics_weights(1.0, 0.0)
-
+            self.metrics.set({self.metrics.ADE: 1.0,
+                              self.metrics.FDE: 0.0})
         else:
-            self.set_metrics(self.Loss.avgADE,
-                             self.Loss.avgFDE,
-                             self.Loss.avgKey)
-            self.set_metrics_weights(1.0, 0.0, 0.0)
+            self.metrics.set({self.metrics.ADE: 1.0,
+                              self.metrics.FDE: 0.0,
+                              self.metrics.avgKey: 0.0})
 
     def set_model_type(self, new_type: type[BaseHandlerModel]):
         self.model_type = new_type

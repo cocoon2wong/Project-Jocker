@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-29 18:58:30
+@LastEditTime: 2022-10-12 13:19:20
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,9 +13,9 @@ from codes.basemodels import Model
 from codes.training import Structure
 
 from .__args import SilverballersArgs
-from .__loss import SilverballersLoss
 from .agents import BaseAgentModel, BaseAgentStructure
-from .handlers import BaseHandlerModel, BaseHandlerStructure, LinearHandlerModel
+from .handlers import (BaseHandlerModel, BaseHandlerStructure,
+                       LinearHandlerModel)
 
 
 class BaseSilverballersModel(Model):
@@ -83,13 +83,7 @@ class BaseSilverballers(Structure):
 
         # set args
         self.args = SilverballersArgs(terminal_args)
-        self.Loss = SilverballersLoss(self.args)
         self.noTraining = True
-
-        # set labels and metrics
-        self.set_labels('gt')
-        self.set_metrics(self.Loss.avgADE, self.Loss.avgFDE)
-        self.set_metrics_weights(1.0, 0.0)
 
         # check weights
         if 'null' in [self.args.loada, self.args.loadb]:
@@ -129,6 +123,9 @@ class BaseSilverballers(Structure):
         self.args._set('anntype', self.agent.args.anntype)
         self.args._set('obs_frames', self.agent.args.obs_frames)
         self.args._set('pred_frames', self.agent.args.pred_frames)
+
+        # set labels
+        self.set_labels('gt')
 
         self.add_keywords(ModelType=self.args.model,
                           PredictionType=self.args.anntype,

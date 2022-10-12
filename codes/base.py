@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:28:13
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-26 15:52:49
+@LastEditTime: 2022-10-12 13:16:14
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -166,12 +166,25 @@ class BaseManager(_BaseManager):
                  manager: _BaseManager = None):
 
         super().__init__()
-        self.args: Args = args
+        self._args: Args = args
         self.manager: _BaseManager = manager
         self.members: list[_BaseManager] = []
 
         if manager:
             self.manager.members.append(self)
+
+    @property
+    def args(self) -> Args:
+        if self._args:
+            return self._args
+        elif self.manager:
+            return self.manager.args
+        else:
+            return None
+
+    @args.setter
+    def args(self, value: T) -> T:
+        self._args = value
 
 
 class __SecondaryBar(BaseManager):

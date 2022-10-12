@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-29 18:15:52
+@LastEditTime: 2022-10-12 13:15:16
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -19,7 +19,7 @@ from ..basemodels import Model
 from ..dataset import AgentManager, DatasetManager
 from ..utils import WEIGHTS_FORMAT, dir_check
 from ..vis import Visualization
-from . import __loss as losslib
+from .loss import LossManager
 
 
 class Structure(BaseManager):
@@ -40,11 +40,19 @@ class Structure(BaseManager):
         # Set labels, loss functions, and metrics
         # You can change the following items in your subclasses
         self.set_labels('pred')
-        self.set_loss('ade')
-        self.set_loss_weights(1.0)
 
-        self.set_metrics('ade', 'fde')
-        self.set_metrics_weights(1.0, 0.0)
+        self.loss = LossManager('loss', manager=self)
+        self.loss.set({self.loss.ADE: 1.0})
+
+        self.metrics = LossManager('metrics', manager=self)
+        if self.args.anntype == 'boundingbox':
+            self.metrics.set({self.metrics.ADE: 1.0,
+                              self.metrics.FDE: 0.0,
+                              self.metrics.AIoU: 0.0,
+                              self.metrics.FIoU: 0.0})
+        else:
+            self.metrics.set({self.metrics.ADE: 1.0,
+                              self.metrics.FDE: 0.0})
 
         # Keywords to be print on the screen before training
         self.add_keywords(ModelType=self.args.model,
@@ -71,18 +79,6 @@ class Structure(BaseManager):
             elif 'des' in item or \
                     'inten' in item:
                 self.model_label_type.append('DEST')
-
-    def set_loss(self, *args):
-        self.loss_list = [arg for arg in args]
-
-    def set_loss_weights(self, *args: list[float]):
-        self.loss_weights = [arg for arg in args]
-
-    def set_metrics(self, *args):
-        self.metrics_list = [arg for arg in args]
-
-    def set_metrics_weights(self, *args: list[float]):
-        self.metrics_weights = [arg for arg in args]
 
     def set_optimizer(self, epoch: int = None) -> tf.keras.optimizers.Optimizer:
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.args.lr)
@@ -112,44 +108,6 @@ class Structure(BaseManager):
         """
         self.model.save_weights(save_path)
 
-    def loss(self, outputs: list[tf.Tensor],
-             labels: tf.Tensor,
-             *args, **kwargs) -> tuple[tf.Tensor, dict[str, tf.Tensor]]:
-        """
-        Train loss, use ADE by default.
-
-        :param outputs: model's outputs
-        :param labels: groundtruth labels
-
-        :return loss: sum of all single loss functions
-        :return loss_dict: a dict of all losses
-        """
-        return losslib.apply(self.loss_list,
-                             outputs,
-                             labels,
-                             self.loss_weights,
-                             mode='loss',
-                             *args, **kwargs)
-
-    def metrics(self, outputs: list[tf.Tensor],
-                labels: tf.Tensor) -> tuple[tf.Tensor, dict[str, tf.Tensor]]:
-        """
-        Metrics, use [ADE, FDE] by default.
-        Use ADE as the validation item.
-
-        :param outputs: model's outputs, a list of tensor
-        :param labels: groundtruth labels
-
-        :return loss: sum of all single loss functions
-        :return loss_dict: a dict of all losses
-        """
-        return losslib.apply(self.metrics_list,
-                             outputs,
-                             labels,
-                             self.metrics_weights,
-                             mode='metric',
-                             coefficient=self.dsmanager.info.scale)
-
     def gradient_operations(self, inputs: list[tf.Tensor],
                             labels: tf.Tensor,
                             loss_move_average: tf.Variable,
@@ -168,8 +126,9 @@ class Structure(BaseManager):
 
         with tf.GradientTape() as tape:
             outputs = self.model.forward(inputs, training=True)
-            loss, loss_dict = self.loss(outputs, labels,
-                                        inputs=inputs, *args, **kwargs)
+            loss, loss_dict = self.loss.call(outputs, labels,
+                                             training=True,
+                                             coefficient=1.0)
 
             loss_move_average = 0.7 * loss + 0.3 * loss_move_average
 
@@ -193,11 +152,13 @@ class Structure(BaseManager):
         :return metrics: weighted sum of all loss 
         :return loss_dict: a dict contains all loss
         """
+        outputs = self.model.forward(inputs, training)
+        metrics, metrics_dict = \
+            self.metrics.call(outputs, labels,
+                              training=None,
+                              coefficient=self.dsmanager.info.scale)
 
-        outpus = self.model.forward(inputs, training)
-        metrics, metrics_dict = self.metrics(outpus, labels)
-
-        return outpus, metrics, metrics_dict
+        return outputs, metrics, metrics_dict
 
     def train_or_test(self):
         """

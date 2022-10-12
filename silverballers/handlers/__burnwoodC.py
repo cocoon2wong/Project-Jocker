@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-06-23 11:19:05
+@LastEditTime: 2022-10-12 12:14:18
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -121,11 +121,3 @@ class BurnwoodC(BaseHandlerStructure):
         super().__init__(terminal_args)
 
         self.set_model_type(new_type=BurnwoodCModel)
-
-        if self.args.key_points == 'null':
-            self.set_loss('ade')
-            self.set_loss_weights(0.8)
-
-        else:
-            self.set_loss('ade', self.l2_keypoints)
-            self.set_loss_weights(0.8, 1.0)

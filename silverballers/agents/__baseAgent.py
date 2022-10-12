@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-29 16:22:27
+@LastEditTime: 2022-10-12 13:00:10
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,7 +13,6 @@ from codes.basemodels import Model
 from codes.training import Structure
 
 from ..__args import AgentArgs
-from ..__loss import SilverballersLoss
 
 
 class BaseAgentModel(Model):
@@ -57,18 +56,16 @@ class BaseAgentStructure(Structure):
         super().__init__(terminal_args)
 
         self.args = AgentArgs(terminal_args)
-        self.Loss = SilverballersLoss(self.args)
 
         self.add_keywords(KeypointsIndex=self.args.key_points,
                           PreprocessOptions=self.args.preprocess,
                           Transformation=self.args.T)
 
         self.set_labels('pred')
-        self.set_loss(self.Loss.l2)
-        self.set_loss_weights(1.0)
 
-        self.set_metrics(self.Loss.avgKey, self.Loss.avgFDE)
-        self.set_metrics_weights(1.0, 0.0)
+        self.loss.set({self.loss.l2: 1.0})
+        self.metrics.set({self.metrics.avgKey: 1.0,
+                          self.metrics.FDE: 0.0})
 
     def set_model_type(self, new_type: type[BaseAgentModel]):
         self.model_type = new_type
@@ -77,8 +74,8 @@ class BaseAgentStructure(Structure):
         return self.model_type(self.args,
                                feature_dim=self.args.feature_dim,
                                id_depth=self.args.depth,
-                               keypoints_number=self.Loss.p_len,
-                               keypoints_index=self.Loss.p_index,
+                               keypoints_number=self.loss.p_len,
+                               keypoints_index=self.loss.p_index,
                                structure=self)
 
     def print_test_results(self, loss_dict: dict[str, float], **kwargs):
