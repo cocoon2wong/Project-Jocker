@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-29 19:58:13
+@LastEditTime: 2022-10-17 11:37:41
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -26,8 +26,11 @@ DRAW_ON_EMPTY = 2
 
 class Visualization(BaseManager):
 
-    def __init__(self, manager: BaseManager, dataset: str, clip: str):
-        super().__init__(manager.args, manager)
+    def __init__(self, manager: BaseManager,
+                 dataset: str, clip: str,
+                 name='Visualization Manager'):
+
+        super().__init__(manager=manager, name=name)
 
         # Get information of the video clip
         self.info = VideoClip(name=clip, dataset=dataset).get()

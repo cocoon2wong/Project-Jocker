@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-12 13:50:24
+@LastEditTime: 2022-10-17 11:31:13
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -24,14 +24,14 @@ from .loss import LossManager
 
 class Structure(BaseManager):
 
-    def __init__(self, args: list[str] = None):
-        
+    def __init__(self, args: list[str] = None, name='Train Manager'):
+
         if issubclass(type(args), Args):
             init_args = args
         else:
             init_args = Args(args)
 
-        super().__init__(args=init_args, manager=None)
+        super().__init__(args=init_args, manager=None, name=name)
 
         self.model: Model = None
         self.keywords = {}
@@ -47,10 +47,10 @@ class Structure(BaseManager):
         # You can change the following items in your subclasses
         self.set_labels('pred')
 
-        self.loss = LossManager('loss', manager=self)
+        self.loss = LossManager(self, name='Loss')
         self.loss.set({self.loss.ADE: 1.0})
 
-        self.metrics = LossManager('metrics', manager=self)
+        self.metrics = LossManager(self, name='Metrics')
         if self.args.anntype == 'boundingbox':
             self.metrics.set({self.metrics.ADE: 1.0,
                               self.metrics.FDE: 0.0,
@@ -180,61 +180,86 @@ class Structure(BaseManager):
                                  labels_type=self.model_label_type)
 
         if self.noTraining:
-            self.run_test(self.dsmanager)
+            self.test()
 
         elif self.args.load == 'null':
             # restore weights before training (optional)
             if self.args.restore != 'null':
                 self.model.load_weights_from_logDir(self.args.restore)
-
-            self.log(f'Start training with args = {self.args._args_runnning}')
-            self.__train()
+            self.train()
 
         # prepare test
         else:
-            self.log(f'Start test `{self.args.load}`')
             self.model.load_weights_from_logDir(self.args.load)
-            self.run_test(self.dsmanager)
+            self.test()
 
-    def run_test(self, manager: DatasetManager):
+    def train(self):
+        """
+        Start training according to the args.
+        """
+        self.log(f'Start training with args = {self.args._args_runnning}')
+
+        clips_train = self.dsmanager.info.train_sets
+        clips_val = self.dsmanager.info.test_sets
+        ds_train = self.dsmanager.load_dataset(clips_train, 'train')
+        ds_val = self.dsmanager.load_dataset(clips_val, 'test')
+
+        # train on all test/train clips
+        loss, metrics, best_metric, best_epoch = self.__train(ds_train, ds_val)
+        self.print_train_results(best_epoch=best_epoch,
+                                 best_metric=best_metric)
+
+    def test(self):
         """
         Run test on the given dataset.
-
-        :param manager: dataset's manager object
         """
-        test_sets = manager.info.test_sets
+        self.log(f'Start test with args = {self.args._args_runnning}')
+        test_sets = self.dsmanager.info.test_sets
+        r = None
 
         # test on a single sub-dataset
         if self.args.test_mode == 'one':
             clip = self.args.force_clip
-            agents = manager.load(clip, 'test')
-            self.__test(agents, self.args.dataset, [clip])
+            ds_test = self.dsmanager.load_dataset(clip, 'test')
+            r = self.__test(ds_test)
 
         # test on all test datasets separately
         elif self.args.test_mode == 'all':
             for clip in test_sets:
-                agents = manager.load(clip, 'test')
-                self.__test(agents, self.args.dataset, [clip])
+                ds_test = self.dsmanager.load_dataset(clip, 'test')
+                self.__test(ds_test)
 
         # test on all test datasets together
         elif self.args.test_mode == 'mix':
-            agents = manager.load(test_sets, 'test')
-            self.__test(agents, self.args.dataset, test_sets)
+            ds_test = self.dsmanager.load_dataset(test_sets, 'test')
+            r = self.__test(ds_test)
 
         else:
             raise NotImplementedError(self.args.test_mode)
 
-    def __train(self):
-        """
-        Training
-        """
+        # Write test results
+        if r:
+            metric, metrics_dict, outputs, labels = r
+            self.print_test_results(metrics_dict)
+            agent_manager = self.dsmanager.get_members_by_type(AgentManager)[0]
+            self.write_test_results(outputs=outputs,
+                                    agents=agent_manager,
+                                    clips=self.dsmanager.processed_clips['test'])
 
+    def __train(self, ds_train: tf.data.Dataset, ds_val: tf.data.Dataset):
+        """
+        Train model on the given dataset.
+
+        :param ds_train: train dataset
+        :param ds_val: val dataset
+
+        :return loss_dict:
+        :return metrics_dict:
+        :return best_metric:
+        :return best_epoch:
+        """
         # print training infomation
-        self.print_dataset_info(DatasetName=self.dsmanager.info.name,
-                                DatasetSplitName=self.dsmanager.info.split,
-                                TrainingSets=self.dsmanager.info.train_sets,
-                                TestSets=self.dsmanager.info.test_sets,
-                                DatasetType=self.dsmanager.info.anntype,)
+        self.dsmanager.print_info()
         self.print_model_info()
         self.print_train_info()
 
@@ -250,14 +275,9 @@ class Structure(BaseManager):
         metrics_dict = {}
 
         best_epoch = 0
-        best_metrics = 10000.0
-        best_metrics_dict = {'-': best_metrics}
+        best_metric = 10000.0
+        best_metrics_dict = {'-': best_metric}
         test_epochs = []
-
-        # Load dataset
-        train_agents, test_agents = self.dsmanager.load('auto', 'train')
-        ds_train = train_agents.make_dataset(shuffle=True)
-        ds_val = test_agents.make_dataset()
         train_number = len(ds_train)
 
         # divide with batch size
@@ -297,7 +317,7 @@ class Structure(BaseManager):
                     and (not epoch in test_epochs)
                     and (epoch > 0)) or (batch_id == batch_number - 1):
 
-                metrics, metrics_dict = self.__test_on_dataset(
+                metric, metrics_dict = self.__test_on_dataset(
                     ds=ds_val,
                     return_results=False,
                     show_timebar=False
@@ -305,8 +325,8 @@ class Structure(BaseManager):
                 test_epochs.append(epoch)
 
                 # Save model
-                if metrics <= best_metrics:
-                    best_metrics = metrics
+                if metric <= best_metric:
+                    best_metric = metric
                     best_metrics_dict = metrics_dict
                     best_epoch = epoch
 
@@ -316,7 +336,7 @@ class Structure(BaseManager):
                     ))
 
                     np.savetxt(os.path.join(self.args.log_dir, 'best_ade_epoch.txt'),
-                               np.array([best_metrics, best_epoch]))
+                               np.array([best_metric, best_epoch]))
 
             # Update time bar
             loss_dict = dict(epoch=epoch,
@@ -339,17 +359,21 @@ class Structure(BaseManager):
                     value = loss_dict[loss_name]
                     tf.summary.scalar(loss_name, value, step=epoch)
 
-        self.print_train_results(best_epoch=best_epoch,
-                                 best_metric=best_metrics)
+        return loss_dict, metrics_dict, best_metric, best_epoch
 
-    def __test(self, agents: AgentManager,
-               dataset: str, clips: list[str]):
+    def __test(self, ds_test: tf.data.Dataset):
         """
-        Test
-        """
+        Test model on the given dataset.
 
+        :param ds_test: test dataset
+
+        :return metric:
+        :return metrics_dict
+        :return outputs: model outputs
+        :return labels: model labels
+        """
         # Print test information
-        self.print_dataset_info(DatasetName=dataset, TestSets=clips)
+        self.dsmanager.print_info()
         self.print_model_info()
         self.print_test_info()
 
@@ -357,31 +381,37 @@ class Structure(BaseManager):
         if self.args.update_saved_args:
             self.args._save_as_json(self.args.load)
 
-        # Load dataset
-        ds_test = agents.make_dataset()
-
         # Run test
-        outputs, labels, metrics, metrics_dict = self.__test_on_dataset(
+        outputs, labels, metric, metrics_dict = self.__test_on_dataset(
             ds=ds_test,
             return_results=True,
             show_timebar=True,
         )
 
-        # Write test results
-        self.print_test_results(metrics_dict)
-
-        # model_inputs_all = list(ds_test.as_numpy_iterator())
         outputs = stack_results(outputs)
         labels = stack_results(labels)
 
-        self.write_test_results(outputs=outputs,
-                                agents=agents,
-                                clips=clips)
+        return metric, metrics_dict, outputs, labels
 
     def __test_on_dataset(self, ds: tf.data.Dataset,
                           return_results=False,
                           show_timebar=False):
+        """
+        Run test on the given dataset.
 
+        :param ds: the test `tf.data.Dataset` object
+        :param return_results: controls items to return
+
+        Returns if `return_results == False`:
+        :return metric: the weighted sum of all metrics
+        :return metric_dict: a dict of all metrics
+
+        Returns if `return_results == True`:
+        :return outputs: a list of model outputs
+        :return labels: model labels
+        :return metric: the weighted sum of all metrics
+        :return metric_dict: a dict of all metrics
+        """
         # init variables for test
         outputs_all = []
         labels_all = []
@@ -451,10 +481,6 @@ class Structure(BaseManager):
         self.print_parameters(title='Test Options',
                               BatchSize=self.args.batch_size,
                               GPUIndex=self.args.gpu,
-                              **kwargs)
-
-    def print_dataset_info(self, **kwargs):
-        self.print_parameters(title='Dataset Details',
                               **kwargs)
 
     def print_train_results(self, best_epoch: int, best_metric: float):

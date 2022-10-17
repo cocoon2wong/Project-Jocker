@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:34:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-26 16:39:08
+@LastEditTime: 2022-10-17 11:35:06
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,7 +10,8 @@
 
 import os
 import random
-from typing import Union
+
+import tensorflow as tf
 
 from ..base import BaseManager
 from ..utils import dir_check
@@ -41,12 +42,13 @@ class DatasetManager(BaseManager):
     ```
     """
 
-    def __init__(self, manager: BaseManager):
-        super().__init__(manager.args, manager)
+    def __init__(self, manager: BaseManager, name='Dataset Manager'):
+        super().__init__(manager=manager, name=name)
 
         self.info = Dataset(self.args.dataset, self.args.split)
         self.model_input_type: list[str] = None
         self.model_label_type: list[str] = None
+        self.processed_clips: dict[str, list[str]] = {'train': [], 'test': []}
 
     def set_types(self, inputs_type: list[str], labels_type: list[str] = None):
         """
@@ -68,19 +70,21 @@ class DatasetManager(BaseManager):
         (a list of agent managers, type = `Agent`)
 
         :param video_clips: a list of video clip managers (`VideoClipManager`)
+        :param mode: canbe `train` or `test`. It will shuffle the clips when
+            `mode == 'train'`
         :return all_agents: a list of train agents (`AgentManager`)
         """
-        all_agents = AgentManager(manager=self)
+        all_agents = AgentManager(self, 'Agent Manager (Chief)')
 
         if mode == 'train':
             random.shuffle(video_clips)
 
         for clip in self.timebar(video_clips):
             # assign time bar
-            s = f'Prepare {mode} data in `{clip.name}`...'
+            s = f'Prepare {mode} data in `{clip.clip_name}`...'
             self.update_timebar(s, pos='start')
 
-            base_dir = os.path.join(clip.path, clip.name)
+            base_dir = os.path.join(clip.path, clip.clip_name)
             if (self.args.obs_frames, self.args.pred_frames) == (8, 12):
                 f_name = 'agent'
             else:
@@ -90,7 +94,7 @@ class DatasetManager(BaseManager):
             f_name = f_name + endstring + '.npz'
             data_path = os.path.join(base_dir, f_name)
 
-            agents = AgentManager(manager=self)
+            agents = AgentManager(self, f'Agent Manager ({clip.clip_name})')
             if not os.path.exists(data_path):
                 new_agents = clip.sample_train_data()
                 agents.load(new_agents)
@@ -141,27 +145,31 @@ class DatasetManager(BaseManager):
                              labels_type=self.model_label_type)
         return all_agents
 
-    def load(self, clips: Union[str, list[str]], mode: str) -> Union[AgentManager, tuple[AgentManager, AgentManager]]:
+    def load_dataset(self, clips: list[str], mode: str) -> tf.data.Dataset:
         """
         Load train samples in sub-datasets (i.e., video clips).
 
         :param clips: clips to load. Set it to `'auto'` to load train agents
         :param mode: load mode, canbe `'test'` or `'train'`
-        :param datasetInfo: dataset infomation. It should be given when
-            `dataset` is not `'auto'`.
 
-        :return agents: loaded agents. It returns a list of `[train_agents, test_agents]` when `mode` is `'train'`.
+        :return dataset: the loaded `tf.data.Dataset` object
         """
+        if type(clips) == str:
+            clips = [clips]
 
-        if clips == 'auto':
-            train_agents = self.load(self.info.train_sets, mode='train')
-            test_agents = self.load(self.info.test_sets, mode='test')
+        self.processed_clips[mode] += clips
+        clip_managers = [VideoClipManager(self, d) for d in clips]
+        agent_manager = self._load_from_videoClips(clip_managers, mode)
+        shuffle = True if mode == 'train' else False
+        return agent_manager.make_dataset(shuffle=shuffle)
 
-            return [train_agents, test_agents]
+    def print_info(self, **kwargs):
+        t_info = {'Dataset name': self.info.name,
+                  'Dataset annotation type': self.info.anntype,
+                  'Split name': self.info.split}
 
-        else:
-            if type(clips) == str:
-                clips = [clips]
+        for mode in ['train', 'test']:
+            if len(t := self.processed_clips[mode]):
+                t_info.update({f'Clips to {mode}': t})
 
-            dms = [VideoClipManager(self, d) for d in clips]
-            return self._load_from_videoClips(dms, mode=mode)
+        return super().print_info(**t_info, **kwargs)

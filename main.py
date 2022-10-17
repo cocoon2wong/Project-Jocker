@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 15:28:14
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-27 14:22:27
+@LastEditTime: 2022-10-17 11:26:32
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -24,5 +24,9 @@ if __name__ == '__main__':
     else:
         s = silverballers.get_structure(model)
     
-    s(terminal_args=sys.argv).train_or_test()
+    t = s(terminal_args=sys.argv)
+    t.train_or_test()
+
+    # It is used to debug
+    # t.print_info_all()
     

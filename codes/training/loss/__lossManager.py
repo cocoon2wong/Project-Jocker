@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 11:13:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-12 19:12:10
+@LastEditTime: 2022-10-17 11:35:48
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -19,17 +19,19 @@ from .__iou import AIoU, FIoU
 
 class LossManager(BaseManager):
 
-    def __init__(self, name: str,
-                 manager: BaseManager):
+    def __init__(self, manager: BaseManager, name='Loss Manager'):
+        """
+        Init a `LossManager` object.
 
-        super().__init__(manager=manager)
+        :param manager: manager object, usually a `Structure` object.
+        :param name: name of the manager, which could appear in all dict
+            keys in the final output `loss_dict`.
+        """
 
-        self.name = name
+        super().__init__(manager=manager, name=name)
 
         self.loss_list = []
         self.loss_weights = []
-        self.metrics_list = []
-        self.metrics_weights = []
 
         if self.args.anntype == 'coordinate':
             self.order = [[0, 1]]
@@ -58,6 +60,13 @@ class LossManager(BaseManager):
         return len(self.p_index)
 
     def set(self, loss_dict: dict[Any, float]):
+        """
+        Set loss functions and their weights.
+
+        :param loss_dict: a dict of loss functions, where all dict keys
+            are the callable loss function, and the dict values are the
+            weights of the corresponding loss function.
+        """
         self.loss_list = [k for k in loss_dict.keys()]
         self.loss_weights = [v for v in loss_dict.values()]
 
@@ -65,6 +74,17 @@ class LossManager(BaseManager):
              labels: tf.Tensor,
              training=None,
              coefficient: float = 1.0):
+        """
+        Call all loss functions recorded in the `loss_list`.
+
+        :param outputs: a list of model's output tensors.
+        :param labels: ground truth tensor.
+        :param training: choose whether to run as the training mode.
+        :param coefficient: scale parameter on the loss functions.
+
+        :return summary: the weighted sum of all loss functions.
+        :return loss_dict: a dict of values of all loss functions.
+        """
 
         loss_dict = {}
         for loss_func in self.loss_list:
@@ -200,3 +220,9 @@ class LossManager(BaseManager):
 
         return FIoU(outputs, labels, coe=1.0,
                     index=index, length=length)
+
+    def print_info(self, **kwargs):
+        funcs = [f.__name__ for f in self.loss_list]
+        return super().print_info(Functions=funcs,
+                                  Weights=self.loss_weights,
+                                  **kwargs)

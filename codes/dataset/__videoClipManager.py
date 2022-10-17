@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:30:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-26 15:32:21
+@LastEditTime: 2022-10-14 16:12:44
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -45,16 +45,17 @@ class VideoClipManager(BaseManager):
     ```
     """
 
-    def __init__(self, manager: BaseManager, name: str,
-                 custom_list: list[np.ndarray] = []):
+    def __init__(self, manager: BaseManager, clip_name: str,
+                 custom_list: list[np.ndarray] = [],
+                 name='Video Clip Manager'):
 
-        super().__init__(manager.args, manager)
+        super().__init__(manager=manager, name=f'{name} ({clip_name})')
 
         self.dataset = self.args.dataset
-        self.name = name
+        self.clip_name = clip_name
 
         self.path = TEMP_PATH.format(self.dataset)
-        self.info = VideoClip(name=name, dataset=self.dataset).get()
+        self.info = VideoClip(name=clip_name, dataset=self.dataset).get()
 
         self.custom_list = custom_list
         self.agent_count = None
@@ -111,7 +112,7 @@ class VideoClipManager(BaseManager):
         files) into numpy ndarray.
         """
         # make directories
-        b = dir_check(os.path.join(self.path, self.name))
+        b = dir_check(os.path.join(self.path, self.clip_name))
         npy_path = os.path.join(b, 'data.npz')
 
         # load from saved files
@@ -235,3 +236,6 @@ class VideoClipManager(BaseManager):
                                                        add_noise=False))
 
         return train_samples
+
+    def print_info(self, **kwargs):
+        pass

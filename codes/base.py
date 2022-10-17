@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:28:13
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-12 13:16:14
+@LastEditTime: 2022-10-17 11:38:14
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -40,8 +40,10 @@ class _BaseManager():
     ```
     """
 
-    def __init__(self):
+    def __init__(self, name: str = None):
         super().__init__()
+
+        self.name = name
 
         # create or restore a logger
         logger = logging.getLogger(name=type(self).__name__)
@@ -117,11 +119,18 @@ class _BaseManager():
         else:
             raise NotImplementedError(pos)
 
-    @staticmethod
-    def print_parameters(title='null', **kwargs):
-        print('\n>>> ' + title + ':')
-        for key, value in kwargs.items():
+    def print_info(self, **kwargs):
+        """
+        Print information of the object itself.
+        """
+        self.print_parameters(**kwargs)
 
+    def print_parameters(self, title='null', **kwargs):
+        if title == 'null':
+            title = ''
+
+        print(f'\n>>> [{self.name}]: {title}')
+        for key, value in kwargs.items():
             if type(value) == tf.Tensor:
                 value = value.numpy()
 
@@ -163,9 +172,10 @@ class BaseManager(_BaseManager):
     """
 
     def __init__(self, args: Args = None,
-                 manager: _BaseManager = None):
+                 manager: _BaseManager = None,
+                 name: str = None):
 
-        super().__init__()
+        super().__init__(name)
         self._args: Args = args
         self.manager: _BaseManager = manager
         self.members: list[_BaseManager] = []
@@ -186,15 +196,44 @@ class BaseManager(_BaseManager):
     def args(self, value: T) -> T:
         self._args = value
 
+    def get_members_by_type(self, mtype: type[T]) -> list[T]:
+        results = []
+        for m in self.members:
+            if type(m) == mtype:
+                results.append(m)
+
+        return results
+
+    def print_info_all(self, include_self=True):
+        """
+        Print information of the object itself and all its members.
+        It is used to debug only.
+        """
+        if include_self:
+            self.print_info(title='DEBUG', object=self, members=self.members)
+
+        for s in self.members:
+            s.print_info(title='DEBUG', object=s,
+                         manager=self, members=s.members)
+            s.print_info_all(include_self=False)
+
+    def print_manager_info(self):
+        self.print_parameters(title='Information',
+                              name=self.__str__(),
+                              type=type(self).__name__,
+                              members=self.members,
+                              manager=self.manager)
+
 
 class __SecondaryBar(BaseManager):
 
     def __init__(self, item: Iterable,
                  manager: BaseManager,
                  desc: str = 'Calculating:',
-                 pos: str = 'end'):
+                 pos: str = 'end',
+                 name='Secondary InformationBar Manager'):
 
-        super().__init__()
+        super().__init__(name=name)
 
         if not '__getitem__' in item.__dir__():
             item = list(item)
@@ -231,7 +270,8 @@ class __SecondaryBar(BaseManager):
 def SecondaryBar(item: T,
                  manager: BaseManager,
                  desc: str = 'Calculating:',
-                 pos: str = 'end') -> T:
+                 pos: str = 'end',
+                 name='Secondary InformationBar Manager') -> T:
     """
     Init
 
@@ -240,4 +280,4 @@ def SecondaryBar(item: T,
     :param desc: text to show on the main timebar
     :param pos: text position, can be `'start'` or `'end'`
     """
-    return __SecondaryBar(item, manager, desc, pos)
+    return __SecondaryBar(item, manager, desc, pos, name)

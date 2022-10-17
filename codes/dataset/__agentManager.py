@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-26 15:29:52
+@LastEditTime: 2022-10-14 16:20:31
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -82,8 +82,8 @@ class AgentManager(BaseManager):
     ```
     """
 
-    def __init__(self, manager: BaseManager):
-        super().__init__(manager.args, manager)
+    def __init__(self, manager: BaseManager, name='Agent Manager'):
+        super().__init__(manager=manager, name=name)
 
         self.agents: list[Agent] = []
         self.model_inputs = None
@@ -302,6 +302,9 @@ class AgentManager(BaseManager):
             raise ValueError(type_name)
 
         return call(self.agents)
+
+    def print_info(self, **kwargs):
+        pass
 
 
 def _get_obs_traj(input_agents: list[Agent]) -> tf.Tensor:

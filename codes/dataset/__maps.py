@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 15:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-26 15:30:40
+@LastEditTime: 2022-10-14 15:48:22
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -54,9 +54,10 @@ class MapManager(BaseManager):
     def __init__(self, manager: BaseManager,
                  map_type: str,
                  init_trajs: np.ndarray = None,
-                 init_manager=None):
+                 init_manager=None,
+                 name='Interaction Maps Manager'):
 
-        super().__init__(manager.args, manager)
+        super().__init__(manager=manager, name=name)
 
         self.map_type = map_type
 
