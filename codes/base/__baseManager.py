@@ -1,21 +1,21 @@
 """
 @Author: Conghao Wong
-@Date: 2022-06-20 16:28:13
+@Date: 2022-10-17 14:57:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-17 11:38:14
+@LastEditTime: 2022-10-17 17:30:23
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import logging
-from typing import Iterable, TypeVar, Union
+from typing import TypeVar, Union
 
 import tensorflow as tf
 from tqdm import tqdm
 
-from .utils import MAX_PRINT_LIST_LEN
-from .args import Args
+from ..args import Args
+from ..utils import MAX_PRINT_LIST_LEN
 
 T = TypeVar('T')
 
@@ -43,7 +43,10 @@ class _BaseManager():
     def __init__(self, name: str = None):
         super().__init__()
 
-        self.name = name
+        try:
+            self.name = name
+        except AttributeError:
+            pass
 
         # create or restore a logger
         logger = logging.getLogger(name=type(self).__name__)
@@ -129,7 +132,7 @@ class _BaseManager():
         if title == 'null':
             title = ''
 
-        print(f'\n>>> [{self.name}]: {title}')
+        print(f'>>> [{self.name}]: {title}')
         for key, value in kwargs.items():
             if type(value) == tf.Tensor:
                 value = value.numpy()
@@ -177,8 +180,8 @@ class BaseManager(_BaseManager):
 
         super().__init__(name)
         self._args: Args = args
-        self.manager: _BaseManager = manager
-        self.members: list[_BaseManager] = []
+        self.manager: BaseManager = manager
+        self.members: list[BaseManager] = []
 
         if manager:
             self.manager.members.append(self)
@@ -216,68 +219,3 @@ class BaseManager(_BaseManager):
             s.print_info(title='DEBUG', object=s,
                          manager=self, members=s.members)
             s.print_info_all(include_self=False)
-
-    def print_manager_info(self):
-        self.print_parameters(title='Information',
-                              name=self.__str__(),
-                              type=type(self).__name__,
-                              members=self.members,
-                              manager=self.manager)
-
-
-class __SecondaryBar(BaseManager):
-
-    def __init__(self, item: Iterable,
-                 manager: BaseManager,
-                 desc: str = 'Calculating:',
-                 pos: str = 'end',
-                 name='Secondary InformationBar Manager'):
-
-        super().__init__(name=name)
-
-        if not '__getitem__' in item.__dir__():
-            item = list(item)
-
-        self.item = item
-        self.target = manager
-        self.desc = desc + ' {}%'
-        self.pos = pos
-
-        self.max = len(item)
-        self.count = 0
-
-    def __iter__(self):
-        self.count = 0
-        return self
-
-    def __next__(self):
-        if self.count >= self.max:
-            raise StopIteration
-
-        # get value
-        value = self.item[self.count]
-        self.count += 1
-
-        # update timebar
-        percent = (self.count * 100) // self.max
-        self.target.update_timebar(item=self.desc.format(percent),
-                                   pos=self.pos)
-
-        return value
-
-
-# It is only used for type-hinting
-def SecondaryBar(item: T,
-                 manager: BaseManager,
-                 desc: str = 'Calculating:',
-                 pos: str = 'end',
-                 name='Secondary InformationBar Manager') -> T:
-    """
-    Init
-
-    :param item: an iterable object
-    :param manager: target manager object to be updated
-    :param desc: text to show on the main timebar
-    :param pos: text position, can be `'start'` or `'end'`
-    """
-    return __SecondaryBar(item, manager, desc, pos, name)

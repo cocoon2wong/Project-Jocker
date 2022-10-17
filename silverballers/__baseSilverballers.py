@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-12 13:56:52
+@LastEditTime: 2022-10-17 17:24:15
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -58,6 +58,18 @@ class BaseSilverballersModel(Model):
         handler_inputs.append(agent_proposals)
         final_results = self.handler.forward(handler_inputs)[0]
         return (final_results,)
+
+    def print_info(self, **kwargs):
+        info = {'Index of keypoints': self.agent.p_index,
+                'Stage-1 Subnetwork': f"'{self.agent.name}' from '{self.structure.args.loada}'",
+                'Stage-2 Subnetwork': f"'{self.handler.name}' from '{self.structure.args.loadb}'"}
+
+        kwargs_old = kwargs.copy()
+        kwargs.update(**info)
+        super().print_info(**kwargs)
+
+        self.agent.print_info(**kwargs_old)
+        self.handler.print_info(**kwargs_old)
 
 
 class BaseSilverballers(Structure):
@@ -132,17 +144,6 @@ class BaseSilverballers(Structure):
         # set labels
         self.set_labels('gt')
 
-        self.add_keywords(ModelType=self.args.model,
-                          PredictionType=self.args.anntype,
-                          ModelName=self.args.model_name,
-                          KeypointsIndex=self.agent.args.key_points,
-                          AgentModelType=self.agent_model.__name__,
-                          AgentModelPath=self.args.loada,
-                          AgentTransformation=self.agent.args.T,
-                          HandlerModelType=handler_type.__name__,
-                          HandlerModelPath=handler_path,
-                          HandlerTransformation=self.handler.args.T)
-
     def substructure(self, structure: type[BaseAgentStructure],
                      args: list[str],
                      model: type[BaseAgentModel],
@@ -162,13 +163,12 @@ class BaseSilverballers(Structure):
             the structure's args
         """
 
-        struct = structure(args)
+        struct = structure(args, manager=self)
         for key in kwargs.keys():
             struct.args._set(key, kwargs[key])
 
         struct.set_model_type(model)
         struct.model = struct.create_model(**create_args)
-        struct.leader = self
 
         if load:
             struct.model.load_weights_from_logDir(load)

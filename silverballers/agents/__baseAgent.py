@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-12 13:00:10
+@LastEditTime: 2022-10-17 17:18:34
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -27,7 +27,7 @@ class BaseAgentModel(Model):
 
         super().__init__(Args, structure, *args, **kwargs)
 
-        self.args = Args
+        self.args: AgentArgs = Args
         self.structure: BaseAgentStructure = structure
 
         # Model input types
@@ -47,22 +47,27 @@ class BaseAgentModel(Model):
 
         self.set_preprocess(**preprocess)
 
+    def print_info(self, **kwargs):
+        info = {'Transform type': self.args.T,
+                'Index of keypoints': self.p_index}
+
+        kwargs.update(**info)
+        return super().print_info(**kwargs)
+
 
 class BaseAgentStructure(Structure):
 
     model_type: BaseAgentModel = None
 
-    def __init__(self, terminal_args: list[str]):
-        super().__init__(terminal_args)
+    def __init__(self, terminal_args: list[str], manager: Structure = None):
 
-        self.args = AgentArgs(terminal_args)
+        super().__init__(args=terminal_args,
+                         manager=manager,
+                         name='Train Manager (First-Stage Sub-network)')
 
-        self.add_keywords(KeypointsIndex=self.args.key_points,
-                          PreprocessOptions=self.args.preprocess,
-                          Transformation=self.args.T)
+        self.args: AgentArgs = AgentArgs(terminal_args)
 
         self.set_labels('pred')
-
         self.loss.set({self.loss.l2: 1.0})
         self.metrics.set({self.metrics.avgKey: 1.0,
                           self.metrics.FDE: 0.0})

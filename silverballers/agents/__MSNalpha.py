@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-13 21:18:29
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-14 16:21:32
+@LastEditTime: 2022-10-17 15:44:43
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -121,6 +121,6 @@ class MSNAlphaModel(BaseAgentModel):
 
 class MSNAlpha(BaseAgentStructure):
 
-    def __init__(self, terminal_args: list[str]):
-        super().__init__(terminal_args)
+    def __init__(self, terminal_args: list[str], manager=None):
+        super().__init__(terminal_args, manager)
         self.set_model_type(MSNAlphaModel)

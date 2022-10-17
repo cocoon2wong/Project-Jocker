@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:38
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-27 15:12:33
+@LastEditTime: 2022-10-17 15:43:41
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -149,7 +149,7 @@ class Agent47C(BaseAgentStructure):
     agent-handler based silverballers models.
     """
 
-    def __init__(self, terminal_args: list[str]):
-        super().__init__(terminal_args)
+    def __init__(self, terminal_args: list[str], manager=None):
+        super().__init__(terminal_args, manager)
 
         self.set_model_type(new_type=Agent47CModel)

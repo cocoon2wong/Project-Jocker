@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-12 12:14:18
+@LastEditTime: 2022-10-17 15:46:23
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -117,7 +117,7 @@ class BurnwoodCModel(BaseHandlerModel):
 
 class BurnwoodC(BaseHandlerStructure):
 
-    def __init__(self, terminal_args: list[str]):
-        super().__init__(terminal_args)
+    def __init__(self, terminal_args: list[str], manager=None):
+        super().__init__(terminal_args, manager)
 
         self.set_model_type(new_type=BurnwoodCModel)

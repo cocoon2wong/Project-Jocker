@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-17 11:31:13
+@LastEditTime: 2022-10-17 17:33:26
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -24,33 +24,32 @@ from .loss import LossManager
 
 class Structure(BaseManager):
 
-    def __init__(self, args: list[str] = None, name='Train Manager'):
+    def __init__(self, args: list[str] = None,
+                 manager: BaseManager = None,
+                 name='Train Manager'):
 
         if issubclass(type(args), Args):
             init_args = args
         else:
             init_args = Args(args)
 
-        super().__init__(args=init_args, manager=None, name=name)
+        super().__init__(init_args, manager, name)
 
+        # init managers
+        self.dsmanager = DatasetManager(self)
+        self.loss = LossManager(self, name='Loss')
+        self.metrics = LossManager(self, name='Metrics')
+
+        # init model options
         self.model: Model = None
-        self.keywords = {}
-
-        self.dsmanager: DatasetManager = None
-        self.leader: Structure = None
-        self.noTraining = False
-
         self.set_gpu()
+        self.noTraining = False
         self.optimizer = self.set_optimizer()
 
         # Set labels, loss functions, and metrics
-        # You can change the following items in your subclasses
         self.set_labels('pred')
-
-        self.loss = LossManager(self, name='Loss')
         self.loss.set({self.loss.ADE: 1.0})
 
-        self.metrics = LossManager(self, name='Metrics')
         if self.args.anntype == 'boundingbox':
             self.metrics.set({self.metrics.ADE: 1.0,
                               self.metrics.FDE: 0.0,
@@ -60,11 +59,6 @@ class Structure(BaseManager):
         else:
             self.metrics.set({self.metrics.ADE: 1.0,
                               self.metrics.FDE: 0.0})
-
-        # Keywords to be print on the screen before training
-        self.add_keywords(ModelType=self.args.model,
-                          PredictionType=self.args.anntype,
-                          ModelName=self.args.model_name)
 
     def set_labels(self, *args):
         """
@@ -106,14 +100,6 @@ class Structure(BaseManager):
         :return model: created model
         """
         raise NotImplementedError('MODEL is not defined!')
-
-    def save_model_weights(self, save_path: str):
-        """
-        Save trained model to `save_path`.
-
-        :param save_path: where model saved.
-        """
-        self.model.save_weights(save_path)
 
     def gradient_operations(self, inputs: list[tf.Tensor],
                             labels: tf.Tensor,
@@ -169,16 +155,14 @@ class Structure(BaseManager):
 
     def train_or_test(self):
         """
-        Load args, load datasets, and start training or test.
+        Load models and datasets, then start training or testing.
         """
-        # init model
+        # init model and dataset manager
         self.model = self.create_model()
-
-        # assign agentManagers
-        self.dsmanager = DatasetManager(manager=self)
         self.dsmanager.set_types(inputs_type=self.model.input_type,
                                  labels_type=self.model_label_type)
 
+        # start training or testing
         if self.noTraining:
             self.test()
 
@@ -188,7 +172,6 @@ class Structure(BaseManager):
                 self.model.load_weights_from_logDir(self.args.restore)
             self.train()
 
-        # prepare test
         else:
             self.model.load_weights_from_logDir(self.args.load)
             self.test()
@@ -205,7 +188,7 @@ class Structure(BaseManager):
         ds_val = self.dsmanager.load_dataset(clips_val, 'test')
 
         # train on all test/train clips
-        loss, metrics, best_metric, best_epoch = self.__train(ds_train, ds_val)
+        _, _, best_metric, best_epoch = self.__train(ds_train, ds_val)
         self.print_train_results(best_epoch=best_epoch,
                                  best_metric=best_metric)
 
@@ -260,8 +243,8 @@ class Structure(BaseManager):
         """
         # print training infomation
         self.dsmanager.print_info()
-        self.print_model_info()
-        self.print_train_info()
+        self.model.print_info()
+        self.print_info()
 
         # make log directory and save current args
         self.args._save_as_json(self.args.log_dir)
@@ -374,8 +357,8 @@ class Structure(BaseManager):
         """
         # Print test information
         self.dsmanager.print_info()
-        self.print_model_info()
-        self.print_test_info()
+        self.model.print_info()
+        self.print_info()
 
         # make log directory and save current args
         if self.args.update_saved_args:
@@ -461,27 +444,14 @@ class Structure(BaseManager):
         else:
             return metrics_all, metrics_dict_all
 
-    def add_keywords(self, **kwargs):
-        self.keywords.update(**kwargs)
+    def print_info(self, **kwargs):
+        info = {'Batch size': self.args.batch_size,
+                'GPU index': self.args.gpu,
+                'Train epochs': self.args.epochs,
+                'Learning rate': self.args.lr}
 
-    def print_model_info(self, **kwargs):
-        self.print_parameters(title='Model Options',
-                              **self.keywords,
-                              **kwargs)
-
-    def print_train_info(self, **kwargs):
-        self.print_parameters(title='Training Options',
-                              BatchSize=self.args.batch_size,
-                              GPUIndex=self.args.gpu,
-                              TrainEpochs=self.args.epochs,
-                              LearningRate=self.args.lr,
-                              **kwargs)
-
-    def print_test_info(self, **kwargs):
-        self.print_parameters(title='Test Options',
-                              BatchSize=self.args.batch_size,
-                              GPUIndex=self.args.gpu,
-                              **kwargs)
+        kwargs.update(**info)
+        return super().print_info(**kwargs)
 
     def print_train_results(self, best_epoch: int, best_metric: float):
         self.log('Training done.')

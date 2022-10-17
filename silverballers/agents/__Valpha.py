@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-05 16:00:26
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-05 10:00:08
+@LastEditTime: 2022-10-17 15:45:00
 @Description: First stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -123,6 +123,6 @@ class VA(BaseAgentStructure):
     Training structure for the first stage sub-network
     """
 
-    def __init__(self, terminal_args: list[str]):
-        super().__init__(terminal_args)
+    def __init__(self, terminal_args: list[str], manager=None):
+        super().__init__(terminal_args, manager)
         self.set_model_type(new_type=VAModel)

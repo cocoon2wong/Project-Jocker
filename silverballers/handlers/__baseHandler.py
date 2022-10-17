@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-12 12:59:37
+@LastEditTime: 2022-10-17 17:36:24
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -29,7 +29,8 @@ class BaseHandlerModel(Model):
 
         super().__init__(Args, structure, *args, **kwargs)
 
-        self.structure: Structure = structure
+        self.args: HandlerArgs = Args
+        self.structure: BaseHandlerStructure = structure
 
         # GT in the inputs is only used when training
         self.set_inputs('trajs', 'maps', 'paras', 'gt')
@@ -76,7 +77,7 @@ class BaseHandlerModel(Model):
         if not self.accept_batchK_inputs:
             p_all = []
             for k in SecondaryBar(range(keypoints.shape[1]),
-                                  manager=self.structure.leader,
+                                  manager=self.structure.manager,
                                   desc='Running Stage-2 Sub-Network...'):
 
                 # single shape is (batch, pred, 2)
@@ -132,19 +133,24 @@ class BaseHandlerModel(Model):
         outputs_p = self.process(outputs, preprocess=False, training=training)
         return outputs_p
 
+    def print_info(self, **kwargs):
+        info = {'Transform type': self.args.T,
+                'Number of keypoints': self.args.points}
+
+        kwargs.update(**info)
+        return super().print_info(**kwargs)
+
 
 class BaseHandlerStructure(Structure):
 
     model_type = None
 
-    def __init__(self, terminal_args: list[str]):
-        super().__init__(terminal_args)
+    def __init__(self, terminal_args: list[str], manager: Structure = None):
+        super().__init__(args=terminal_args,
+                         manager=manager,
+                         name='Train Manager (Second-Stage Sub-network)')
 
-        self.args = HandlerArgs(terminal_args)
-
-        self.add_keywords(NumberOfKeyoints=self.args.points,
-                          Transformation=self.args.T)
-
+        self.args: HandlerArgs = HandlerArgs(terminal_args)
         self.set_labels('gt')
         self.loss.set({self.loss.l2: 1.0})
 

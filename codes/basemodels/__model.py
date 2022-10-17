@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-14 09:45:33
+@LastEditTime: 2022-10-17 17:31:28
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,13 +10,17 @@
 
 import os
 import re
+from typing import TypeVar
 
 import numpy as np
 import tensorflow as tf
 
 from ..args import Args
+from ..base import BaseManager
 from ..utils import CHECKPOINT_FILENAME, WEIGHTS_FORMAT
 from . import process
+
+T = TypeVar('T')
 
 MOVE = 'MOVE'
 ROTATE = 'ROTATE'
@@ -24,7 +28,7 @@ SCALE = 'SCALE'
 UPSAMPLING = 'UPSAMPLING'
 
 
-class Model(tf.keras.Model):
+class Model(tf.keras.Model, BaseManager):
     """
     Model
     -----
@@ -65,19 +69,26 @@ class Model(tf.keras.Model):
                  structure=None,
                  *args, **kwargs):
 
-        super().__init__()
-        self.args = Args
-        self.structure = structure
+        tf.keras.Model.__init__(self, *args, **kwargs)
+        BaseManager.__init__(self, manager=structure, name=self.name)
 
         # Model inputs
         self.input_type: list[str] = []
         self.set_inputs('obs')
 
         # preprocess
-        self.processor: process.BaseProcessLayer = None
+        self.processor: process.ProcessModel = None
         self._default_process_para = {MOVE: Args.pmove,
                                       SCALE: Args.pscale,
                                       ROTATE: Args.protate}
+
+    @property
+    def structure(self) -> BaseManager:
+        return self.manager
+
+    @structure.setter
+    def structure(self, value: T) -> T:
+        self.manager = value
 
     def call(self, inputs,
              training=None,
@@ -203,3 +214,14 @@ class Model(tf.keras.Model):
 
         weights_name = weights_files[-1].split('.index')[0]
         self.load_weights(os.path.join(weights_dir, weights_name))
+
+    def print_info(self, **kwargs):
+        p_layers = [l.name for l in self.processor.layers]
+
+        info = {'Model type': type(self).__name__,
+                'Model name': self.args.model_name,
+                'Model predion type': self.args.anntype,
+                'Preprocess used': p_layers}
+
+        kwargs.update(**info)
+        return super().print_info(**kwargs)
