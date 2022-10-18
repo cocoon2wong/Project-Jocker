@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-04-16 16:02:45
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-31 10:02:54
+@LastEditTime: 2022-10-18 14:58:49
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,9 +12,10 @@ import inspect
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath('.'))
 import codes
 import silverballers
+
+sys.path.insert(0, os.path.abspath('.'))
 
 
 def get_menmber(package):
@@ -24,7 +25,6 @@ def get_menmber(package):
 def print_all_members(package):
     waiting = get_menmber(package)
     name_list = []
-    info_list = []
     lens = ['```mermaid\n',
             '    graph LR\n']
 
@@ -34,26 +34,30 @@ def print_all_members(package):
             if item.__name__.split('.')[0] in [package.__name__]:
                 waiting += get_menmber(item)
         else:
-            father_name = item.__base__.__name__
-            father_module = item.__base__.__module__
             name = item.__name__
             module = item.__module__
+            class_name = f'{module}/{name}'
+            info = f'{module}_{name}'
 
-            if name != 'builtins':
-                class_name = f'{module}/{name}'
-                info = f'{module}_{name}'
+            if name == 'builtins':
+                continue
+
+            if class_name in name_list:
+                continue
+
+            for father in item.__bases__:
+                father_name = father.__name__
+                father_module = father.__module__
                 father_info = f'{father_module}_{father_name}'
 
-                if not class_name in name_list:
-                    print(class_name)
-                    print(father_info)
-                    lens.append(f'        {father_info}("{father_name}({father_module})") ' +
-                                f'--> {info}("{name}({module})")\n')
-                    name_list.append(class_name)
-                    info_list.append(father_info)
+                print(f'{father_info} -> {class_name}')
+                lens.append(f'        {father_info}("{father_name}({father_module})") ' +
+                            f'--> {info}("{name}({module})")\n')
 
-                    if father_name != 'object':
-                        waiting += get_menmber(item)
+                if father_name != 'object':
+                    waiting += get_menmber(item)
+
+            name_list.append(class_name)
 
     lens.append('```\n')
     return lens
