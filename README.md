@@ -2,7 +2,7 @@
  * @Author: Conghao Wong
  * @Date: 2022-07-07 21:43:30
  * @LastEditors: Conghao Wong
- * @LastEditTime: 2022-08-02 15:50:42
+ * @LastEditTime: 2022-10-18 21:19:35
  * @Description: file content
  * @Github: https://github.com/cocoon2wong
  * Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -173,141 +173,155 @@ python main.py --ARG_KEY1 ARG_VALUE2 --ARG_KEY2 ARG_VALUE2 --ARG_KEY3 ARG_VALUE3
 
 where `ARG_KEY` is the name of args, and `ARG_VALUE` is the corresponding value.
 All args and their usages are listed below.
-Args with `argtype='static'` means that their values can not be changed once after training.
+
+Instruction for the `argtype`:
+
+- Args with `argtype='STATIC'` indicates that their values can not be changed once after training.
+  The program will not parse these args to overwrite the saved values when test the model.
+- Args with `argtype='DYNAMIC'` indicates that their values can be changed anytime.
+  The program will try to first parse inputs from the terminal, and then try to load from the saved `json` file.
+- Args with `argtype='TEMPORARY'` indicates that these values will not be saved into `json` files.
+  The program will parse these args from the terminal at each time.
 
 <!-- DO NOT CHANGE THIS LINE -->
 ### Basic args
 
-- `--K_train`, type=`int`, argtype=`'static'`.
+- `--K_train`, type=`int`, argtype=`STATIC`.
   Number of multiple generations when training. This arg only works for `Generative Models`.
   The default value is `10`.
-- `--K`, type=`int`, argtype=`'dynamic'`.
+- `--K`, type=`int`, argtype=`DYNAMIC`.
   Number of multiple generations when test. This arg only works for `Generative Models`.
   The default value is `20`.
-- `--anntype`, type=`str`, argtype=`'static'`.
+- `--anntype`, type=`str`, argtype=`STATIC`.
   Type of annotations in the predicted trajectories. Canbe `'coordinate'` or `'boundingbox'`.
   The default value is `'coordinate'`.
-- `--batch_size`, type=`int`, argtype=`'dynamic'`.
+- `--batch_size`, type=`int`, argtype=`DYNAMIC`.
   Batch size when implementation.
   The default value is `5000`.
-- `--dataset`, type=`str`, argtype=`'static'`.
+- `--dataset`, type=`str`, argtype=`STATIC`.
   Name of the video dataset to train or evaluate. For example, `'ETH-UCY'` or `'SDD'`. DO NOT set this argument manually.
   The default value is `'error'`.
-- `--dim`, type=`int`, argtype=`'static'`.
+- `--dim`, type=`int`, argtype=`STATIC`.
   Dimension of the `trajectory`. For example, (x, y) -> `dim = 2`.
   The default value is `dim`.
-- `--draw_distribution`, type=`int`, argtype=`'dynamic'`.
-  Conrtols if draw distributions of predictions instead of points.
+- `--draw_distribution`, type=`int`, argtype=`TEMPORARY`.
+  Conrtols if draw distributions of predictions instead of points. If `draw_distribution == 0`, it will draw results as normal coordinates; If `draw_distribution == 1`, it will draw all results in the distribution way, and points from different time steps will be drawn with different colors.
   The default value is `0`.
-- `--draw_results`, type=`str`, argtype=`'dynamic'`.
-  Controls if draw visualized results on video frames. Accept the name of one video clip. The codes will first try to load the video according to the path saved in the `plist` file, and if successful it will draw the visualization on the video, otherwise it will draw on a blank canvas. Note that `test_mode` will be set to `'one'` and `force_split` will be set to `draw_results` if `draw_results != 'null'`.
+- `--draw_index`, type=`str`, argtype=`TEMPORARY`.
+  Indexes of test agents to visualize. Numbers are split with `_`. For example, `'123_456_789'`.
+  The default value is `'all'`.
+- `--draw_results`, type=`str`, argtype=`TEMPORARY`.
+  Controls if draw visualized results on video frames and save as images. Accept the name of one video clip. The codes will first try to load the video according to the path saved in the `plist` file, and if successful it will draw the visualization on the video, otherwise it will draw on a blank canvas. Note that `test_mode` will be set to `'one'` and `force_split` will be set to `draw_results` if `draw_results != 'null'`.
   The default value is `'null'`.
-- `--epochs`, type=`int`, argtype=`'static'`.
+- `--draw_videos`, type=`str`, argtype=`TEMPORARY`.
+  Controls if draw visualized results on video frames and save as images. Accept the name of one video clip. The codes will first try to load the video according to the path saved in the `plist` file, and if successful it will draw the visualization on the video, otherwise it will draw on a blank canvas. Note that `test_mode` will be set to `'one'` and `force_split` will be set to `draw_videos` if `draw_videos != 'null'`.
+  The default value is `'null'`.
+- `--epochs`, type=`int`, argtype=`STATIC`.
   Maximum training epochs.
   The default value is `500`.
-- `--force_clip`, type=`str`, argtype=`'dynamic'`.
+- `--force_clip`, type=`str`, argtype=`TEMPORARY`.
   Force test video clip. It only works when `test_mode` is `one`.
   The default value is `'null'`.
-- `--force_dataset`, type=`str`, argtype=`'dynamic'`.
+- `--force_dataset`, type=`str`, argtype=`TEMPORARY`.
   Force test dataset.
   The default value is `'null'`.
-- `--force_split`, type=`str`, argtype=`'dynamic'`.
+- `--force_split`, type=`str`, argtype=`TEMPORARY`.
   Force test dataset. Only works when evaluating when `test_mode` is `one`.
   The default value is `'null'`.
-- `--gpu`, type=`str`, argtype=`'dynamic'`.
+- `--gpu`, type=`str`, argtype=`TEMPORARY`.
   Speed up training or test if you have at least one nvidia GPU. If you have no GPUs or want to run the code on your CPU, please set it to `-1`.
   The default value is `'0'`.
-- `--interval`, type=`float`, argtype=`'static'`.
+- `--interval`, type=`float`, argtype=`STATIC`.
   Time interval of each sampled trajectory coordinate.
   The default value is `0.4`.
-- `--load`, type=`str`, argtype=`'dynamic'`.
+- `--load`, type=`str`, argtype=`TEMPORARY`.
   Folder to load model. If set to `null`, it will start training new models according to other args.
   The default value is `'null'`.
-- `--log_dir`, type=`str`, argtype=`'static'`.
+- `--log_dir`, type=`str`, argtype=`STATIC`.
   Folder to save training logs and models. If set to `null`, logs will save at `args.save_base_dir/current_model`.
   The default value is `'null'`.
-- `--lr`, type=`float`, argtype=`'static'`.
+- `--lr`, type=`float`, argtype=`STATIC`.
   Learning rate.
   The default value is `0.001`.
-- `--model_name`, type=`str`, argtype=`'static'`.
+- `--model_name`, type=`str`, argtype=`STATIC`.
   Customized model name.
   The default value is `'model'`.
-- `--model`, type=`str`, argtype=`'static'`.
+- `--model`, type=`str`, argtype=`STATIC`.
   Model type used to train or test.
   The default value is `'none'`.
-- `--obs_frames`, type=`int`, argtype=`'static'`.
+- `--obs_frames`, type=`int`, argtype=`STATIC`.
   Observation frames for prediction.
   The default value is `8`.
-- `--pmove`, type=`int`, argtype=`'static'`.
+- `--pmove`, type=`int`, argtype=`STATIC`.
   Index of the reference point when moving trajectories.
   The default value is `-1`.
-- `--pred_frames`, type=`int`, argtype=`'static'`.
+- `--pred_frames`, type=`int`, argtype=`STATIC`.
   Prediction frames.
   The default value is `12`.
-- `--protate`, type=`float`, argtype=`'static'`.
+- `--protate`, type=`float`, argtype=`STATIC`.
   Reference degree when rotating trajectories.
   The default value is `0.0`.
-- `--pscale`, type=`str`, argtype=`'static'`.
+- `--pscale`, type=`str`, argtype=`STATIC`.
   Index of the reference point when scaling trajectories.
   The default value is `'autoref'`.
-- `--restore`, type=`str`, argtype=`'dynamic'`.
+- `--restore`, type=`str`, argtype=`DYNAMIC`.
   Path to restore the pre-trained weights before training. It will not restore any weights if `args.restore == 'null'`.
   The default value is `'null'`.
-- `--save_base_dir`, type=`str`, argtype=`'static'`.
+- `--save_base_dir`, type=`str`, argtype=`STATIC`.
   Base folder to save all running logs.
   The default value is `'./logs'`.
-- `--save_model`, type=`int`, argtype=`'static'`.
+- `--save_model`, type=`int`, argtype=`STATIC`.
   Controls if save the final model at the end of training.
   The default value is `1`.
-- `--split`, type=`str`, argtype=`'static'`.
+- `--split`, type=`str`, argtype=`STATIC`.
   Dataset split used when training and evaluating.
   The default value is `'zara1'`.
-- `--start_test_percent`, type=`float`, argtype=`'static'`.
+- `--start_test_percent`, type=`float`, argtype=`STATIC`.
   Set when to start validation during training. Range of this arg is `0 <= x <= 1`. Validation will start at `epoch = args.epochs * args.start_test_percent`.
   The default value is `0.0`.
-- `--step`, type=`int`, argtype=`'dynamic'`.
+- `--step`, type=`int`, argtype=`DYNAMIC`.
   Frame interval for sampling training data.
   The default value is `1`.
-- `--test_mode`, type=`str`, argtype=`'dynamic'`.
+- `--test_mode`, type=`str`, argtype=`TEMPORARY`.
   Test settings, canbe `'one'` or `'all'` or `'mix'`. When set it to `one`, it will test the model on the `args.force_split` only; When set it to `all`, it will test on each of the test dataset in `args.split`; When set it to `mix`, it will test on all test dataset in `args.split` together.
   The default value is `'mix'`.
-- `--test_step`, type=`int`, argtype=`'static'`.
-  Epoch interval to run validation during training. """ return self._get('test_step', 3, argtype='static') """ Trajectory Prediction Args 
+- `--test_step`, type=`int`, argtype=`STATIC`.
+  Epoch interval to run validation during training. """ return self._get('test_step', 3, argtype=STATIC) """ Trajectory Prediction Args 
   The default value is `3`.
-- `--update_saved_args`, type=`int`, argtype=`'dynamic'`.
+- `--update_saved_args`, type=`int`, argtype=`TEMPORARY`.
   Choose if update (overwrite) json arg files or not.
   The default value is `0`.
-- `--use_extra_maps`, type=`int`, argtype=`'dynamic'`.
+- `--use_extra_maps`, type=`int`, argtype=`DYNAMIC`.
   Controls if uses the calculated trajectory maps or the given trajectory maps. The model will load maps from `./dataset_npz/.../agent1_maps/trajMap.png` if set it to `0`, and load from `./dataset_npz/.../agent1_maps/trajMap_load.png` if set this argument to `1`.
   The default value is `0`.
 
 ### Silverballers args
 
-- `--Kc`, type=`int`, argtype=`'static'`.
+- `--Kc`, type=`int`, argtype=`STATIC`.
   Number of style channels in `Agent` model.
   The default value is `20`.
-- `--T`, type=`str`, argtype=`'static'`.
+- `--T`, type=`str`, argtype=`STATIC`.
   Type of transformations used when encoding or decoding trajectories. It could be: - `none`: no transformations - `fft`: fast fourier transform - `haar`: haar wavelet transform - `db2`: DB2 wavelet transform 
   The default value is `'fft'`.
-- `--depth`, type=`int`, argtype=`'static'`.
-  Depth of the random contract id.
+- `--depth`, type=`int`, argtype=`STATIC`.
+  Depth of the random noise vector.
   The default value is `16`.
-- `--feature_dim`, type=`int`, argtype=`'static'`.
+- `--feature_dim`, type=`int`, argtype=`STATIC`.
   Feature dimension used in most layers.
   The default value is `128`.
-- `--key_points`, type=`str`, argtype=`'static'`.
+- `--key_points`, type=`str`, argtype=`STATIC`.
   A list of key-time-steps to be predicted in the agent model. For example, `'0_6_11'`.
   The default value is `'0_6_11'`.
-- `--loada`, type=`str`, argtype=`'dynamic'`.
+- `--loada`, type=`str`, argtype=`TEMPORARY`.
   Path for agent model.
   The default value is `'null'`.
-- `--loadb`, type=`str`, argtype=`'dynamic'`.
+- `--loadb`, type=`str`, argtype=`TEMPORARY`.
   Path for handler model.
   The default value is `'null'`.
-- `--points`, type=`int`, argtype=`'static'`.
+- `--points`, type=`int`, argtype=`STATIC`.
   Controls the number of keypoints accepted in the handler model.
   The default value is `1`.
-- `--preprocess`, type=`str`, argtype=`'static'`.
+- `--preprocess`, type=`str`, argtype=`STATIC`.
   Controls if running any preprocess before model inference. Accept a 3-bit-like string value (like `'111'`): - the first bit: `MOVE` trajectories to (0, 0); - the second bit: re-`SCALE` trajectories; - the third bit: `ROTATE` trajectories.
   The default value is `'111'`.
 <!-- DO NOT CHANGE THIS LINE -->

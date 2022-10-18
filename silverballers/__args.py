@@ -2,13 +2,13 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:41:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-13 21:44:02
+@LastEditTime: 2022-10-18 21:32:03
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-from codes.args import Args
+from codes.args import DYNAMIC, STATIC, TEMPORARY, Args
 
 
 class _BaseSilverballersArgs(Args):
@@ -24,7 +24,7 @@ class _BaseSilverballersArgs(Args):
         """
         Number of style channels in `Agent` model.
         """
-        return self._get('Kc', 20, argtype='static')
+        return self._get('Kc', 20, argtype=STATIC)
 
     @property
     def key_points(self) -> str:
@@ -32,7 +32,7 @@ class _BaseSilverballersArgs(Args):
         A list of key-time-steps to be predicted in the agent model.
         For example, `'0_6_11'`.
         """
-        return self._get('key_points', '0_6_11', argtype='static')
+        return self._get('key_points', '0_6_11', argtype=STATIC)
 
     @property
     def preprocess(self) -> str:
@@ -43,7 +43,7 @@ class _BaseSilverballersArgs(Args):
         - the second bit: re-`SCALE` trajectories;
         - the third bit: `ROTATE` trajectories.
         """
-        return self._get('preprocess', '111', argtype='static')
+        return self._get('preprocess', '111', argtype=STATIC)
 
     @property
     def T(self) -> str:
@@ -56,14 +56,14 @@ class _BaseSilverballersArgs(Args):
         - `haar`: haar wavelet transform
         - `db2`: DB2 wavelet transform
         """
-        return self._get('T', 'fft', argtype='static')
+        return self._get('T', 'fft', argtype=STATIC)
 
     @property
     def feature_dim(self) -> int:
         """
         Feature dimension used in most layers.
         """
-        return self._get('feature_dim', 128, argtype='static')
+        return self._get('feature_dim', 128, argtype=STATIC)
 
 
 class AgentArgs(_BaseSilverballersArgs):
@@ -74,9 +74,9 @@ class AgentArgs(_BaseSilverballersArgs):
     @property
     def depth(self) -> int:
         """
-        Depth of the random contract id.
+        Depth of the random noise vector.
         """
-        return self._get('depth', 16, argtype='static')
+        return self._get('depth', 16, argtype=STATIC)
 
 
 class HandlerArgs(_BaseSilverballersArgs):
@@ -91,7 +91,7 @@ class HandlerArgs(_BaseSilverballersArgs):
         """
         Controls the number of keypoints accepted in the handler model.
         """
-        return self._get('points', 1, argtype='static')
+        return self._get('points', 1, argtype=STATIC)
 
 
 class SilverballersArgs(_BaseSilverballersArgs):
@@ -104,11 +104,11 @@ class SilverballersArgs(_BaseSilverballersArgs):
         """
         Path for agent model.
         """
-        return self._get('loada', 'null', argtype='dynamic')
+        return self._get('loada', 'null', argtype=TEMPORARY)
 
     @property
     def loadb(self) -> str:
         """
         Path for handler model.
         """
-        return self._get('loadb', 'null', argtype='dynamic')
+        return self._get('loadb', 'null', argtype=TEMPORARY)
