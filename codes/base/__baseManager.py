@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-17 14:57:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-17 17:30:23
+@LastEditTime: 2022-10-19 14:56:16
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -182,8 +182,14 @@ class BaseManager(_BaseManager):
         self._args: Args = args
         self.manager: BaseManager = manager
         self.members: list[BaseManager] = []
+        self.members_dict: dict[type[BaseManager], list[BaseManager]] = {}
 
         if manager:
+            mtype = type(self)
+            if not mtype in self.manager.members_dict.keys():
+                self.manager.members_dict[mtype] = []
+
+            self.manager.members_dict[mtype].append(self)
             self.manager.members.append(self)
 
     @property
@@ -199,13 +205,26 @@ class BaseManager(_BaseManager):
     def args(self, value: T) -> T:
         self._args = value
 
-    def get_members_by_type(self, mtype: type[T]) -> list[T]:
-        results = []
-        for m in self.members:
-            if type(m) == mtype:
-                results.append(m)
+    def get_member(self, mtype: type[T], mindex: int = 0) -> T:
+        """
+        Get a member manager by class name.
 
-        return results
+        :param mtype: Type of the member manager.
+        :param mindex: Index of the member.
+
+        :return member: Member manager with the specific type.
+        """
+        return self.members_dict[mtype][mindex]
+
+    def find_members_by_type(self, mtype: type[T]) -> list[T]:
+        """
+        Find member managers by class name.
+
+        :param mtype: Type of the member manager.
+
+        :return members: A list of member objects.
+        """
+        return self.members_dict[mtype]
 
     def print_info_all(self, include_self=True):
         """

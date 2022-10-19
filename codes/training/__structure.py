@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-19 10:21:33
+@LastEditTime: 2022-10-19 14:39:50
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -225,10 +225,10 @@ class Structure(BaseManager):
         if r:
             metric, metrics_dict, outputs, labels = r
             self.print_test_results(metrics_dict)
-            agent_manager = self.dsmanager.get_members_by_type(AgentManager)[0]
-            self.write_test_results(outputs=outputs,
-                                    agents=agent_manager,
-                                    clips=self.dsmanager.processed_clips['test'])
+            self.write_test_results(
+                outputs=outputs,
+                agents=self.dsmanager.get_member(AgentManager, mindex=0),
+                clips=self.dsmanager.processed_clips['test'])
 
     def __train(self, ds_train: tf.data.Dataset, ds_val: tf.data.Dataset):
         """

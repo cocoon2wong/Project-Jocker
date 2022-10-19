@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-19 11:37:48
+@LastEditTime: 2022-10-19 14:42:04
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -62,7 +62,7 @@ class Visualization(BaseManager):
 
     @property
     def picker(self) -> AnnotationManager:
-        return self.manager.annmanager
+        return self.manager.get_member(AnnotationManager)
 
     def get_image(self, frame: int) -> np.ndarray:
         """

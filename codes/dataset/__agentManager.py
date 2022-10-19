@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-19 11:32:54
+@LastEditTime: 2022-10-19 14:41:45
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -101,7 +101,7 @@ class AgentManager(BaseManager):
     def picker(self) -> AnnotationManager:
         ds_manager = self.manager
         train_manager = ds_manager.manager
-        return train_manager.annmanager
+        return train_manager.get_member(AnnotationManager)
 
     def update_agents(self, agents: list[Agent]):
         for a in agents:
