@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-17 11:37:41
+@LastEditTime: 2022-10-19 11:37:48
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,7 +13,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from ..base import BaseManager, SecondaryBar
-from ..dataset import Agent, VideoClip
+from ..dataset import Agent, VideoClip, AnnotationManager
 from ..utils import (DISTRIBUTION_IMAGE, DRAW_TEXT_IN_IMAGES,
                      DRAW_TEXT_IN_VIDEOS, GT_IMAGE, NEIGHBOR_IMAGE, OBS_IMAGE,
                      PRED_IMAGE)
@@ -59,6 +59,10 @@ class Visualization(BaseManager):
     @property
     def video_capture(self) -> cv2.VideoCapture:
         return self._vc
+
+    @property
+    def picker(self) -> AnnotationManager:
+        return self.manager.annmanager
 
     def get_image(self, frame: int) -> np.ndarray:
         """
@@ -106,7 +110,7 @@ class Visualization(BaseManager):
         b = [weights[1], weights[3]]
 
         real = scale * real_pos
-        pixel = self.helper.picker.real2pixel2d(real, w, b, self.info.order)
+        pixel = self.helper.real2pixel2d(real, w, b, self.info.order)
 
         if integer:
             pixel = pixel.astype(np.int32)

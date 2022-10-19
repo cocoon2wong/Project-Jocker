@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-14 16:20:31
+@LastEditTime: 2022-10-19 11:32:54
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -20,7 +20,7 @@ from ..base import BaseManager, SecondaryBar
 from ..utils import MAP_HALF_SIZE
 from .__agent import Agent
 from .__maps import MapManager
-from .__picker import Picker
+from .__picker import AnnotationManager
 
 
 class TrajMapNotFoundError(FileNotFoundError):
@@ -85,18 +85,31 @@ class AgentManager(BaseManager):
     def __init__(self, manager: BaseManager, name='Agent Manager'):
         super().__init__(manager=manager, name=name)
 
-        self.agents: list[Agent] = []
+        self._agents: list[Agent] = []
         self.model_inputs = None
         self.model_labels = None
-        self.picker: Picker = None
+
+    @property
+    def agents(self) -> list[Agent]:
+        return self._agents
+
+    @agents.setter
+    def agents(self, value: list[Agent]) -> list[Agent]:
+        self._agents = self.update_agents(value)
+
+    @property
+    def picker(self) -> AnnotationManager:
+        ds_manager = self.manager
+        train_manager = ds_manager.manager
+        return train_manager.annmanager
+
+    def update_agents(self, agents: list[Agent]):
+        for a in agents:
+            a.agent_manager = self
+        return agents
 
     def append(self, target):
-        self.agents += target.agents
-
-    def set_picker(self, datasetType: str, predictionType: str):
-        self.picker = Picker(datasetType, predictionType)
-        for agent in self.agents:
-            agent.picker = self.picker
+        self._agents += self.update_agents(target.agents)
 
     def set_types(self, inputs_type: list[str], labels_type: list[str]):
         """

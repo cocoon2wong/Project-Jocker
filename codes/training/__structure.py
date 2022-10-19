@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-17 17:33:26
+@LastEditTime: 2022-10-19 10:21:33
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -16,7 +16,7 @@ import tensorflow as tf
 from ..args import Args
 from ..base import BaseManager
 from ..basemodels import Model
-from ..dataset import AgentManager, DatasetManager
+from ..dataset import AgentManager, DatasetManager, AnnotationManager
 from ..utils import WEIGHTS_FORMAT, dir_check
 from ..vis import Visualization
 from .loss import LossManager
@@ -37,6 +37,7 @@ class Structure(BaseManager):
 
         # init managers
         self.dsmanager = DatasetManager(self)
+        self.annmanager = AnnotationManager(self, self.dsmanager.info.anntype)
         self.loss = LossManager(self, name='Loss')
         self.metrics = LossManager(self, name='Metrics')
 

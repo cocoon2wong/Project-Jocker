@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:34:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-17 11:35:06
+@LastEditTime: 2022-10-19 10:58:36
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -24,7 +24,8 @@ class DatasetManager(BaseManager):
     """
     DatasetsManager
     ---------------
-    Manage all prediction training data from one dataset split.
+    Manage all trajectory prediction data from one dataset split,
+    and then make them into the `tf.data.Dataset` object to train or test.
 
     Public Methods
     ---
@@ -34,11 +35,10 @@ class DatasetManager(BaseManager):
                          inputs_type: list[str], 
                          labels_type: list[str] = None) -> None
 
-    # Load train samples in sub-datasets (i.e., video clips)
-    (method) load: (self: Self@DatasetManager,
-                    clips: str | list[str],
-                    mode: str)
-                    -> (AgentManager | tuple[AgentManager, AgentManager])
+    # Load data and make them into the `Dataset` object from video clips
+    (method) load_dataset: (self: Self@DatasetManager,
+                            clips: list[str],
+                            mode: str) -> DatasetV2
     ```
     """
 
@@ -63,27 +63,36 @@ class DatasetManager(BaseManager):
         if labels_type is not None:
             self.model_label_type = labels_type
 
-    def _load_from_videoClips(self, video_clips: list[VideoClipManager],
-                              mode='test') -> AgentManager:
+    def load_dataset(self, clips: list[str], mode: str) -> tf.data.Dataset:
         """
-        Make or load train files to get train agents.
-        (a list of agent managers, type = `Agent`)
+        Load train samples in sub-datasets (i.e., video clips).
 
-        :param video_clips: a list of video clip managers (`VideoClipManager`)
-        :param mode: canbe `train` or `test`. It will shuffle the clips when
-            `mode == 'train'`
-        :return all_agents: a list of train agents (`AgentManager`)
+        :param clips: clips to load. Set it to `'auto'` to load train agents
+        :param mode: load mode, canbe `'test'` or `'train'`
+
+        :return dataset: the loaded `tf.data.Dataset` object
         """
-        all_agents = AgentManager(self, 'Agent Manager (Chief)')
+        if type(clips) == str:
+            clips = [clips]
 
+        # init managers
+        clip_managers = [VideoClipManager(self, d) for d in clips]
+        agent_manager = AgentManager(self, 'Agent Manager (Chief)')
+
+        # shuffle agents and video clips when training
         if mode == 'train':
-            random.shuffle(video_clips)
+            shuffle = True
+            random.shuffle(clip_managers)
+        else:
+            shuffle = False
 
-        for clip in self.timebar(video_clips):
-            # assign time bar
-            s = f'Prepare {mode} data in `{clip.clip_name}`...'
+        # load agent data in each video clip
+        for clip in self.timebar(clip_managers):
+            # update time bar
+            s = f'Prepare data of {mode} agents in `{clip.clip_name}`...'
             self.update_timebar(s, pos='start')
 
+            # file name
             base_dir = os.path.join(clip.path, clip.clip_name)
             if (self.args.obs_frames, self.args.pred_frames) == (8, 12):
                 f_name = 'agent'
@@ -94,6 +103,7 @@ class DatasetManager(BaseManager):
             f_name = f_name + endstring + '.npz'
             data_path = os.path.join(base_dir, f_name)
 
+            # load agents in this video clip
             agents = AgentManager(self, f'Agent Manager ({clip.clip_name})')
             if not os.path.exists(data_path):
                 new_agents = clip.sample_train_data()
@@ -102,10 +112,7 @@ class DatasetManager(BaseManager):
             else:
                 agents.load(data_path)
 
-            dataset_type = clip.info.datasetInfo.anntype
-            prediction_type = self.args.anntype
-            agents.set_picker(dataset_type, prediction_type)
-
+            # load or make context maps
             if 'MAP' in self.model_input_type:
                 map_path = dir_check(data_path.split('.np')[0] + '_maps')
                 map_file = ('trajMap.png' if not self.args.use_extra_maps
@@ -139,28 +146,12 @@ class DatasetManager(BaseManager):
                                      para_file='para.txt',
                                      centers_file='centers.txt')
 
-            all_agents.append(agents)
+            agent_manager.append(agents)
 
-        all_agents.set_types(inputs_type=self.model_input_type,
-                             labels_type=self.model_label_type)
-        return all_agents
-
-    def load_dataset(self, clips: list[str], mode: str) -> tf.data.Dataset:
-        """
-        Load train samples in sub-datasets (i.e., video clips).
-
-        :param clips: clips to load. Set it to `'auto'` to load train agents
-        :param mode: load mode, canbe `'test'` or `'train'`
-
-        :return dataset: the loaded `tf.data.Dataset` object
-        """
-        if type(clips) == str:
-            clips = [clips]
+        agent_manager.set_types(inputs_type=self.model_input_type,
+                                labels_type=self.model_label_type)
 
         self.processed_clips[mode] += clips
-        clip_managers = [VideoClipManager(self, d) for d in clips]
-        agent_manager = self._load_from_videoClips(clip_managers, mode)
-        shuffle = True if mode == 'train' else False
         return agent_manager.make_dataset(shuffle=shuffle)
 
     def print_info(self, **kwargs):

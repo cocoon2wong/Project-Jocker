@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-30 09:52:17
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-29 19:59:58
+@LastEditTime: 2022-10-19 11:35:05
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,12 +10,19 @@
 
 import numpy as np
 
+from ..base import BaseManager
+
+T_2D_COORDINATE = 'coordinate'
+T_2D_BOUNDINGBOX = 'boundingbox'
+T_2D_BOUNDINGBOX_ROTATE = 'boundingbox-rotate'
+T_3D_BOUNDINGBOX = '3Dboundingbox'
+T_3D_BOUNDINGBOX_ROTATE = '3Dboundingbox-rotate'
+
 
 class _BaseAnnType():
     def __init__(self) -> None:
         self.typeName: str = None
         self.dim: int = None
-        self.order2d: list[list[int]] = None
         self.targets: list[type[_BaseAnnType]] = []
 
     def transfer(self, target, traj: np.ndarray) -> np.ndarray:
@@ -50,42 +57,18 @@ class _BaseAnnType():
     def _transfer(self, target, traj: np.ndarray) -> np.ndarray:
         raise NotImplementedError
 
-    def gather_dim(self, traj: np.ndarray, dim: int):
-        return traj.T[dim].T
-
-    def real2pixel2d(self, traj: np.ndarray, w, b, order=[0, 1]):
-        """
-        Transform n-dim trajectories into a series of 2d coordinates
-        """
-        results = []
-        for _order in self.order2d:
-            x = _order[order[0]]
-            y = _order[order[1]]
-
-            _x = self.gather_dim(traj, x)
-            _y = self.gather_dim(traj, y)
-
-            _xp = w[0] * _x + b[0]
-            _yp = w[1] * _y + b[1]
-
-            results += [_xp, _yp]
-
-        return np.stack(results, axis=-1)
-
 
 class _Coordinate(_BaseAnnType):
     def __init__(self) -> None:
-        self.typeName = 'coordinate'
+        self.typeName = T_2D_COORDINATE
         self.dim = 2
-        self.order2d = [[0, 1]]
         self.targets = []
 
 
 class _Boundingbox(_BaseAnnType):
     def __init__(self) -> None:
-        self.typeName = 'boundingbox'
+        self.typeName = T_2D_BOUNDINGBOX
         self.dim = 4
-        self.order2d = [[0, 1], [2, 3]]
         self.targets = [_Coordinate]
 
     def _transfer(self, T: type[_BaseAnnType], traj: np.ndarray):
@@ -99,9 +82,8 @@ class _Boundingbox(_BaseAnnType):
 
 class _3DBoundingboxWithRotate(_BaseAnnType):
     def __init__(self) -> None:
-        self.typeName = '3Dboundingbox-rotate'
+        self.typeName = T_3D_BOUNDINGBOX_ROTATE
         self.dim = 10
-        self.order2d = [[0, 1], [2, 3]]
         self.targets = [_Coordinate]
 
     def _transfer(self, T: type[_BaseAnnType], traj: np.ndarray):
@@ -147,23 +129,56 @@ class Picker():
         """
         return self.ds_manager.transfer(self.pred_manager, traj)
 
-    def real2pixel2d(self, traj: np.ndarray, w, b, order=[0, 1]):
+
+class AnnotationManager(BaseManager):
+
+    def __init__(self, manager: BaseManager,
+                 dataset_type: str,
+                 name: str = 'Annotation Manager'):
+
+        super().__init__(manager=manager, name=name)
+
+        self.d_type = dataset_type
+        self.p_type = self.args.anntype
+
+        self.dataset_picker = Picker(datasetType=dataset_type,
+                                     predictionType=self.p_type)
+
+        self.center_picker = Picker(datasetType=self.p_type,
+                                    predictionType=T_2D_COORDINATE)
+
+    def get(self, inputs: np.ndarray):
         """
-        Transform n-dim trajectories into a series of 2d coordinates
+        Get data with target annotations from original dataset files.
         """
-        return self.ds_manager.real2pixel2d(traj, w, b, order)
+        return self.dataset_picker.get(inputs)
+
+    def get_center(self, inputs: np.ndarray):
+        """
+        Get the center of trajectories from the processed data.
+        Note that annotation type of `inputs` is the same as model's
+        prediction type. (Not the dataset's annotation type.)
+        """
+        return self.center_picker.get(inputs)
+
+    def print_info(self, **kwargs):
+        info = {'Dataset annotation type': self.d_type,
+                'Model prediction type': self.p_type}
+
+        kwargs.update(**info)
+        return super().print_info(**kwargs)
 
 
 def get_manager(anntype: str) -> _BaseAnnType:
-    if anntype == 'coordinate':
+    if anntype == T_2D_COORDINATE:
         return _Coordinate()
-    elif anntype == 'boundingbox':
+    elif anntype == T_2D_BOUNDINGBOX:
         return _Boundingbox()
-    elif anntype == 'boundingbox-rotate':
+    elif anntype == T_2D_BOUNDINGBOX_ROTATE:
         raise NotImplementedError(anntype)
-    elif anntype == '3Dboundingbox':
+    elif anntype == T_3D_BOUNDINGBOX:
         raise NotImplementedError(anntype)
-    elif anntype == '3Dboundingbox-rotate':
+    elif anntype == T_3D_BOUNDINGBOX_ROTATE:
         return _3DBoundingboxWithRotate()
     else:
         raise NotImplementedError(anntype)

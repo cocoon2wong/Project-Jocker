@@ -23,7 +23,7 @@ Public Classes
 
 from .__agent import Agent
 from .__agentManager import AgentManager
-from .__picker import Picker
+from .__picker import AnnotationManager
 from .__videoClip import VideoClip
 from .__videoClipManager import VideoClipManager
 from .__videoDataset import Dataset

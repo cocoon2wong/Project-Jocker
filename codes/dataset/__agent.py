@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-26 15:27:42
+@LastEditTime: 2022-10-19 11:30:45
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,7 +13,7 @@ import copy
 import numpy as np
 
 from ..utils import INIT_POSITION
-from .__picker import Picker
+from .__picker import AnnotationManager
 
 
 class Agent():
@@ -85,11 +85,15 @@ class Agent():
         self._traj_neighbor: np.ndarray = None
         self._traj_linear_neighbor: np.ndarray = None
 
-        self.picker: Picker = None
         self._map = None
+        self.agent_manager = None
 
     def copy(self):
         return copy.deepcopy(self)
+
+    @property
+    def picker(self) -> AnnotationManager:
+        return self.agent_manager.picker
 
     @property
     def id(self) -> str:
