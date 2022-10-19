@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-15 20:13:07
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-14 10:22:06
+@LastEditTime: 2022-10-19 15:17:34
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -35,4 +35,4 @@ class Linear(Structure):
         self.noTraining = True
 
     def create_model(self, *args, **kwargs) -> Model:
-        return LinearModel(self.args)
+        return LinearModel(self.args, structure=self)

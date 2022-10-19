@@ -2,13 +2,14 @@
 @Author: Conghao Wong
 @Date: 2022-08-30 09:52:17
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-19 11:35:05
+@LastEditTime: 2022-10-19 15:50:40
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import numpy as np
+import tensorflow as tf
 
 from ..base import BaseManager
 
@@ -42,14 +43,14 @@ class _BaseAnnType():
             raise ValueError(f'Transfer from {T_c} to {T} is not supported.')
 
         else:
-            if traj.ndim == 4:       # (batch, steps, K, dim)
-                _traj = np.transpose(traj, [3, 0, 1, 2])
-            elif traj.ndim == 3:      # (batch, steps, dim)
-                _traj = np.transpose(traj, [2, 0, 1])
-            elif traj.ndim == 2:    # (steps, dim)
-                _traj = traj.T
+            M = traj.shape[-1]
+
+            if issubclass(type(traj), np.ndarray):
+                _traj = np.stack([traj[..., m] for m in np.arange(M)])
+            elif issubclass(type(traj), tf.Tensor):
+                _traj = tf.stack([traj[..., m] for m in tf.range(M)])
             else:
-                raise NotImplementedError
+                raise TypeError(traj)
 
             # shape of `_traj` is (dim, ...)
             return self._transfer(T, _traj)
@@ -74,7 +75,15 @@ class _Boundingbox(_BaseAnnType):
     def _transfer(self, T: type[_BaseAnnType], traj: np.ndarray):
         if T == _Coordinate:
             xl, yl, xr, yr = traj[:4]
-            return 0.5 * np.stack((xl+xr, yl+yr), axis=-1)
+
+            if issubclass(type(traj), np.ndarray):
+                stack = np.stack
+            elif issubclass(type(traj), tf.Tensor):
+                stack = tf.stack
+            else:
+                raise TypeError(traj)
+
+            return 0.5 * stack((xl+xr, yl+yr), axis=-1)
 
         else:
             raise NotImplementedError
@@ -89,7 +98,15 @@ class _3DBoundingboxWithRotate(_BaseAnnType):
     def _transfer(self, T: type[_BaseAnnType], traj: np.ndarray):
         if T == _Coordinate:
             xl, yl, xr, yr = traj[:4]
-            return 0.5 * np.stack((xl+xr, yl+yr), axis=-1)
+
+            if issubclass(type(traj), np.ndarray):
+                stack = np.stack
+            elif issubclass(type(traj), tf.Tensor):
+                stack = tf.stack
+            else:
+                raise TypeError(traj)
+
+            return 0.5 * stack((xl+xr, yl+yr), axis=-1)
 
         else:
             raise NotImplementedError
