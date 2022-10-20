@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-29 09:53:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-19 11:26:44
+@LastEditTime: 2022-10-20 19:49:36
 @Description: png content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -21,27 +21,7 @@ CONV_LAYER = tf.keras.layers.Conv2D(
 
 class BaseVisHelper():
     def __init__(self):
-        self.order2d: list[list[int]] = None
         self.draw_lines = DRAW_LINES
-
-    def real2pixel2d(self, traj: np.ndarray, w, b, order=[0, 1]):
-        """
-        Transform n-dim trajectories into a series of 2d coordinates
-        """
-        results = []
-        for _order in self.order2d:
-            x = _order[order[0]]
-            y = _order[order[1]]
-
-            _x = gather_dim(traj, x)
-            _y = gather_dim(traj, y)
-
-            _xp = w[0] * _x + b[0]
-            _yp = w[1] * _y + b[1]
-
-            results += [_xp, _yp]
-
-        return np.stack(results, axis=-1)
 
     def draw_single(self, source: np.ndarray,
                     inputs: np.ndarray,
@@ -117,7 +97,6 @@ class BaseVisHelper():
 class CoordinateHelper(BaseVisHelper):
     def __init__(self):
         super().__init__()
-        self.order2d = [[0, 1]]
 
     def draw_single(self, source: np.ndarray,
                     inputs: np.ndarray,
@@ -154,7 +133,6 @@ class CoordinateHelper(BaseVisHelper):
 class BoundingboxHelper(BaseVisHelper):
     def __init__(self):
         super().__init__()
-        self.order2d = [[0, 1], [2, 3]]
 
     def draw_single(self, source: np.ndarray,
                     inputs: np.ndarray,
@@ -240,7 +218,3 @@ def ADD(source: np.ndarray,
                 np.minimum(source[x0:x0+xp, y0:y0+yp, 3:4] +
                            255 * alpha * png_mask, 255)
     return source
-
-
-def gather_dim(traj: np.ndarray, dim: int):
-    return traj.T[dim].T

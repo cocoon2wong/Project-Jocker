@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-19 14:42:04
+@LastEditTime: 2022-10-20 19:36:22
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -109,8 +109,17 @@ class Visualization(BaseManager):
         w = [weights[0], weights[2]]
         b = [weights[1], weights[3]]
 
+        order = self.info.order
         real = scale * real_pos
-        pixel = self.helper.real2pixel2d(real, w, b, self.info.order)
+        real_2d = self.manager.get_member(AnnotationManager) \
+            .get_coordinate_series(real)
+
+        pixel = []
+        for p in real_2d:
+            pixel += [w[0] * p[..., order[0]] + b[0],
+                      w[1] * p[..., order[1]] + b[1]]
+
+        pixel = np.stack(pixel, axis=-1)
 
         if integer:
             pixel = pixel.astype(np.int32)
