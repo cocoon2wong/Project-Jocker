@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-27 20:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-12 12:45:27
+@LastEditTime: 2022-10-20 20:44:31
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -41,18 +41,18 @@ __SILVERBALLERS_DICT = dict(
 
     # MSN
     msna=[agents.MSNAlpha, agents.MSNAlphaModel],
+    msnb=[handlers.MSNBeta, handlers.MSNBetaModel],
 
     # V^2-Net
     va=[agents.VA, agents.VAModel],
     agent=[agents.VA, agents.VAModel],
+    vb=[handlers.VB, handlers.VBModel],
 
     # agent47 series
     agent47B=[agents.Agent47B, agents.Agent47BModel],
     agent47C=[agents.Agent47C, agents.Agent47CModel],
     agent47CE=[agents.Agent47CE, agents.Agent47CEModel],
 
-    # Handler Structures and Models
-    vb=[handlers.VB, handlers.VBModel],
 
     # Silverballers Structures (Traditional)
     V=[V, None],
