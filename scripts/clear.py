@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-07-19 11:11:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-07 09:11:20
+@LastEditTime: 2022-10-20 15:06:18
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -74,7 +74,8 @@ def clean_dirs(base_dir):
 
         files = os.listdir(cd)
 
-        if len(files) == 0:
+        if ((len(files) == 0) or 
+            (len(files) == 1 and files[0] == '.DS_Store')):
             os.system(f'rm -r {cd}')
             print(f'Removed `{cd}.`')
 
