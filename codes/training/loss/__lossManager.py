@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 11:13:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-17 11:35:48
+@LastEditTime: 2022-10-20 10:47:33
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,7 +13,8 @@ from typing import Any
 import tensorflow as tf
 
 from ...base import BaseManager
-from .__ade import ADE
+from ...dataset import AnnotationManager
+from .__ade import ADE_2D
 from .__iou import AIoU, FIoU
 
 
@@ -30,15 +31,15 @@ class LossManager(BaseManager):
 
         super().__init__(manager=manager, name=name)
 
+        self.AIoU = AIoU
+        self.FIoU = FIoU
+
         self.loss_list = []
         self.loss_weights = []
 
-        if self.args.anntype == 'coordinate':
-            self.order = [[0, 1]]
-        elif self.args.anntype == 'boundingbox':
-            self.order = [[0, 1], [2, 3]]
-        else:
-            raise NotImplementedError(self.args.anntype)
+    @property
+    def picker(self) -> AnnotationManager:
+        return self.manager.get_member(AnnotationManager)
 
     @property
     def p_index(self) -> tf.Tensor:
@@ -121,7 +122,7 @@ class LossManager(BaseManager):
         Support M-dimensional trajectories.
         """
         labels_pickled = tf.gather(labels, self.p_index, axis=1)
-        return ADE(outputs, labels_pickled, coe=coe)
+        return ADE_2D(outputs[0], labels_pickled, coe=coe)
 
     def avgKey(self, outputs: list[tf.Tensor],
                labels: tf.Tensor,
@@ -144,7 +145,7 @@ class LossManager(BaseManager):
 
         labels_key = tf.gather(labels, self.p_index, axis=-2)
 
-        return ADE([pred], labels_key, coe)
+        return ADE_2D(pred, labels_key, coe)
 
     def ADE(self, outputs: list[tf.Tensor],
             labels: tf.Tensor,
@@ -159,16 +160,14 @@ class LossManager(BaseManager):
         :param labels: shape is `(batch, pred, 2)`
         """
         pred = outputs[0]
-        order = self.order
 
         if pred.ndim == 3:
             pred = pred[:, tf.newaxis, :, :]
 
         ade = []
-        for [x, y] in order:
-            _pred = tf.gather(pred, [x, y], axis=-1)
-            _labels = tf.gather(labels, [x, y], axis=-1)
-            ade.append(ADE([_pred], _labels, coe))
+        for p, gt in zip(self.picker.get_coordinate_series(pred),
+                         self.picker.get_coordinate_series(labels)):
+            ade.append(ADE_2D(p, gt, coe))
 
         return tf.reduce_mean(ade)
 
@@ -194,20 +193,6 @@ class LossManager(BaseManager):
         labels_final = labels[..., -1:, :]
 
         return self.ADE([pred_final], labels_final, coe)
-
-    def AIoU(self, outputs: list[tf.Tensor],
-             labels: tf.Tensor,
-             coe: float = 1.0,
-             *args, **kwargs):
-
-        return AIoU(outputs, labels, coe=1.0)
-
-    def FIoU(self, outputs: list[tf.Tensor],
-             labels: tf.Tensor,
-             coe: float = 1.0,
-             *args, **kwargs):
-
-        return FIoU(outputs, labels, coe=1.0, index=-1)
 
     def HIoU(self, outputs: list[tf.Tensor],
              labels: tf.Tensor,

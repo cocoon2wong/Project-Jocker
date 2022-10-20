@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 09:06:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-12 10:56:06
+@LastEditTime: 2022-10-19 15:05:13
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,20 +11,20 @@
 import tensorflow as tf
 
 
-def ADE(outputs: list[tf.Tensor],
-        GT: tf.Tensor,
-        coe: float = 1.0) -> tf.Tensor:
+def ADE_2D(pred: tf.Tensor,
+           GT: tf.Tensor,
+           coe: float = 1.0) -> tf.Tensor:
     """
     Calculate `ADE` or `minADE`.
 
-    :param pred: pred traj, shape = `[batch, (K), pred, 2]`
-    :param GT: ground truth future traj, shape = `[batch, pred, 2]`
+    :param pred: The predicted trajectories with shape = \
+        `(batch, K, steps, 2)` or `(batch, steps, 2)`.
+    :param GT: Ground truth future trajectory, shape = `(batch, steps, 2)`.
+
     :return loss_ade:
         Return `ADE` when input_shape = [batch, pred_frames, 2];
         Return `minADE` when input_shape = [batch, K, pred_frames, 2].
     """
-    pred = outputs[0]
-
     if pred.ndim == 3:
         pred = pred[:, tf.newaxis, :, :]
 
@@ -37,41 +37,42 @@ def ADE(outputs: list[tf.Tensor],
     return coe * tf.reduce_mean(best_ade)
 
 
-def FDE(outputs: list[tf.Tensor],
-        GT: tf.Tensor,
-        coe: float = 1.0) -> tf.Tensor:
+def FDE_2D(pred: tf.Tensor,
+           GT: tf.Tensor,
+           coe: float = 1.0) -> tf.Tensor:
     """
     Calculate `FDE` or `minFDE`
 
-    :param pred: pred traj, shape = `[batch, pred, 2]`
-    :param GT: ground truth future traj, shape = `[batch, pred, 2]`
+    :param pred: The predicted trajectories with shape = \
+        `(batch, K, steps, 2)` or `(batch, steps, 2)`.
+    :param GT: Ground truth future trajectory, shape = `(batch, steps, 2)`.
+
     :return fde:
         Return `FDE` when input_shape = [batch, pred_frames, 2];
         Return `minFDE` when input_shape = [batch, K, pred_frames, 2].
     """
-    pred = outputs[0]
-    return ADE([pred[..., -1:, :]], GT[..., -1:, :], coe=coe)
+    return ADE_2D([pred[..., -1:, :]], GT[..., -1:, :], coe=coe)
 
 
-def diff(outputs: list[tf.Tensor],
+def diff(pred: tf.Tensor,
          GT: tf.Tensor,
          ordd: int = 2,
          coe: float = 1.0) -> list[tf.Tensor]:
     """
     loss_functions with diference limit
 
-    :param pred: pred traj, shape = `[(K,) batch, pred, 2]`
-    :param GT: ground truth future traj, shape = `[batch, pred, 2]`
+    :param pred: The predicted trajectories with shape = \
+        `(batch, K, steps, 2)` or `(batch, steps, 2)`.
+    :param GT: Ground truth future trajectory, shape = `(batch, steps, 2)`.
+
     :return loss: a list of Tensor, `len(loss) = ord + 1`
     """
-    pred = outputs[0]
-
     pred_diff = __difference(pred, ordd=ordd)
     GT_diff = __difference(GT, ordd=ordd)
 
     loss = []
     for pred_, gt_ in zip(pred_diff, GT_diff):
-        loss.append(ADE([pred_], gt_, coe=coe))
+        loss.append(ADE_2D([pred_], gt_, coe=coe))
 
     return loss
 

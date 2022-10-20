@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-17 17:31:28
+@LastEditTime: 2022-10-20 10:38:40
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -216,7 +216,10 @@ class Model(tf.keras.Model, BaseManager):
         self.load_weights(os.path.join(weights_dir, weights_name))
 
     def print_info(self, **kwargs):
-        p_layers = [l.name for l in self.processor.layers]
+        try:
+            p_layers = [l.name for l in self.processor.layers]
+        except:
+            p_layers = None
 
         info = {'Model type': type(self).__name__,
                 'Model name': self.args.model_name,

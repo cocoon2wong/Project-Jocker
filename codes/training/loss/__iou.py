@@ -13,7 +13,8 @@ import tensorflow as tf
 
 def AIoU(outputs: list[tf.Tensor],
          GT: tf.Tensor,
-         coe: float = 1.0) -> tf.Tensor:
+         coe: float = 1.0,
+         *args, **kwargs) -> tf.Tensor:
     """
     Calculate the average IoU on predicted bounding boxes among the `time` axis.
     It is only used for models with `anntype == 'boundingbox'`.
@@ -38,7 +39,8 @@ def FIoU(outputs: list[tf.Tensor],
          GT: tf.Tensor,
          coe: float = 1.0,
          index: int = -1,
-         length: int = 1) -> tf.Tensor:
+         length: int = 1,
+         *args, **kwargs) -> tf.Tensor:
     """
     Calculate the IoU on the final prediction time step.
     It is only used for models with `anntype == 'boundingbox'`.

@@ -2,11 +2,13 @@
 @Author: Conghao Wong
 @Date: 2022-08-30 09:52:17
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-19 15:50:40
+@LastEditTime: 2022-10-20 10:44:49
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
+
+from typing import Union
 
 import numpy as np
 import tensorflow as tf
@@ -18,6 +20,8 @@ T_2D_BOUNDINGBOX = 'boundingbox'
 T_2D_BOUNDINGBOX_ROTATE = 'boundingbox-rotate'
 T_3D_BOUNDINGBOX = '3Dboundingbox'
 T_3D_BOUNDINGBOX_ROTATE = '3Dboundingbox-rotate'
+
+_T_2D_COORDINATE_SERIES = 'coordinate-series'
 
 
 class _BaseAnnType():
@@ -43,70 +47,75 @@ class _BaseAnnType():
             raise ValueError(f'Transfer from {T_c} to {T} is not supported.')
 
         else:
-            M = traj.shape[-1]
-
-            if issubclass(type(traj), np.ndarray):
-                _traj = np.stack([traj[..., m] for m in np.arange(M)])
-            elif issubclass(type(traj), tf.Tensor):
-                _traj = tf.stack([traj[..., m] for m in tf.range(M)])
-            else:
-                raise TypeError(traj)
-
-            # shape of `_traj` is (dim, ...)
-            return self._transfer(T, _traj)
+            return self._transfer(T, traj)
 
     def _transfer(self, target, traj: np.ndarray) -> np.ndarray:
         raise NotImplementedError
+
+
+class _SeriesOfSingleCoordinate(_BaseAnnType):
+    def __init__(self) -> None:
+        self.typeName = _T_2D_COORDINATE_SERIES
+        self.dim = 2
+        self.targets = []
 
 
 class _Coordinate(_BaseAnnType):
     def __init__(self) -> None:
         self.typeName = T_2D_COORDINATE
         self.dim = 2
-        self.targets = []
+        self.targets = [_SeriesOfSingleCoordinate]
+
+    def _transfer(self, T: type[_BaseAnnType], traj: np.ndarray):
+        if T == _SeriesOfSingleCoordinate:
+            # return shape = (1, ..., steps, 2)
+            return [traj]
+
+        else:
+            raise NotImplementedError(T)
 
 
 class _Boundingbox(_BaseAnnType):
     def __init__(self) -> None:
         self.typeName = T_2D_BOUNDINGBOX
         self.dim = 4
-        self.targets = [_Coordinate]
+        self.targets = [_Coordinate, _SeriesOfSingleCoordinate]
 
     def _transfer(self, T: type[_BaseAnnType], traj: np.ndarray):
+
+        p1 = traj[..., 0:2]
+        p2 = traj[..., 2:4]
+
         if T == _Coordinate:
-            xl, yl, xr, yr = traj[:4]
+            # return shape = (..., steps, 2)
+            return 0.5 * (p1 + p2)
 
-            if issubclass(type(traj), np.ndarray):
-                stack = np.stack
-            elif issubclass(type(traj), tf.Tensor):
-                stack = tf.stack
-            else:
-                raise TypeError(traj)
-
-            return 0.5 * stack((xl+xr, yl+yr), axis=-1)
+        elif T == _SeriesOfSingleCoordinate:
+            # return shape = (2, ..., steps, 2)
+            return [p1, p2]
 
         else:
-            raise NotImplementedError
+            raise NotImplementedError(T)
 
 
 class _3DBoundingboxWithRotate(_BaseAnnType):
     def __init__(self) -> None:
         self.typeName = T_3D_BOUNDINGBOX_ROTATE
         self.dim = 10
-        self.targets = [_Coordinate]
+        self.targets = [_Coordinate, _SeriesOfSingleCoordinate]
 
     def _transfer(self, T: type[_BaseAnnType], traj: np.ndarray):
+
+        p1 = traj[..., 0:3]
+        p2 = traj[..., 3:6]
+
         if T == _Coordinate:
-            xl, yl, xr, yr = traj[:4]
+            # return shape = (..., steps, 2)
+            return 0.5 * (p1 + p2)[..., 0:2]
 
-            if issubclass(type(traj), np.ndarray):
-                stack = np.stack
-            elif issubclass(type(traj), tf.Tensor):
-                stack = tf.stack
-            else:
-                raise TypeError(traj)
-
-            return 0.5 * stack((xl+xr, yl+yr), axis=-1)
+        elif T == _SeriesOfSingleCoordinate:
+            # return shape = (2, ..., steps, 3)
+            return [p1, p2]
 
         else:
             raise NotImplementedError
@@ -164,19 +173,35 @@ class AnnotationManager(BaseManager):
         self.center_picker = Picker(datasetType=self.p_type,
                                     predictionType=T_2D_COORDINATE)
 
-    def get(self, inputs: np.ndarray):
+        self.single_picker = Picker(datasetType=self.p_type,
+                                    predictionType=_T_2D_COORDINATE_SERIES)
+
+    def get(self, inputs: Union[tf.Tensor, np.ndarray]):
         """
         Get data with target annotations from original dataset files.
         """
         return self.dataset_picker.get(inputs)
 
-    def get_center(self, inputs: np.ndarray):
+    def get_center(self, inputs: Union[tf.Tensor, np.ndarray]):
         """
         Get the center of trajectories from the processed data.
         Note that annotation type of `inputs` is the same as model's
         prediction type. (Not the dataset's annotation type.)
         """
         return self.center_picker.get(inputs)
+
+    def get_coordinate_series(self, inputs: Union[tf.Tensor, np.ndarray]) \
+            -> Union[list[tf.Tensor], list[np.ndarray]]:
+        """
+        Reshape inputs trajectories into a series of single coordinates.
+        Note that annotation type of `inputs` is the same as model's
+        prediction type. (Not the dataset's annotation type.)
+        For example, when inputs has the annotation type `boundingbox`,
+        then this function will reshape it into two slices of single
+        2D coordinates with shapes `(..., steps, 2)`, and then return
+        a list that containing them.
+        """
+        return self.single_picker.get(inputs)
 
     def print_info(self, **kwargs):
         info = {'Dataset annotation type': self.d_type,
@@ -197,5 +222,21 @@ def get_manager(anntype: str) -> _BaseAnnType:
         raise NotImplementedError(anntype)
     elif anntype == T_3D_BOUNDINGBOX_ROTATE:
         return _3DBoundingboxWithRotate()
+    elif anntype == _T_2D_COORDINATE_SERIES:
+        return _SeriesOfSingleCoordinate()
     else:
         raise NotImplementedError(anntype)
+
+
+def isNumpy(value):
+    if issubclass(type(value), np.ndarray):
+        return True
+    else:
+        return False
+
+
+def isTensor(value):
+    if issubclass(type(value), tf.Tensor):
+        return True
+    else:
+        return False

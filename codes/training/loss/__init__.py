@@ -8,6 +8,6 @@
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-from .__ade import ADE, FDE, diff
+from .__ade import ADE_2D, FDE_2D, diff
 from .__iou import AIoU, FIoU
 from .__lossManager import LossManager
