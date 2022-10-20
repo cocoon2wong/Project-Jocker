@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-17 14:57:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-19 14:56:16
+@LastEditTime: 2022-10-20 20:41:43
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -49,7 +49,7 @@ class _BaseManager():
             pass
 
         # create or restore a logger
-        logger = logging.getLogger(name=type(self).__name__)
+        logger = logging.getLogger(name=f'`{name}` ({type(self).__name__})')
 
         if not logger.hasHandlers():
             logger.setLevel(logging.INFO)
@@ -64,11 +64,11 @@ class _BaseManager():
 
             # add formatter
             fformatter = logging.Formatter(
-                '[%(asctime)s][%(levelname)s] `%(name)s`: %(message)s')
+                '[%(asctime)s][%(levelname)s] %(name)s: %(message)s')
             fhandler.setFormatter(fformatter)
 
             tformatter = logging.Formatter(
-                '[%(levelname)s] `%(name)s`: %(message)s')
+                '[%(levelname)s] %(name)s: %(message)s')
             thandler.setFormatter(tformatter)
 
             logger.addHandler(fhandler)
