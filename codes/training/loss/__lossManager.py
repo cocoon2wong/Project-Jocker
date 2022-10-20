@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 11:13:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-20 10:47:33
+@LastEditTime: 2022-10-20 19:11:12
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -170,6 +170,30 @@ class LossManager(BaseManager):
             ade.append(ADE_2D(p, gt, coe))
 
         return tf.reduce_mean(ade)
+
+    def avgCenter(self, outputs: list[tf.Tensor],
+                  labels: tf.Tensor,
+                  coe: float = 1.0,
+                  *args, **kwargs):
+        """
+        Average displacement error on the center of each prediction.
+        """
+        pred = outputs[0]
+        pred_center = self.picker.get_center(pred)
+        gt_center = self.picker.get_center(labels)
+        return ADE_2D(pred_center, gt_center, coe)
+
+    def finalCenter(self, outputs: list[tf.Tensor],
+                    labels: tf.Tensor,
+                    coe: float = 1.0,
+                    *args, **kwargs):
+        """
+        Final displacement error on the center of each prediction.
+        """
+        pred = outputs[0]
+        pred_center = self.picker.get_center(pred)
+        gt_center = self.picker.get_center(labels)
+        return ADE_2D(pred_center[..., -1:, :], gt_center[..., -1:, :], coe)
 
     def FDE(self, outputs: list[tf.Tensor],
             labels: tf.Tensor,
