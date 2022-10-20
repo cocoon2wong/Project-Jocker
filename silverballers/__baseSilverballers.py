@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-17 17:24:15
+@LastEditTime: 2022-10-20 19:10:13
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,9 +10,10 @@
 
 import tensorflow as tf
 from codes.basemodels import Model
+from codes.dataset import AnnotationManager, DatasetManager
 from codes.training import Structure
 
-from .__args import SilverballersArgs, AgentArgs
+from .__args import AgentArgs, SilverballersArgs
 from .agents import BaseAgentModel, BaseAgentStructure
 from .handlers import (BaseHandlerModel, BaseHandlerStructure,
                        LinearHandlerModel)
@@ -49,15 +50,32 @@ class BaseSilverballersModel(Model):
              training=None, mask=None,
              *args, **kwargs):
 
-        # call the first stage model
-        agent_inputs = [inputs[i] for i in self.agent_input_index]
-        agent_proposals = self.agent.forward(agent_inputs)[0]
+        if self.args.auto_dimension and \
+           self.agent.args.anntype == 'coordinate' and \
+           self.manager.get_member(DatasetManager).info.anntype == 'boundingbox':
 
-        # call the second stage model
-        handler_inputs = [inputs[i] for i in self.handler_input_index]
-        handler_inputs.append(agent_proposals)
-        final_results = self.handler.forward(handler_inputs)[0]
-        return (final_results,)
+            # Flatten into a series of 2D points
+            all_trajs = self.manager.get_member(AnnotationManager) \
+                .get_coordinate_series(inputs[0])
+
+        else:
+            all_trajs = [inputs[0]]
+
+        all_predictions = []
+        for traj in all_trajs:
+            inputs_new = (traj,) + inputs[1:]
+
+            # call the first stage model
+            agent_inputs = [inputs_new[i] for i in self.agent_input_index]
+            agent_proposals = self.agent.forward(agent_inputs)[0]
+
+            # call the second stage model
+            handler_inputs = [inputs_new[i] for i in self.handler_input_index]
+            handler_inputs.append(agent_proposals)
+            final_results = self.handler.forward(handler_inputs)[0]
+            all_predictions.append(final_results)
+
+        return (tf.concat(all_predictions, axis=-1),)
 
     def print_info(self, **kwargs):
         info = {'Index of keypoints': self.agent.p_index,
@@ -115,6 +133,23 @@ class BaseSilverballers(Structure):
 
         # init the structure
         super().__init__(self.args)
+
+        if self.args.auto_dimension:
+            self.args._set('anntype', self.get_member(
+                DatasetManager).info.anntype)
+
+        if self.args.anntype == 'boundingbox':
+            self.metrics.set({self.metrics.ADE: 1.0,
+                              self.metrics.FDE: 0.0,
+                              self.metrics.avgCenter: 0.0,
+                              self.metrics.finalCenter: 0.0,
+                              self.metrics.AIoU: 0.0,
+                              self.metrics.HIoU: 0.0,
+                              self.metrics.FIoU: 0.0})
+        else:
+            self.metrics.set({self.metrics.ADE: 1.0,
+                              self.metrics.FDE: 0.0})
+
         self.noTraining = True
 
         # config second-stage model

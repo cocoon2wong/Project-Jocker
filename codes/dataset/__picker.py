@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-30 09:52:17
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-20 10:44:49
+@LastEditTime: 2022-10-20 11:09:01
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -56,7 +56,7 @@ class _BaseAnnType():
 class _SeriesOfSingleCoordinate(_BaseAnnType):
     def __init__(self) -> None:
         self.typeName = _T_2D_COORDINATE_SERIES
-        self.dim = 2
+        self.dim = None
         self.targets = []
 
 
@@ -166,6 +166,9 @@ class AnnotationManager(BaseManager):
 
         self.d_type = dataset_type
         self.p_type = self.args.anntype
+
+        if self.args.auto_dimension:
+            self.p_type = dataset_type
 
         self.dataset_picker = Picker(datasetType=dataset_type,
                                      predictionType=self.p_type)
