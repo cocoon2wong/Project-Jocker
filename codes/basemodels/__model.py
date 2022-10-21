@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-20 10:38:40
+@LastEditTime: 2022-10-21 15:19:27
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -30,7 +30,7 @@ UPSAMPLING = 'UPSAMPLING'
 
 class Model(tf.keras.Model, BaseManager):
     """
-    Model
+    Model (Model Manager)
     -----
 
     Usage
@@ -57,11 +57,15 @@ class Model(tf.keras.Model, BaseManager):
     --------------
     ```python
     # forward model with pre-process and post-process
-    (method) forward: (self: Model, model_inputs: list[Tensor], training=None, *args, **kwargs) -> list[Tensor]
+    (method) forward: (self: Self@Model,
+                       inputs: list[Tensor],
+                       training: Any | None = None) -> list[Tensor]
 
-    # Pre/Post-processes
-    (method) pre_process: (self: Model, tensors: list[Tensor], training=None, use_new_para_dict=True, *args, **kwargs) -> list[Tensor]
-    (method) post_process: (self: Model, outputs: list[Tensor], training=None, *args, **kwargs) -> list[Tensor]
+    # Set model inputs
+    (method) set_inputs: (self: Self@Model, *args: Any) -> None
+
+    # Set pre/post-process methods
+    (method) set_preprocess: (self: Self@Model, **kwargs: Any) -> None
     ```
     """
 

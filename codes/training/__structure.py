@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-19 14:39:50
+@LastEditTime: 2022-10-21 14:20:05
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -23,6 +23,28 @@ from .loss import LossManager
 
 
 class Structure(BaseManager):
+    """
+    Structure
+    ---------
+    Training manager that manages all training/test-related methods.
+
+    Member Managers
+    ---------------
+    - Model, `type = Model`;
+    - Dataset Manager, `type = DatasetManager`;
+    - Annotation Manager, `type = AnnotationManager`;
+    - Loss Manager, `type = LossManager`;
+    - Metrics Manager, `type = LossManager`.
+
+    Public Methods
+    --------------
+    ```python
+    # Start training or testing
+    (method) train_or_test: (self: Self@Structure) -> None
+    ```
+
+    Other methods should be rewrote when subclassing.
+    """
 
     def __init__(self, args: list[str] = None,
                  manager: BaseManager = None,
@@ -225,10 +247,8 @@ class Structure(BaseManager):
         if r:
             metric, metrics_dict, outputs, labels = r
             self.print_test_results(metrics_dict)
-            self.write_test_results(
-                outputs=outputs,
-                agents=self.dsmanager.get_member(AgentManager, mindex=0),
-                clips=self.dsmanager.processed_clips['test'])
+            self.write_test_results(outputs=outputs,
+                                    clips=self.dsmanager.processed_clips['test'])
 
     def __train(self, ds_train: tf.data.Dataset, ds_val: tf.data.Dataset):
         """
@@ -455,6 +475,9 @@ class Structure(BaseManager):
         return super().print_info(**kwargs)
 
     def print_train_results(self, best_epoch: int, best_metric: float):
+        """
+        Print train results on the screen.
+        """
         self.log('Training done.')
         self.log('During training, the model reaches the best metric ' +
                  f'`{best_metric}` at epoch {best_epoch}.')
@@ -467,6 +490,9 @@ class Structure(BaseManager):
                  f'`python main.py --load {self.args.log_dir}`.')
 
     def print_test_results(self, loss_dict: dict[str, float], **kwargs):
+        """
+        Print test results on the screen.
+        """
         self.print_parameters(title='Test Results',
                               **kwargs,
                               **loss_dict)
@@ -474,9 +500,13 @@ class Structure(BaseManager):
                  f'load: {self.args.load}, ' +
                  f'metrics: {loss_dict}')
 
-    def write_test_results(self, outputs: list[tf.Tensor],
-                           agents: AgentManager,
-                           clips: list[str]):
+    def write_test_results(self, outputs: list[tf.Tensor], clips: list[str]):
+        """
+        Save visualized prediction results.
+        """
+
+        # get agents' information
+        agents = self.dsmanager.get_member(AgentManager, mindex=0)
 
         if (((self.args.draw_results != 'null') or
              (self.args.draw_videos != 'null'))
@@ -507,9 +537,8 @@ class Structure(BaseManager):
                 agent = agents.agents[index]
                 agent._traj_pred = pred_all[index]
 
-                d = self.args.draw_distribution
-                if d >= 100:
-                    d -= 100
+                # choose to draw as a video or a single image
+                if self.args.draw_videos != 'null':
                     save_image = False
                     frames = agent.frames
                 else:
@@ -519,7 +548,7 @@ class Structure(BaseManager):
                 tv.draw(agent=agent,
                         frames=frames,
                         save_name=save_format.format(index),
-                        draw_dis=d,
+                        draw_dis=self.args.draw_distribution,
                         save_as_images=save_image)
 
             self.log(f'Prediction result images are saved at {img_dir}')

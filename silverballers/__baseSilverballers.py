@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-20 19:10:13
+@LastEditTime: 2022-10-21 15:45:40
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -20,6 +20,19 @@ from .handlers import (BaseHandlerModel, BaseHandlerStructure,
 
 
 class BaseSilverballersModel(Model):
+    """
+    BaseSilverballersModel
+    ---
+    The two-stage silverballers model.
+    NOTE: This model is typically used for testing, not training.
+
+    Member Managers
+    ---
+    - (Soft member) Stage-1 Subnetwork, type is `BaseAgentModel`
+        or a subclass of it;
+    - (Soft member) Stage-2 Subnetwork, type is `BaseHandlerModel`
+        or a subclass of it.
+    """
 
     def __init__(self, Args: SilverballersArgs,
                  agentModel: BaseAgentModel,
@@ -91,12 +104,20 @@ class BaseSilverballersModel(Model):
 
 
 class BaseSilverballers(Structure):
-
     """
+    BaseSilverballers
+    ---
     Basic structure to run the `agent-handler` based silverballers model.
+    NOTE: It is only used for TESTING silverballers models, not training.
     Please set agent model and handler model used in this silverballers by
     subclassing this class, and call the `set_models` method *before*
     the `super().__init__()` method.
+
+    Member Managers
+    ---
+    - Stage-1 Subnetwork Manager, type is `BaseAgentStructure` or its subclass;
+    - Stage-2 Subnetwork Manager, type is `BaseHandlerStructure` or its subclass;
+    - All members from the `Structure`.
     """
 
     # Structures

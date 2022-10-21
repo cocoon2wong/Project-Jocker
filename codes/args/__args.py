@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-20 11:07:17
+@LastEditTime: 2022-10-21 15:41:08
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -188,7 +188,7 @@ class Args():
         """
         Name of the video dataset to train or evaluate.
         For example, `'ETH-UCY'` or `'SDD'`.
-        DO NOT set this argument manually.
+        NOTE: DO NOT set this argument manually.
         """
         if self.force_dataset != 'null':
             return self.force_dataset
@@ -231,10 +231,10 @@ class Args():
     @property
     def force_clip(self) -> str:
         """
-        Force test video clip.
-        It only works when `test_mode` is `one`. 
+        Force test video clip (ignore the train/test split).
+        It only works when `test_mode` has been set to `one`. 
         """
-        if not self.draw_results in ['null', '0', '1']:
+        if self.draw_results != 'null':
             self._set('force_clip', self.draw_results)
 
         if self.draw_videos != 'null':
@@ -245,15 +245,16 @@ class Args():
     @property
     def force_dataset(self) -> str:
         """
-        Force test dataset. 
+        Force test dataset (ignore the train/test split).
+        It only works when `test_mode` has been set to `one`.
         """
         return self._get('force_dataset', 'null', argtype=TEMPORARY)
 
     @property
     def force_split(self) -> str:
         """
-        Force test dataset. 
-        Only works when evaluating when `test_mode` is `one`.
+        Force test dataset (ignore the train/test split). 
+        It only works when `test_mode` has been set to `one`.
         """
         return self._get('force_split', 'null', argtype=TEMPORARY)
 
@@ -263,6 +264,7 @@ class Args():
         Speed up training or test if you have at least one nvidia GPU. 
         If you have no GPUs or want to run the code on your CPU, 
         please set it to `-1`.
+        NOTE: It only supports training or test on one GPU.
         """
         return self._get('gpu', '0', argtype=TEMPORARY)
 
@@ -274,26 +276,22 @@ class Args():
         return self._get('save_base_dir', './logs', argtype=STATIC)
 
     @property
-    def save_model(self) -> int:
-        """
-        Controls if save the final model at the end of training.
-        """
-        return self._get('save_model', 1, argtype=STATIC)
-
-    @property
     def start_test_percent(self) -> float:
         """
-        Set when to start validation during training.
-        Range of this arg is `0 <= x <= 1`. 
-        Validation will start at `epoch = args.epochs * args.start_test_percent`.
+        Set when (at which epoch) to start validation during training.
+        Range of this arg should be `0 <= x <= 1`. 
+        Validation may start at epoch
+        `args.epochs * args.start_test_percent`.
         """
         return self._get('start_test_percent', 0.0, argtype=STATIC)
 
     @property
     def log_dir(self) -> str:
         """
-        Folder to save training logs and models. If set to `null`,
-        logs will save at `args.save_base_dir/current_model`.
+        Folder to save training logs and model weights.
+        Logs will save at `args.save_base_dir/current_model`.
+        DO NOT change this arg manually. (You can still change
+        the path by passing the `save_base_dir` arg.)
         """
         if not 'log_dir' in self._args_default.keys():
             log_dir_current = (TIME +
@@ -310,8 +308,9 @@ class Args():
     @property
     def load(self) -> str:
         """
-        Folder to load model. If set to `null`,
-        it will start training new models according to other args.
+        Folder to load model (to test). If set to `null`, the
+        training manager will start training new models according
+        to other given args.
         """
         return self._get('load', 'null', argtype=TEMPORARY)
 
@@ -377,20 +376,20 @@ class Args():
     @property
     def draw_results(self) -> str:
         """
-        Controls if draw visualized results on video frames and save as images.
-        Accept the name of one video clip.
-        The codes will first try to load the video according to the path
-        saved in the `plist` file, and if successful it will draw the
-        visualization on the video, otherwise it will draw on a blank canvas.
-        Note that `test_mode` will be set to `'one'` and `force_split`
-        will be set to `draw_results` if `draw_results != 'null'`.
+        Controls whether to draw visualized results on video frames.
+        Accept the name of one video clip. The codes will first try to
+        load the video file according to the path saved in the `plist`
+        file (saved in `dataset_configs` folder), and if it loads successfully
+        it will draw the results on that video, otherwise it will draw results
+        on a blank canvas. Note that `test_mode` will be set to `'one'` and
+        `force_split` will be set to `draw_results` if `draw_results != 'null'`.
         """
         return self._get('draw_results', 'null', argtype=TEMPORARY)
 
     @property
     def draw_videos(self) -> str:
         """
-        Controls if draw visualized results on video frames and save as images.
+        Controls whether draw visualized results on video frames and save as images.
         Accept the name of one video clip.
         The codes will first try to load the video according to the path
         saved in the `plist` file, and if successful it will draw the
@@ -434,7 +433,7 @@ class Args():
         When set it to `all`, it will test on each of the test dataset in `args.split`;
         When set it to `mix`, it will test on all test dataset in `args.split` together.
         """
-        if not self.draw_results in ['null', '0', '1']:
+        if self.draw_results != 'null' or self.draw_videos != 'null':
             self._set('test_mode', 'one')
 
         return self._get('test_mode', 'mix', argtype=TEMPORARY)
@@ -450,7 +449,7 @@ class Args():
     def K(self) -> int:
         """
         Number of multiple generations when test.
-        This arg only works for `Generative Models`.
+        This arg only works for multiple-generation models.
         """
         return self._get('K', 20, argtype=DYNAMIC)
 
@@ -458,16 +457,17 @@ class Args():
     def K_train(self) -> int:
         """
         Number of multiple generations when training.
-        This arg only works for `Generative Models`.
+        This arg only works for multiple-generation models.
         """
         return self._get('K_train', 10, argtype=STATIC)
 
     @property
     def use_extra_maps(self) -> int:
         """
-        Controls if uses the calculated trajectory maps or the given trajectory maps. 
-        The model will load maps from `./dataset_npz/.../agent1_maps/trajMap.png`
-        if set it to `0`, and load from `./dataset_npz/.../agent1_maps/trajMap_load.png` 
+        Controls if uses the calculated trajectory maps or the given
+        trajectory maps. The training manager will load maps from 
+        `./dataset_npz/.../agent1_maps/trajMap.png` if set it to `0`,
+        and load from `./dataset_npz/.../agent1_maps/trajMap_load.png` 
         if set this argument to `1`.
         """
         return self._get('use_extra_maps', 0, argtype=DYNAMIC)
@@ -476,7 +476,9 @@ class Args():
     def dim(self) -> int:
         """
         Dimension of the `trajectory`.
-        For example, (x, y) -> `dim = 2`.
+        For example,
+        - coordinate (x, y) -> `dim = 2`;
+        - boundingbox (xl, yl, xr, yr) -> `dim = 4`.
         """
         if self.anntype == 'coordinate':
             dim = 2
@@ -492,7 +494,7 @@ class Args():
     @property
     def anntype(self) -> str:
         """
-        Type of annotations in the predicted trajectories.
+        Model's predicted annotation type.
         Canbe `'coordinate'` or `'boundingbox'`.
         """
         return self._get('anntype', 'coordinate', argtype=STATIC)
@@ -500,7 +502,7 @@ class Args():
     @property
     def interval(self) -> float:
         """
-        Time interval of each sampled trajectory coordinate.
+        Time interval of each sampled trajectory points.
         """
         return self._get('interval', 0.4, argtype=STATIC)
 
@@ -528,7 +530,7 @@ class Args():
     @property
     def update_saved_args(self) -> int:
         """
-        Choose if update (overwrite) json arg files or not.
+        Choose whether to update (overwrite) the saved arg files or not.
         """
         return self._get('update_saved_args', 0, argtype=TEMPORARY)
 
@@ -536,9 +538,9 @@ class Args():
     def auto_dimension(self) -> int:
         """
         Choose whether to handle the dimension adaptively.
-        It is only used for silverballers models that are trained with
-        annotation type `coordinate` but want to test on datasets with
-        annotation type `boundingbox`.
+        It is now only used for silverballers models that are trained
+        with annotation type `coordinate` but want to test on datasets
+        with annotation type `boundingbox`.
         """
         return self._get('auto_dimension', 0, argtype=TEMPORARY)
     

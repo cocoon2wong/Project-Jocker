@@ -187,22 +187,25 @@ Instruction for the `argtype`:
 ### Basic args
 
 - `--K_train`, type=`int`, argtype=`STATIC`.
-  Number of multiple generations when training. This arg only works for `Generative Models`.
+  Number of multiple generations when training. This arg only works for multiple-generation models.
   The default value is `10`.
 - `--K`, type=`int`, argtype=`DYNAMIC`.
-  Number of multiple generations when test. This arg only works for `Generative Models`.
+  Number of multiple generations when test. This arg only works for multiple-generation models.
   The default value is `20`.
 - `--anntype`, type=`str`, argtype=`STATIC`.
-  Type of annotations in the predicted trajectories. Canbe `'coordinate'` or `'boundingbox'`.
+  Model's predicted annotation type. Canbe `'coordinate'` or `'boundingbox'`.
   The default value is `'coordinate'`.
+- `--auto_dimension`, type=`int`, argtype=`TEMPORARY`.
+  Choose whether to handle the dimension adaptively. It is now only used for silverballers models that are trained with annotation type `coordinate` but want to test on datasets with annotation type `boundingbox`.
+  The default value is `0`.
 - `--batch_size`, type=`int`, argtype=`DYNAMIC`.
   Batch size when implementation.
   The default value is `5000`.
 - `--dataset`, type=`str`, argtype=`STATIC`.
-  Name of the video dataset to train or evaluate. For example, `'ETH-UCY'` or `'SDD'`. DO NOT set this argument manually.
+  Name of the video dataset to train or evaluate. For example, `'ETH-UCY'` or `'SDD'`. NOTE: DO NOT set this argument manually.
   The default value is `'error'`.
 - `--dim`, type=`int`, argtype=`STATIC`.
-  Dimension of the `trajectory`. For example, (x, y) -> `dim = 2`.
+  Dimension of the `trajectory`. For example, - coordinate (x, y) -> `dim = 2`; - boundingbox (xl, yl, xr, yr) -> `dim = 4`.
   The default value is `dim`.
 - `--draw_distribution`, type=`int`, argtype=`TEMPORARY`.
   Conrtols if draw distributions of predictions instead of points. If `draw_distribution == 0`, it will draw results as normal coordinates; If `draw_distribution == 1`, it will draw all results in the distribution way, and points from different time steps will be drawn with different colors.
@@ -211,34 +214,34 @@ Instruction for the `argtype`:
   Indexes of test agents to visualize. Numbers are split with `_`. For example, `'123_456_789'`.
   The default value is `'all'`.
 - `--draw_results`, type=`str`, argtype=`TEMPORARY`.
-  Controls if draw visualized results on video frames and save as images. Accept the name of one video clip. The codes will first try to load the video according to the path saved in the `plist` file, and if successful it will draw the visualization on the video, otherwise it will draw on a blank canvas. Note that `test_mode` will be set to `'one'` and `force_split` will be set to `draw_results` if `draw_results != 'null'`.
+  Controls whether to draw visualized results on video frames. Accept the name of one video clip. The codes will first try to load the video file according to the path saved in the `plist` file (saved in `dataset_configs` folder), and if it loads successfully it will draw the results on that video, otherwise it will draw results on a blank canvas. Note that `test_mode` will be set to `'one'` and `force_split` will be set to `draw_results` if `draw_results != 'null'`.
   The default value is `'null'`.
 - `--draw_videos`, type=`str`, argtype=`TEMPORARY`.
-  Controls if draw visualized results on video frames and save as images. Accept the name of one video clip. The codes will first try to load the video according to the path saved in the `plist` file, and if successful it will draw the visualization on the video, otherwise it will draw on a blank canvas. Note that `test_mode` will be set to `'one'` and `force_split` will be set to `draw_videos` if `draw_videos != 'null'`.
+  Controls whether draw visualized results on video frames and save as images. Accept the name of one video clip. The codes will first try to load the video according to the path saved in the `plist` file, and if successful it will draw the visualization on the video, otherwise it will draw on a blank canvas. Note that `test_mode` will be set to `'one'` and `force_split` will be set to `draw_videos` if `draw_videos != 'null'`.
   The default value is `'null'`.
 - `--epochs`, type=`int`, argtype=`STATIC`.
   Maximum training epochs.
   The default value is `500`.
 - `--force_clip`, type=`str`, argtype=`TEMPORARY`.
-  Force test video clip. It only works when `test_mode` is `one`.
+  Force test video clip (ignore the train/test split). It only works when `test_mode` has been set to `one`.
   The default value is `'null'`.
 - `--force_dataset`, type=`str`, argtype=`TEMPORARY`.
-  Force test dataset.
+  Force test dataset (ignore the train/test split). It only works when `test_mode` has been set to `one`.
   The default value is `'null'`.
 - `--force_split`, type=`str`, argtype=`TEMPORARY`.
-  Force test dataset. Only works when evaluating when `test_mode` is `one`.
+  Force test dataset (ignore the train/test split). It only works when `test_mode` has been set to `one`.
   The default value is `'null'`.
 - `--gpu`, type=`str`, argtype=`TEMPORARY`.
-  Speed up training or test if you have at least one nvidia GPU. If you have no GPUs or want to run the code on your CPU, please set it to `-1`.
+  Speed up training or test if you have at least one nvidia GPU. If you have no GPUs or want to run the code on your CPU, please set it to `-1`. NOTE: It only supports training or test on one GPU.
   The default value is `'0'`.
 - `--interval`, type=`float`, argtype=`STATIC`.
-  Time interval of each sampled trajectory coordinate.
+  Time interval of each sampled trajectory points.
   The default value is `0.4`.
 - `--load`, type=`str`, argtype=`TEMPORARY`.
-  Folder to load model. If set to `null`, it will start training new models according to other args.
+  Folder to load model (to test). If set to `null`, the training manager will start training new models according to other given args.
   The default value is `'null'`.
 - `--log_dir`, type=`str`, argtype=`STATIC`.
-  Folder to save training logs and models. If set to `null`, logs will save at `args.save_base_dir/current_model`.
+  Folder to save training logs and model weights. Logs will save at `args.save_base_dir/current_model`. DO NOT change this arg manually. (You can still change the path by passing the `save_base_dir` arg.) 
   The default value is `'null'`.
 - `--lr`, type=`float`, argtype=`STATIC`.
   Learning rate.
@@ -270,14 +273,11 @@ Instruction for the `argtype`:
 - `--save_base_dir`, type=`str`, argtype=`STATIC`.
   Base folder to save all running logs.
   The default value is `'./logs'`.
-- `--save_model`, type=`int`, argtype=`STATIC`.
-  Controls if save the final model at the end of training.
-  The default value is `1`.
 - `--split`, type=`str`, argtype=`STATIC`.
   Dataset split used when training and evaluating.
   The default value is `'zara1'`.
 - `--start_test_percent`, type=`float`, argtype=`STATIC`.
-  Set when to start validation during training. Range of this arg is `0 <= x <= 1`. Validation will start at `epoch = args.epochs * args.start_test_percent`.
+  Set when (at which epoch) to start validation during training. Range of this arg should be `0 <= x <= 1`. Validation may start at epoch `args.epochs * args.start_test_percent`.
   The default value is `0.0`.
 - `--step`, type=`int`, argtype=`DYNAMIC`.
   Frame interval for sampling training data.
@@ -289,10 +289,10 @@ Instruction for the `argtype`:
   Epoch interval to run validation during training. """ return self._get('test_step', 3, argtype=STATIC) """ Trajectory Prediction Args 
   The default value is `3`.
 - `--update_saved_args`, type=`int`, argtype=`TEMPORARY`.
-  Choose if update (overwrite) json arg files or not.
+  Choose whether to update (overwrite) the saved arg files or not.
   The default value is `0`.
 - `--use_extra_maps`, type=`int`, argtype=`DYNAMIC`.
-  Controls if uses the calculated trajectory maps or the given trajectory maps. The model will load maps from `./dataset_npz/.../agent1_maps/trajMap.png` if set it to `0`, and load from `./dataset_npz/.../agent1_maps/trajMap_load.png` if set this argument to `1`.
+  Controls if uses the calculated trajectory maps or the given trajectory maps. The training manager will load maps from `./dataset_npz/.../agent1_maps/trajMap.png` if set it to `0`, and load from `./dataset_npz/.../agent1_maps/trajMap_load.png` if set this argument to `1`.
   The default value is `0`.
 
 ### Silverballers args

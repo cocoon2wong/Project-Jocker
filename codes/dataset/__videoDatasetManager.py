@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:34:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-19 10:58:36
+@LastEditTime: 2022-10-21 14:23:25
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -26,6 +26,12 @@ class DatasetManager(BaseManager):
     ---------------
     Manage all trajectory prediction data from one dataset split,
     and then make them into the `tf.data.Dataset` object to train or test.
+
+    Member Managers
+    ---------------
+    - VideoClip Manager for each video clip, `type = VideoClipManager`;
+    - Main Agent Manager, `type = AgentManager`;
+    - Agent Manager for each video clip, `type = AgentManager`.
 
     Public Methods
     ---

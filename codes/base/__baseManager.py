@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-17 14:57:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-20 20:41:43
+@LastEditTime: 2022-10-21 10:15:30
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -21,24 +21,6 @@ T = TypeVar('T')
 
 
 class _BaseManager():
-    """
-    BaseManager
-    ----------
-    Base class for all structures.
-
-    Public Methods
-    --------------
-    ```python
-    # log information
-    (method) log: (self: BaseObject, s: str, level: str = 'info') -> None
-
-    # print parameters with the format
-    (method) print_parameters: (title='null', **kwargs) -> None
-
-    # timebar
-    (method) log_timebar: (inputs, text='', return_enumerate=True) -> (enumerate | tqdm)
-    ```
-    """
 
     def __init__(self, name: str = None):
         super().__init__()
@@ -162,12 +144,35 @@ class BaseManager(_BaseManager):
 
     Public Methods
     --------------
+    ### Manager and members methods
     ```python
+    # get a member by type
+    (method) get_member: (self: Self@BaseManager,
+                          mtype: Type[T@get_member],
+                          mindex: int = 0) -> T@get_member
+
+    # get all members with the same type
+    (method) find_members_by_type: (self: Self@BaseManager,
+                                    mtype: Type[T@find_members_by_type]) \
+                                         -> list[T@find_members_by_type]
+    ```
+
+    ### Log and print methods
+    ```
     # log information
-    (method) log: (self: BaseObject, s: str, level: str = 'info') -> None
+    (method) log: (self: Self@BaseManager, s: str, level: str = 'info') -> str
 
     # print parameters with the format
-    (method) print_parameters: (title='null', **kwargs) -> None
+    (method) print_parameters: (self: Self@BaseManager, 
+                                title: str = 'null',
+                                **kwargs: Any) -> None
+
+    # print information of the manager object itself
+    (method) print_info: (self: Self@BaseManager, **kwargs: Any) -> None
+
+    # print information of the manager and its members
+    (method) print_info_all: (self: Self@BaseManager,
+                              include_self: bool = True) -> None
 
     # timebar
     (method) log_timebar: (inputs, text='', return_enumerate=True) -> (enumerate | tqdm)
