@@ -2,17 +2,14 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 10:36:15
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-07-27 14:08:41
+@LastEditTime: 2022-10-21 16:02:40
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-from codes.training import loss
-
+from . import agents, handlers
 from .__baseSilverballers import BaseSilverballers
-from . import agents
-from . import handlers
 
 
 class V(BaseSilverballers):

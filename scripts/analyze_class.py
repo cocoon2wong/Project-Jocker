@@ -12,10 +12,10 @@ import inspect
 import os
 import sys
 
+sys.path.insert(0, os.path.abspath('.'))
+
 import codes
 import silverballers
-
-sys.path.insert(0, os.path.abspath('.'))
 
 
 def get_menmber(package):

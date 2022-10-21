@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-23 10:23:53
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-17 15:46:37
+@LastEditTime: 2022-10-21 15:54:22
 @Description: Second stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,9 +10,9 @@
 
 import tensorflow as tf
 from codes.basemodels import layers, transformer
-from silverballers.handlers import BaseHandlerModel, BaseHandlerStructure
 
 from ..__args import HandlerArgs
+from .__baseHandler import BaseHandlerModel, BaseHandlerStructure
 
 
 class VBModel(BaseHandlerModel):

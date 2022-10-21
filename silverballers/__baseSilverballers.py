@@ -2,16 +2,14 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-21 15:45:40
+@LastEditTime: 2022-10-21 15:54:43
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import tensorflow as tf
-from codes.basemodels import Model
-from codes.dataset import AnnotationManager, DatasetManager
-from codes.training import Structure
+from codes.managers import AnnotationManager, DatasetManager, Model, Structure
 
 from .__args import AgentArgs, SilverballersArgs
 from .agents import BaseAgentModel, BaseAgentStructure

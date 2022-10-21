@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-17 17:36:24
+@LastEditTime: 2022-10-21 15:52:51
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,9 +10,7 @@
 
 import numpy as np
 import tensorflow as tf
-from codes.base import SecondaryBar
-from codes.basemodels import Model
-from codes.training import Structure
+from codes.managers import Model, SecondaryBar, Structure
 
 from ..__args import HandlerArgs
 

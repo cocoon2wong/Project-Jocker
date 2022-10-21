@@ -2,15 +2,14 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-17 17:18:34
+@LastEditTime: 2022-10-21 15:50:16
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import tensorflow as tf
-from codes.basemodels import Model
-from codes.training import Structure
+from codes.managers import Model, Structure
 
 from ..__args import AgentArgs
 
