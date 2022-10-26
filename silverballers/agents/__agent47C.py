@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:38
-@LastEditors: Conghao Wong
-@LastEditTime: 2022-10-17 15:43:41
+@LastEditors: Beihao Xia
+@LastEditTime: 2022-10-26 10:00:07
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -47,9 +47,11 @@ class Agent47CModel(BaseAgentModel):
 
         # Bilinear structure (outer product + pooling + fc)
         self.outer = OuterLayer(self.d//2, self.d//2, reshape=False)
+
+        # channels_first only runs on GPU
         self.pooling = tf.keras.layers.MaxPooling2D(
             pool_size=(2, 2),
-            data_format='channels_first')
+            data_format='channels_last')
         self.outer_fc = tf.keras.layers.Dense(self.d//2, tf.nn.tanh)
 
         # Random id encoding
@@ -101,7 +103,9 @@ class Agent47CModel(BaseAgentModel):
         # uses bilinear structure to encode features
         f = self.te.call(trajs)             # (batch, Tsteps, d/2)
         f = self.outer.call(f, f)           # (batch, Tsteps, d/2, d/2)
-        f = self.pooling(f)                 # (batch, Tsteps, d/4, d/4)
+        f = tf.transpose(f, [0, 2, 3, 1])   # (batch, d/2, d/2, Tsteps)
+        f = self.pooling(f)                 # (batch, d/4, d/4, Tsteps)
+        f = tf.transpose(f, [0, 3, 2, 1])   # (batch, Tsteps, d/4, d/4)
         f = tf.reshape(f, [f.shape[0], f.shape[1], -1])
         spec_features = self.outer_fc(f)    # (batch, Tsteps, d/2)
 
