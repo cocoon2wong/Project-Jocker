@@ -41,8 +41,8 @@ class VAModel(BaseAgentModel):
                          structure, *args, **kwargs)
 
         # Layers
-        self.fft = layers.FFTLayer((self.args.obs_frames, 2))
-        self.ifft = layers.IFFTLayer((self.n_key, 2))
+        self.fft = layers.FFTLayer((self.args.obs_frames, self.args.dim))
+        self.ifft = layers.IFFTLayer((self.n_key, self.args.dim))
 
         self.te = layers.TrajEncoding(units=self.d//2,
                                       activation=tf.nn.tanh,
@@ -72,9 +72,9 @@ class VAModel(BaseAgentModel):
 
         # Decoder layers
         self.decoder_fc1 = tf.keras.layers.Dense(self.d, tf.nn.tanh)
-        self.decoder_fc2 = tf.keras.layers.Dense(4 * self.n_key)
+        self.decoder_fc2 = tf.keras.layers.Dense(2 * self.args.dim * self.n_key)
         self.decoder_reshape = tf.keras.layers.Reshape(
-            [self.args.Kc, self.n_key, 4])
+            [self.args.Kc, self.n_key, 2 * self.args.dim])
 
     def call(self, inputs: list[tf.Tensor],
              training=None, mask=None):
