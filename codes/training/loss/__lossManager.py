@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 11:13:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-20 19:11:12
+@LastEditTime: 2022-10-26 15:19:08
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -145,7 +145,7 @@ class LossManager(BaseManager):
 
         labels_key = tf.gather(labels, self.p_index, axis=-2)
 
-        return ADE_2D(pred, labels_key, coe)
+        return self.ADE([pred], labels_key, coe)
 
     def ADE(self, outputs: list[tf.Tensor],
             labels: tf.Tensor,
