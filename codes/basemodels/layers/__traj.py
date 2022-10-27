@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2021-12-21 15:25:47
-@LastEditors: Conghao Wong
-@LastEditTime: 2022-07-15 17:09:43
+@LastEditors: Beihao Xia
+@LastEditTime: 2022-10-27 15:46:02
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -47,14 +47,16 @@ class TrajEncoding(tf.keras.layers.Layer):
 
     def call(self, trajs: tf.Tensor, **kwargs) -> tf.Tensor:
         """
-        Encode trajectories into the high-dimension features
+        Encode trajectories into the high-dimension features.
 
-        :param trajs: trajs, shape = `(batch, N, 2)`
-        :return features: features, shape = `(batch, N, units)`
+        :param trajs: trajs, shape = `(batch, N, 2)`.
+        :return features: features, shape = `(batch, N, units)`.
+            NOTE: if transform layer was set, it will return a feature 
+            with the `shape = (batch, Tsteps, units)`.
         """
         if self.Tlayer:
             t = self.Tlayer(trajs)  # (batch, Tsteps, Tchannels)
-            
+
             if not self.channels_first:
                 t = tf.transpose(t, [0, 2, 1])  # (batch, Tchannels, Tsteps)
 

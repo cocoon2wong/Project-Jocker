@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-07-05 16:00:26
-@LastEditors: Conghao Wong
-@LastEditTime: 2022-10-21 15:54:05
+@LastEditors: Beihao Xia
+@LastEditTime: 2022-10-27 15:46:17
 @Description: First stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,6 +12,7 @@ import tensorflow as tf
 from codes.basemodels import layers, transformer
 
 from ..__args import AgentArgs
+from ..__layers import get_transform_layers
 from .__baseAgent import BaseAgentModel, BaseAgentStructure
 
 
@@ -41,17 +42,25 @@ class VAModel(BaseAgentModel):
                          structure, *args, **kwargs)
 
         # Layers
-        self.fft = layers.FFTLayer((self.args.obs_frames, self.args.dim))
-        self.ifft = layers.IFFTLayer((self.n_key, self.args.dim))
+        self.Tlayer, self.ITlayer = get_transform_layers(self.args.T)
 
-        self.te = layers.TrajEncoding(units=self.d//2,
-                                      activation=tf.nn.tanh,
-                                      transform_layer=self.fft)
+        # Transform layers
+        self.t1 = self.Tlayer((self.args.obs_frames, self.args.dim))
+        self.it1 = self.ITlayer((self.n_key, self.args.dim))
 
-        self.ie = layers.TrajEncoding(units=self.d//2,
+        # Trajectory encoding
+        self.te = layers.TrajEncoding(self.d//2,
+                                      tf.nn.tanh,
+                                      transform_layer=self.t1)
+
+        self.ie = layers.TrajEncoding(self.d//2,
                                       activation=tf.nn.tanh)
 
         self.concat = tf.keras.layers.Concatenate(axis=-1)
+
+        # steps and shapes after applying transforms
+        self.Tsteps_en = self.t1.Tshape[0]
+        self.Tsteps_de, self.Tchannels_de = self.it1.Tshape
 
         # Transformer is used as a feature extractor
         self.T = transformer.Transformer(num_layers=4,
@@ -60,8 +69,8 @@ class VAModel(BaseAgentModel):
                                          dff=512,
                                          input_vocab_size=None,
                                          target_vocab_size=None,
-                                         pe_input=Args.obs_frames,
-                                         pe_target=Args.obs_frames,
+                                         pe_input=self.Tsteps_en,
+                                         pe_target=self.Tsteps_en,
                                          include_top=False)
 
         # Trainable adj matrix and gcn layer
@@ -72,9 +81,10 @@ class VAModel(BaseAgentModel):
 
         # Decoder layers
         self.decoder_fc1 = tf.keras.layers.Dense(self.d, tf.nn.tanh)
-        self.decoder_fc2 = tf.keras.layers.Dense(2 * self.args.dim * self.n_key)
+        self.decoder_fc2 = tf.keras.layers.Dense(
+            self.Tsteps_de * self.Tchannels_de)
         self.decoder_reshape = tf.keras.layers.Reshape(
-            [self.args.Kc, self.n_key, 2 * self.args.dim])
+            [self.args.Kc, self.Tsteps_de, self.Tchannels_de])
 
     def call(self, inputs: list[tf.Tensor],
              training=None, mask=None):
@@ -95,7 +105,7 @@ class VAModel(BaseAgentModel):
 
             # transformer inputs
             t_inputs = self.concat([spec_features, id_features])
-            t_outputs = self.fft.call(trajs)
+            t_outputs = self.t1.call(trajs)
 
             # transformer -> (batch, obs, d)
             behavior_features, _ = self.T.call(inputs=t_inputs,
@@ -111,7 +121,7 @@ class VAModel(BaseAgentModel):
             y = self.decoder_fc2(y)
             y = self.decoder_reshape(y)
 
-            y = self.ifft.call(y)
+            y = self.it1.call(y)
             all_predictions.append(y)
 
         return tf.concat(all_predictions, axis=1)

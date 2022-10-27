@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-23 10:23:53
-@LastEditors: Conghao Wong
-@LastEditTime: 2022-10-21 15:54:22
+@LastEditors: Beihao Xia
+@LastEditTime: 2022-10-27 11:38:48
 @Description: Second stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,6 +12,7 @@ import tensorflow as tf
 from codes.basemodels import layers, transformer
 
 from ..__args import HandlerArgs
+from ..__layers import get_transform_layers
 from .__baseHandler import BaseHandlerModel, BaseHandlerStructure
 
 
@@ -43,14 +44,22 @@ class VBModel(BaseHandlerModel):
         self.concat = tf.keras.layers.Concatenate(axis=-1)
         self.linear_interpolation = layers.LinearInterpolation()
 
-        self.fft = layers.FFTLayer((self.args.obs_frames, 2))
+        self.Tlayer, self.ITlayer = get_transform_layers(self.args.T)
+
+        self.t1 = self.Tlayer((self.args.obs_frames, self.args.dim))
+
+        self.t2 = self.Tlayer(
+            (self.args.obs_frames + self.args.pred_frames, self.args.dim))
+
+        self.it = self.ITlayer(
+            (self.args.obs_frames + self.args.pred_frames, self.args.dim))
 
         self.te = layers.TrajEncoding(units=64,
                                       activation=tf.nn.tanh,
-                                      transform_layer=self.fft)
+                                      transform_layer=self.t1)
 
         self.ce = layers.ContextEncoding(units=64,
-                                         output_channels=self.args.obs_frames,
+                                         output_channels=self.t1.Tshape[0],
                                          activation=tf.nn.tanh)
 
         self.transformer = transformer.Transformer(num_layers=4,
@@ -59,12 +68,9 @@ class VBModel(BaseHandlerModel):
                                                    dff=512,
                                                    input_vocab_size=None,
                                                    target_vocab_size=4,
-                                                   pe_input=Args.obs_frames,
-                                                   pe_target=Args.obs_frames + Args.pred_frames,
+                                                   pe_input=self.t1.Tshape[0],
+                                                   pe_target=self.t2.Tshape[0],
                                                    include_top=True)
-
-        self.decoder = layers.IFFTLayer(
-            (self.args.obs_frames + self.args.pred_frames, 2))
 
     def call(self, inputs: list[tf.Tensor],
              keypoints: tf.Tensor,
@@ -78,7 +84,7 @@ class VBModel(BaseHandlerModel):
         traj_feature = self.te.call(trajs)
         context_feature = self.ce.call(maps)
 
-        # transformer inputs shape = (batch, obs, 128)
+        # transformer inputs shape = (batch, Tsteps, 128)
         t_inputs = self.concat([traj_feature, context_feature])
 
         # transformer target shape = (batch, obs+pred, 4)
@@ -89,7 +95,7 @@ class VBModel(BaseHandlerModel):
         linear_pred = self.linear_interpolation.call(
             keypoints_index, keypoints)
         traj = tf.concat([trajs, linear_pred], axis=-2)
-        t_outputs = self.fft.call(traj)
+        t_outputs = self.t2.call(traj)
 
         # transformer output shape = (batch, obs+pred, 4)
         p_fft, _ = self.transformer.call(t_inputs,
@@ -97,7 +103,7 @@ class VBModel(BaseHandlerModel):
                                          training=training)
 
         # decode
-        p = self.decoder.call(p_fft)
+        p = self.it.call(p_fft)
 
         return p[:, self.args.obs_frames:, :]
 
