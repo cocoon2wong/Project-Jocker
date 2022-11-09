@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-21 15:52:51
+@LastEditTime: 2022-11-07 09:46:15
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -31,7 +31,7 @@ class BaseHandlerModel(Model):
         self.structure: BaseHandlerStructure = structure
 
         # GT in the inputs is only used when training
-        self.set_inputs('trajs', 'maps', 'paras', 'gt')
+        self.set_inputs('trajs', 'maps', 'gt')
 
         # Parameters
         self.asHandler = asHandler

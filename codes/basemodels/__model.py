@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-21 15:19:27
+@LastEditTime: 2022-11-09 16:48:54
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -123,7 +123,6 @@ class Model(tf.keras.Model, BaseManager):
         historical_trajectory = ['traj', 'obs']
         groundtruth_trajectory = ['pred', 'gt']
         context_map = ['map']
-        context_map_paras = ['para', 'map_para']
         destination = ['des', 'inten']
         ```
 
@@ -134,10 +133,6 @@ class Model(tf.keras.Model, BaseManager):
             if 'traj' in item or \
                     'obs' in item:
                 self.input_type.append('TRAJ')
-
-            elif 'para' in item or \
-                    'map_para' in item:
-                self.input_type.append('MAPPARA')
 
             elif 'context' in item or \
                     'map' in item:

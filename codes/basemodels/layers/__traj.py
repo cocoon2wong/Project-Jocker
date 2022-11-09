@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2021-12-21 15:25:47
-@LastEditors: Beihao Xia
-@LastEditTime: 2022-10-27 15:46:02
+@LastEditors: Conghao Wong
+@LastEditTime: 2022-11-09 18:19:04
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,6 +10,7 @@
 
 import tensorflow as tf
 
+from ...utils import POOLING_BEFORE_SAVING
 from .__transformLayers import _BaseTransformLayer
 
 
@@ -86,7 +87,8 @@ class ContextEncoding(tf.keras.layers.Layer):
 
         super().__init__(*args, **kwargs)
 
-        self.pool = tf.keras.layers.MaxPooling2D([5, 5])
+        if not POOLING_BEFORE_SAVING:
+            self.pool = tf.keras.layers.MaxPooling2D([5, 5])
         self.flatten = tf.keras.layers.Flatten()
         self.fc = tf.keras.layers.Dense(output_channels * units, activation)
         self.reshape = tf.keras.layers.Reshape((output_channels, units))
@@ -98,7 +100,8 @@ class ContextEncoding(tf.keras.layers.Layer):
         :param context_map: maps, shape = `(batch, a, a)`
         :return feature: features, shape = `(batch, output_channels, units)`
         """
-        pool = self.pool(context_map[:, :, :, tf.newaxis])
-        flat = self.flatten(pool)
+        if not POOLING_BEFORE_SAVING:
+            context_map = self.pool(context_map[:, :, :, tf.newaxis])
+        flat = self.flatten(context_map)
         fc = self.fc(flat)
         return self.reshape(fc)

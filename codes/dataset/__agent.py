@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-19 11:30:45
+@LastEditTime: 2022-11-09 16:56:13
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -54,7 +54,7 @@ class Agent():
     _save_items = ['__version__',
                    '_traj', '_traj_future',
                    '_traj_pred', '_traj_linear',
-                   'real2grid', '_id', '_type',
+                   '_id', '_type',
                    '_frames', '_frames_future',
                    'linear_predict',
                    'obs_length', 'total_frame',
@@ -70,7 +70,6 @@ class Agent():
         self._traj_pred: np.ndarray = None
         self._traj_linear: np.ndarray = None
 
-        self.real2grid = None
         self._id = None
         self._type = None
 
@@ -177,9 +176,8 @@ class Agent():
         """
         return self._map
 
-    def set_map(self, Map: np.ndarray, paras: np.ndarray):
+    def set_map(self, Map: np.ndarray):
         self._map = Map
-        self.real2grid = paras
 
     def zip_data(self) -> dict[str, object]:
         zipped = {}

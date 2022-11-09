@@ -37,6 +37,8 @@ MAP_HALF_SIZE = 50  # Local map's half size
 AVOID_SIZE = 15     # Avoid size in grid cells when modeling social interaction
 INTEREST_SIZE = 20  # Interest size in grid cells when modeling social interaction
 
+POOLING_BEFORE_SAVING = True
+
 # Preprocess configs
 ROTATE_BIAS = 0.01
 SCALE_THRESHOLD = 0.05
