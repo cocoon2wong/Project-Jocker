@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:34:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-09 17:49:30
+@LastEditTime: 2022-11-09 19:32:46
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -127,6 +127,7 @@ class DatasetManager(BaseManager):
                 agents.load_maps()
 
             agent_manager.append(agents)
+            agents.destory()
 
         agent_manager.set_types(inputs_type=self.model_input_type,
                                 labels_type=self.model_label_type)

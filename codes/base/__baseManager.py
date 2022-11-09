@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-17 14:57:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-21 10:15:30
+@LastEditTime: 2022-11-09 19:58:21
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -209,6 +209,13 @@ class BaseManager(_BaseManager):
     @args.setter
     def args(self, value: T) -> T:
         self._args = value
+
+    def destory(self):
+        if self.manager:
+            self.manager.members.remove(self)
+            self.manager.members_dict[type(self)].remove(self)
+
+        del self
 
     def get_member(self, mtype: type[T], mindex: int = 0) -> T:
         """
