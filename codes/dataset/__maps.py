@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 15:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-09 18:36:53
+@LastEditTime: 2022-11-09 20:51:59
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -146,7 +146,7 @@ class TrajMapManager(__BaseMapManager):
         self.map: np.ndarray = None
 
         if self.map_exsits():
-            pass
+            self.load_configs()
         else:
             self.init(init_trajs)
             self.build_all(agents)
@@ -240,11 +240,13 @@ class TrajMapManager(__BaseMapManager):
 
         t_map = (t_map[:, :, 0]).astype(np.float32)/255.0
         self.map = t_map
-        
+        self.load_configs()
+
+    def load_configs(self):
         # load global map's configs
         config_path = self.path.format(self.GLOBAL_CONFIG_FILE)
-        if not os.path.exists(self.GLOBAL_CONFIG_FILE):
-            self.log(f'Please delete the folder `{self.dir}` and' + 
+        if not os.path.exists(config_path):
+            self.log(f'Please delete the folder `{self.dir}` and' +
                      ' re-run this program.', 'error')
             exit()
 
