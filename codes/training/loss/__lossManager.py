@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 11:13:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-26 15:19:08
+@LastEditTime: 2022-11-04 16:40:34
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -46,7 +46,7 @@ class LossManager(BaseManager):
         """
         Time step of predicted key points.
         """
-        if 'key_points' in self.args.__dir__():
+        if 'key_points' in self.args.__dir__() and self.args.key_points != 'null':
             p_index = [int(i) for i in self.args.key_points.split('_')]
         else:
             p_index = list(range(self.args.pred_frames))

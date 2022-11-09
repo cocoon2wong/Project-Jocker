@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:34:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-21 14:23:25
+@LastEditTime: 2022-11-09 17:49:30
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -14,8 +14,7 @@ import random
 import tensorflow as tf
 
 from ..base import BaseManager
-from ..utils import dir_check
-from .__agentManager import AgentManager, TrajMapNotFoundError
+from .__agentManager import AgentManager
 from .__videoClipManager import VideoClipManager
 from .__videoDataset import Dataset
 
@@ -60,7 +59,7 @@ class DatasetManager(BaseManager):
         """
         Set types of model inputs and labels in this dataset.
 
-        :param inputs_type: a list of `str`, accept `'TRAJ'`, `'MAPPARA'`,
+        :param inputs_type: a list of `str`, accept `'TRAJ'`,
             `'MAP'`, `'DEST'`, and `'GT'`
         :param labels_type: a list of `str`, accept `'GT'` and `'DEST'`
         """
@@ -111,6 +110,8 @@ class DatasetManager(BaseManager):
 
             # load agents in this video clip
             agents = AgentManager(self, f'Agent Manager ({clip.clip_name})')
+            agents.set_path(npz_path=data_path)
+
             if not os.path.exists(data_path):
                 new_agents = clip.sample_train_data()
                 agents.load(new_agents)
@@ -120,37 +121,10 @@ class DatasetManager(BaseManager):
 
             # load or make context maps
             if 'MAP' in self.model_input_type:
-                map_path = dir_check(data_path.split('.np')[0] + '_maps')
-                map_file = ('trajMap.png' if not self.args.use_extra_maps
-                            else 'trajMap_load.png')
-                map_type = self.info.type
+                agents.init_map_managers(map_type=self.info.type,
+                                         base_path=agents.maps_dir)
 
-                try:
-                    agents.load_maps(map_path,
-                                     map_file=map_file,
-                                     social_file='socialMap.npy',
-                                     para_file='para.txt',
-                                     centers_file='centers.txt')
-
-                except TrajMapNotFoundError:
-                    path = os.path.join(map_path, map_file)
-                    self.log(s := (f'Trajectory map `{path}`' +
-                                   ' not found, stop running...'),
-                             level='error')
-                    exit()
-
-                except:
-                    agents.make_maps(map_type, map_path,
-                                     save_map_file='trajMap.png',
-                                     save_social_file='socialMap.npy',
-                                     save_para_file='para.txt',
-                                     save_centers_file='centers.txt')
-
-                    agents.load_maps(map_path,
-                                     map_file=map_file,
-                                     social_file='socialMap.npy',
-                                     para_file='para.txt',
-                                     centers_file='centers.txt')
+                agents.load_maps()
 
             agent_manager.append(agents)
 
