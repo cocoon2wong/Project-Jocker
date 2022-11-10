@@ -2,7 +2,7 @@
  * @Author: Conghao Wong
  * @Date: 2022-07-07 21:43:30
  * @LastEditors: Conghao Wong
- * @LastEditTime: 2022-10-18 21:19:35
+ * @LastEditTime: 2022-11-10 19:18:46
  * @Description: file content
  * @Github: https://github.com/cocoon2wong
  * Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,7 +12,7 @@
 
 ## Branch `BB` Notes ⚠️
 
-Please note that contents in this branch are still under development and are not the fianl version.
+Please note that the contents in this branch are still under development and are not the final version.
 
 ![BB](./figures/bb.jpeg)
 
@@ -20,9 +20,10 @@ Please note that contents in this branch are still under development and are not
 
 The codes are developed with python 3.9.
 Additional packages used are included in the `requirements.txt` file.
-We recommend installing the above versions of the python packages in a virtual environment (like the `conda` environment), otherwise there *COULD* be other problems due to the package version conflicts.
+We recommend installing python packages in a virtual environment (like the `conda` environment).
+Otherwise, there *COULD* be other problems due to the package version conflicts.
 
-Run the following command to install the required packages in your python  environment:
+Run the following command to install the required packages in your python environment:
 
 ```bash
 pip install -r requirements.txt
@@ -40,7 +41,7 @@ git checkout bb
 
 The `$MODEL` contains two main sub-networks, the coarse-level keypoints estimation sub-network, and the fine-level spectrum interpolation sub-network.
 `$MODEL` forecast agents' multiple trajectories end-to-end.
-Considering that most of the loss function terms used to optimize the model work within one sub-network alone, we divide `$MODEL` into `$MODEL-a` and `$MODEL-b`, and apply gradient descent separately for easier training.
+Considering that most of the loss function terms used to optimize the model work within one sub-network alone, we divide `$MODEL` into `$MODEL-a` and `$MODEL-b`, and apply gradient descent separately for more accessible training.
 You can train your own `$MODEL` weights on your datasets by training each of these two sub-networks.
 After training, you can still use it as a regular end-to-end model.
 
@@ -67,24 +68,24 @@ Where `A_MODEL_PATH` and `B_MODEL_PATH` are the folders of the two sub-networks'
 ## Pre-Trained Models
 
 We have provided our pre-trained model weights to help you quickly evaluate the `$MODEL` performance.
-Our pre-trained models contain model weights trained on `ETH-UCY` by the `leave-one-out` stragety, and model weights trained on `SDD` via the dataset split method from [SimAug](https://github.com/JunweiLiang/Multiverse).
+Our pre-trained models contain model weights trained on `ETH-UCY` by the `leave-one-out` strategy and model weights trained on `SDD` via the dataset split method from [SimAug](https://github.com/JunweiLiang/Multiverse).
 
-Please note that we do not use dataset split files like trajnet for several reasons.
+Please note that we do not use dataset split files like TrajNet for several reasons.
 For example, the frame rate problem in `ETH-eth` sub-dataset, and some of these splits only consider the `pedestrians` in the SDD dataset.
 We process the original full-dataset files from these datasets with observations = 3.2 seconds (or 8 frames) and predictions = 4.8 seconds (or 12 frames) to train and test the model.
 Detailed process codes are available in `./scripts/add_ethucy_datasets.py`, `./scripts/add_sdd.py`, and `./scripts/sdd_txt2csv.py`.
-See deatils in [this issue](https://github.com/cocoon2wong/Vertical/issues/1).
+See details in [this](https://github.com/cocoon2wong/Vertical/issues/1) issue](https://github.com/cocoon2wong/Vertical/issues/1).
 
-In order to start validating the effects of our pre-trained models, please following these steps to prepare dataset files and model weights:
+In order to start validating the effects of our pre-trained models, please follow these steps to prepare dataset files and model weights:
 
 1. As this repository contains only codes, you may need to download the original dataset files first.
-   If you have clone this repository with `git clone` command, you can download the dataset files by the following command:
+   If you have cloned this repository with `git clone` command, you can download the dataset files by the following command:
 
    ```bash
    git submodule update --init --recursive
    ```
 
-   Or you can just download them from [here](https://github.com/cocoon2wong/Project-Luna), then re-name the folder as `dataset_original` and put it into the repository root path.
+   Or you can just download them from [here, then rename the folder as `dataset_original` and put it into the repository root path.
 
 2. You need to process these original dataset files so that they are in a format that our code can read and process.
    You can run the following lines to process the `ETH-UCY`, `SDD`, and `SDD_pedestrian` (a sub-dataset from SDD that only contains `"Pedestrian"` agents) dataset files:
@@ -94,7 +95,7 @@ In order to start validating the effects of our pre-trained models, please follo
    python main.py
    ```
 
-3. Create soft link of these folders:
+3. Create soft links to these folders:
 
    ```bash
    cd Project-Jocker
@@ -102,7 +103,7 @@ In order to start validating the effects of our pre-trained models, please follo
    ln -s dataset_original/dataset_configs ./
    ```
 
-4. After these steps, you can find and download our model weights file [here](https://github.com/cocoon2wong/Project-Jocker/releases), and put them into the `./weights` folder (optional).
+4. After these steps, you can find and download our model weights file [here](https://github.com/cocoon2wong/Project-Jocker/releases) and put them into the `./weights` folder (optional).
 
 You can start the quick evaluation via the following commands:
 
@@ -127,7 +128,7 @@ TBA
 You can also start testing the fast version of our pre-trained models with the argument `--loadb l` instead of the `--loadb $MODEL_PATH`.
 The `--loadb l` will replace the original stage-2 spectrum interpolation sub-network with the simple linear interpolation method.
 Although it may reduce the prediction performance, the model will implement much faster.
-You can start test these linear-interpolation models like the following command:
+You can start testing these linear-interpolation models with the following command:
 
 ```bash
 python main.py --model MKII --loada $SOME_MODEL_PATH --loadb l
@@ -164,8 +165,7 @@ python main.py --model MKII \
 ```
 
 ## Args Used
-
-Please specific your customized args when training or testing your model through the following way:
+Please specify your customized args when training or testing your model in the following way:
 
 ```bash
 python main.py --ARG_KEY1 ARG_VALUE2 --ARG_KEY2 ARG_VALUE2 --ARG_KEY3 ARG_VALUE3 ...
@@ -176,24 +176,24 @@ All args and their usages are listed below.
 
 Instruction for the `argtype`:
 
-- Args with `argtype='STATIC'` indicates that their values can not be changed once after training.
-  The program will not parse these args to overwrite the saved values when test the model.
-- Args with `argtype='DYNAMIC'` indicates that their values can be changed anytime.
-  The program will try to first parse inputs from the terminal, and then try to load from the saved `json` file.
-- Args with `argtype='TEMPORARY'` indicates that these values will not be saved into `json` files.
+- Args with `argtype='STATIC'` indicate that their values can not be changed once after training.
+  When testing the model, the program will not parse these args to overwrite the saved values.
+- Args with `argtype='DYNAMIC'` indicate that their values can be changed anytime.
+  The program will try to first parse inputs from the terminal and then try to load from the saved `json` file.
+- Args with `argtype='TEMPORARY'` indicate that these values will not be saved into `json` files.
   The program will parse these args from the terminal at each time.
 
 <!-- DO NOT CHANGE THIS LINE -->
 ### Basic args
 
 - `--K_train`, type=`int`, argtype=`STATIC`.
-  Number of multiple generations when training. This arg only works for multiple-generation models.
+  The number of multiple generations when training. This arg only works for multiple-generation models.
   The default value is `10`.
 - `--K`, type=`int`, argtype=`DYNAMIC`.
-  Number of multiple generations when test. This arg only works for multiple-generation models.
+  Number of multiple generations when testing. This arg only works for multiple-generation models.
   The default value is `20`.
 - `--anntype`, type=`str`, argtype=`STATIC`.
-  Model's predicted annotation type. Canbe `'coordinate'` or `'boundingbox'`.
+  Model's predicted annotation type. Can be `'coordinate'` or `'boundingbox'`.
   The default value is `'coordinate'`.
 - `--auto_dimension`, type=`int`, argtype=`TEMPORARY`.
   Choose whether to handle the dimension adaptively. It is now only used for silverballers models that are trained with annotation type `coordinate` but want to test on datasets with annotation type `boundingbox`.
@@ -208,7 +208,7 @@ Instruction for the `argtype`:
   Dimension of the `trajectory`. For example, - coordinate (x, y) -> `dim = 2`; - boundingbox (xl, yl, xr, yr) -> `dim = 4`.
   The default value is `dim`.
 - `--draw_distribution`, type=`int`, argtype=`TEMPORARY`.
-  Conrtols if draw distributions of predictions instead of points. If `draw_distribution == 0`, it will draw results as normal coordinates; If `draw_distribution == 1`, it will draw all results in the distribution way, and points from different time steps will be drawn with different colors.
+  Controls if draw distributions of predictions instead of points. If `draw_distribution == 0`, it will draw results as normal coordinates; If `draw_distribution == 1`, it will draw all results in the distribution way, and points from different time steps will be drawn with different colors.
   The default value is `0`.
 - `--draw_index`, type=`str`, argtype=`TEMPORARY`.
   Indexes of test agents to visualize. Numbers are split with `_`. For example, `'123_456_789'`.
@@ -232,10 +232,10 @@ Instruction for the `argtype`:
   Force test dataset (ignore the train/test split). It only works when `test_mode` has been set to `one`.
   The default value is `'null'`.
 - `--gpu`, type=`str`, argtype=`TEMPORARY`.
-  Speed up training or test if you have at least one nvidia GPU. If you have no GPUs or want to run the code on your CPU, please set it to `-1`. NOTE: It only supports training or test on one GPU.
+  Speed up training or test if you have at least one NVidia GPU. If you have no GPUs or want to run the code on your CPU, please set it to `-1`. NOTE: It only supports training or testing on one GPU.
   The default value is `'0'`.
 - `--interval`, type=`float`, argtype=`STATIC`.
-  Time interval of each sampled trajectory points.
+  Time interval of each sampled trajectory point.
   The default value is `0.4`.
 - `--load`, type=`str`, argtype=`TEMPORARY`.
   Folder to load model (to test). If set to `null`, the training manager will start training new models according to other given args.
@@ -250,7 +250,7 @@ Instruction for the `argtype`:
   Customized model name.
   The default value is `'model'`.
 - `--model`, type=`str`, argtype=`STATIC`.
-  Model type used to train or test.
+  The model type used to train or test.
   The default value is `'none'`.
 - `--obs_frames`, type=`int`, argtype=`STATIC`.
   Observation frames for prediction.
@@ -274,16 +274,16 @@ Instruction for the `argtype`:
   Base folder to save all running logs.
   The default value is `'./logs'`.
 - `--split`, type=`str`, argtype=`STATIC`.
-  Dataset split used when training and evaluating.
+  The dataset split that used to train and evaluate.
   The default value is `'zara1'`.
 - `--start_test_percent`, type=`float`, argtype=`STATIC`.
-  Set when (at which epoch) to start validation during training. Range of this arg should be `0 <= x <= 1`. Validation may start at epoch `args.epochs * args.start_test_percent`.
+  Set when (at which epoch) to start validation during training. The range of this arg should be `0 <= x <= 1`. Validation may start at epoch `args.epochs * args.start_test_percent`.
   The default value is `0.0`.
 - `--step`, type=`int`, argtype=`DYNAMIC`.
   Frame interval for sampling training data.
   The default value is `1`.
 - `--test_mode`, type=`str`, argtype=`TEMPORARY`.
-  Test settings, canbe `'one'` or `'all'` or `'mix'`. When set it to `one`, it will test the model on the `args.force_split` only; When set it to `all`, it will test on each of the test dataset in `args.split`; When set it to `mix`, it will test on all test dataset in `args.split` together.
+  Test settings. It can be `'one'`, `'all'`, or `'mix'`. When setting it to `one`, it will test the model on the `args.force_split` only; When setting it to `all`, it will test on each of the test datasets in `args.split`; When setting it to `mix`, it will test on all test datasets in `args.split` together.
   The default value is `'mix'`.
 - `--test_step`, type=`int`, argtype=`STATIC`.
   Epoch interval to run validation during training. """ return self._get('test_step', 3, argtype=STATIC) """ Trajectory Prediction Args 
@@ -298,19 +298,19 @@ Instruction for the `argtype`:
 ### Silverballers args
 
 - `--Kc`, type=`int`, argtype=`STATIC`.
-  Number of style channels in `Agent` model.
+  The number of style channels in `Agent` model.
   The default value is `20`.
 - `--T`, type=`str`, argtype=`STATIC`.
-  Type of transformations used when encoding or decoding trajectories. It could be: - `none`: no transformations - `fft`: fast fourier transform - `haar`: haar wavelet transform - `db2`: DB2 wavelet transform 
+  Type of transformations used when encoding or decoding trajectories. It could be: - `none`: no transformations - `fft`: fast Fourier transform - `haar`: haar wavelet transform - `db2`: DB2 wavelet transform 
   The default value is `'fft'`.
 - `--depth`, type=`int`, argtype=`STATIC`.
   Depth of the random noise vector.
   The default value is `16`.
 - `--feature_dim`, type=`int`, argtype=`STATIC`.
-  Feature dimension used in most layers.
+  Feature dimensions that are used in most layers.
   The default value is `128`.
 - `--key_points`, type=`str`, argtype=`STATIC`.
-  A list of key-time-steps to be predicted in the agent model. For example, `'0_6_11'`.
+  A list of key time steps to be predicted in the agent model. For example, `'0_6_11'`.
   The default value is `'0_6_11'`.
 - `--loada`, type=`str`, argtype=`TEMPORARY`.
   Path for agent model.
@@ -322,18 +322,18 @@ Instruction for the `argtype`:
   Controls the number of keypoints accepted in the handler model.
   The default value is `1`.
 - `--preprocess`, type=`str`, argtype=`STATIC`.
-  Controls if running any preprocess before model inference. Accept a 3-bit-like string value (like `'111'`): - the first bit: `MOVE` trajectories to (0, 0); - the second bit: re-`SCALE` trajectories; - the third bit: `ROTATE` trajectories.
+  Controls if running any preprocess before model inference. Accept a 3-bit-like string value (like `'111'`): - The first bit: `MOVE` trajectories to (0, 0); - The second bit: re-`SCALE` trajectories; - The third bit: `ROTATE` trajectories.
   The default value is `'111'`.
 <!-- DO NOT CHANGE THIS LINE -->
 
 ## Thanks
 
-Codes of the Transformers used in this model comes from [TensorFlow.org](https://www.tensorflow.org/tutorials/text/transformer);  
-Dataset csv files of ETH-UCY come from [SR-LSTM (CVPR2019) / E-SR-LSTM (TPAMI2020)](https://github.com/zhangpur/SR-LSTM);  
+Codes of the Transformers used in this model come from [TensorFlow.org](https://www.tensorflow.org/tutorials/text/transformer)](https://www.tensorflow.org/tutorials/text/transformer);  
+Dataset CSV files of ETH-UCY come from [SR-LSTM (CVPR2019) / E-SR-LSTM (TPAMI2020)](https://github.com/zhangpur/SR-LSTM);  
 Original dataset annotation files of SDD come from [Stanford Drone Dataset](https://cvgl.stanford.edu/projects/uav_data/), and its split file comes from [SimAug (ECCV2020)](https://github.com/JunweiLiang/Multiverse);  
 All contributors of the repository [Vertical](https://github.com/cocoon2wong/Vertical).
 
 ## Contact us
 
-Conghao Wong ([@cocoon2wong](https://github.com/cocoon2wong)): conghao_wong@icloud.com  
+Conghao Wong ([@cocoon2wong](https://github.com/cocoon2wong)): conghaowong@icloud.com  
 Beihao Xia ([@NorthOcean](https://github.com/NorthOcean)): xbh_hust@hust.edu.cn
