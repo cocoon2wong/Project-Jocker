@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:30:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-14 16:12:44
+@LastEditTime: 2022-11-10 10:07:04
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,8 +12,8 @@ import os
 
 import numpy as np
 
-from ..base import BaseManager, SecondaryBar
-from ..utils import INIT_POSITION, TEMP_PATH, dir_check
+from ...base import BaseManager, SecondaryBar
+from ...utils import INIT_POSITION, TEMP_PATH, dir_check
 from .__agent import Agent
 from .__trajectory import Trajectory
 from .__videoClip import VideoClip

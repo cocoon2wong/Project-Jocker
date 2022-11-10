@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-09 16:56:13
+@LastEditTime: 2022-11-10 10:06:34
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,7 +12,7 @@ import copy
 
 import numpy as np
 
-from ..utils import INIT_POSITION
+from ...utils import INIT_POSITION
 from .__picker import AnnotationManager
 
 

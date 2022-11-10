@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-19 10:32:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 16:10:47
+@LastEditTime: 2022-11-10 10:05:49
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,7 +11,7 @@
 import os
 from typing import Union
 
-from ..utils import DATASET_DIR, dir_check, load_from_plist
+from ...utils import DATASET_DIR, dir_check, load_from_plist
 from .__videoDataset import Dataset
 
 

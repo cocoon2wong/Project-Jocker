@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-10 09:27:06
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 09:52:51
+@LastEditTime: 2022-11-10 10:36:30
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -15,7 +15,7 @@ import tensorflow as tf
 
 from ...base import BaseManager, SecondaryBar
 from ...utils import MAP_HALF_SIZE, dir_check
-from ..__agent import Agent
+from ..trajectories import Agent
 
 POOLING_LAYER = tf.keras.layers.MaxPool2D([5, 5])
 

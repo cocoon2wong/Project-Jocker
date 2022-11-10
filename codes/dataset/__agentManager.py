@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 09:49:15
+@LastEditTime: 2022-11-10 10:27:57
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -16,9 +16,8 @@ from tqdm import tqdm
 
 from ..base import BaseManager
 from ..utils import POOLING_BEFORE_SAVING
-from .__agent import Agent
-from .__picker import AnnotationManager
 from .maps import SocialMapManager, TrajMapManager
+from .trajectories import Agent, AnnotationManager
 
 
 class AgentManager(BaseManager):
@@ -26,6 +25,12 @@ class AgentManager(BaseManager):
     AgentManager
     ---
     Structure to manage several `Agent` objects.
+    The `AgentManager` object is managed by the `DatasetsManager` object.
+
+    Member Managers
+    ---
+    - Trajectory map manager (optional, dynamic): type is `TrajMapManager`;
+    - Social map manager (optional, dynamic): type is `SocialMapManager`.
 
     Public Methods
     ---

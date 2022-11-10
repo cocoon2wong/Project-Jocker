@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-30 09:52:17
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-20 11:09:01
+@LastEditTime: 2022-11-10 10:25:18
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,7 +13,7 @@ from typing import Union
 import numpy as np
 import tensorflow as tf
 
-from ..base import BaseManager
+from ...base import BaseManager
 
 T_2D_COORDINATE = 'coordinate'
 T_2D_BOUNDINGBOX = 'boundingbox'
@@ -157,6 +157,13 @@ class Picker():
 
 
 class AnnotationManager(BaseManager):
+    """
+    Annotation Manager
+    ---
+    A manager to control all annotations and their transformations
+    in dataset files and prediction models. The `AnnotationManager`
+    object is managed by the `Structure` object directly.
+    """
 
     def __init__(self, manager: BaseManager,
                  dataset_type: str,

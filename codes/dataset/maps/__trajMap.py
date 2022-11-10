@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-10 09:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 09:53:33
+@LastEditTime: 2022-11-10 10:36:36
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -16,7 +16,7 @@ import numpy as np
 from ...base import BaseManager
 from ...utils import (WINDOW_EXPAND_METER, WINDOW_EXPAND_PIXEL,
                       WINDOW_SIZE_METER, WINDOW_SIZE_PIXEL)
-from ..__agent import Agent
+from ..trajectories import Agent
 from .__base import BaseMapManager
 from .__utils import add, cut
 

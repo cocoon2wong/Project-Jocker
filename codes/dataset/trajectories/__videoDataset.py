@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-19 11:19:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 16:21:12
+@LastEditTime: 2022-11-10 10:04:59
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,7 +10,7 @@
 
 import os
 
-from ..utils import DATASET_DIR, load_from_plist
+from ...utils import DATASET_DIR, load_from_plist
 
 
 class Dataset():
