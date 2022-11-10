@@ -21,6 +21,7 @@ Public Classes
 ```
 """
 
+from . import maps
 from .__agent import Agent
 from .__agentManager import AgentManager
 from .__picker import AnnotationManager

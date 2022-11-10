@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-09 18:23:06
+@LastEditTime: 2022-11-10 09:49:15
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -17,8 +17,8 @@ from tqdm import tqdm
 from ..base import BaseManager
 from ..utils import POOLING_BEFORE_SAVING
 from .__agent import Agent
-from .__maps import SocialMapManager, TrajMapManager
 from .__picker import AnnotationManager
+from .maps import SocialMapManager, TrajMapManager
 
 
 class AgentManager(BaseManager):
