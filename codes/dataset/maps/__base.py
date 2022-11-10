@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-10 09:27:06
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 10:36:30
+@LastEditTime: 2022-11-10 11:16:21
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -31,7 +31,7 @@ class BaseMapManager(BaseManager):
     Usage
     ---
     Subclass this class to manage the new map. The `build`
-    method should be rewrote in the new class.
+    method should be rewritten in the new class.
     """
 
     def __init__(self, manager: BaseManager,
@@ -67,7 +67,7 @@ class BaseMapManager(BaseManager):
         """
         Apply MaxPooling on a batch of maps.
 
-        :param maps: maps, shape = (batch, a, b)
+        :param maps: Maps, shape = (batch, a, b).
         """
         maps = maps[..., np.newaxis]
         return POOLING_LAYER(maps).numpy()[..., 0]

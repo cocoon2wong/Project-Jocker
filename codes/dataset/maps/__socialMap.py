@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-10 09:27:30
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 10:36:07
+@LastEditTime: 2022-11-10 11:16:39
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -24,9 +24,9 @@ class SocialMapManager(BaseMapManager):
     ---
     The social map is a map that builds from all neighbor agents'
     observed trajectories. It indicates their potential social
-    interactions in the prediction period. The value of social map
+    interactions in the prediction period. The value of the social map
     is in the range `[0, 1]`. A higher value indicates that
-    the area may not suitable for walk under different kinds of
+    the area may not suitable for walking under different kinds of
     social interactions.
     """
 
@@ -61,15 +61,15 @@ class SocialMapManager(BaseMapManager):
               max_neighbor=15,
               *args, **kwargs) -> np.ndarray:
         """
-        Build social map for a specific agent.
+        Build a social map for a specific agent.
         TODO: Social maps for M-dimensional trajectories
 
-        :param agent: target `Agent` object to calculate the map
-        :param source: source map, default are zeros
-        :param regulation: controls if scale the map into [0, 1]
-        :param max_neighbor: the maximum number of neighbors to calculate
-            the social map. Set it to a smaller value to speed up building
-            on datasets thay contain more agents.
+        :param agent: The target `Agent` object to calculate the map.
+        :param source: The source map, default are zeros.
+        :param regulation: Controls if scale the map into [0, 1].
+        :param max_neighbor: The maximum number of neighbors to calculate
+            the social map. Set it to a smaller value to speed up the building
+            on datasets that contain more agents.
         """
 
         # build the global social map

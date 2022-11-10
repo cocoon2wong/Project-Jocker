@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 10:50:35
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-12 19:38:37
+@LastEditTime: 2022-11-10 11:23:28
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -58,8 +58,8 @@ def __IoU_single_2Dbox(box1: tf.Tensor, box2: tf.Tensor) -> tf.Tensor:
     Calculate IoU on pred and GT.
     Boxes must have the same shape.
 
-    :param box1: shape = (..., 4)
-    :param box2: shape = (..., 4)
+    :param box1: Shape = (..., 4).
+    :param box2: Shape = (..., 4).
     """
 
     # box1:
@@ -86,7 +86,7 @@ def __IoU_single_2Dbox(box1: tf.Tensor, box2: tf.Tensor) -> tf.Tensor:
 
 def __get_len_1Dbox(box1: tf.Tensor, box2: tf.Tensor):
     """
-    Shape of each box should be `(..., 2)`.
+    The shape of each box should be `(..., 2)`.
     Boxes should have the same shape.
     """
     len1 = tf.abs(box1[..., 0] - box1[..., 1])

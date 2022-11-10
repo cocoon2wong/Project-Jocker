@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-17 14:57:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-09 19:58:21
+@LastEditTime: 2022-11-10 11:10:49
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -61,10 +61,10 @@ class _BaseManager():
 
     def log(self, s: str, level: str = 'info'):
         """
-        Log infomation to files and console
+        Log information to files and console.
 
-        :param s: text to log
-        :param level: log level, canbe `'info'` or `'error'` or `'debug'`
+        :param s: The text to log.
+        :param level: Log level, can be `'info'` or `'error'` or `'debug'`.
         """
         if level == 'info':
             self.logger.info(s)
@@ -86,10 +86,10 @@ class _BaseManager():
 
     def update_timebar(self, item: Union[str, dict], pos='end'):
         """
-        Update the tqdm timebar.
+        Update the tqdm time bar.
 
-        :param item: string or dict to update
-        :param pos: position, canbe `'end'` or `'start'`
+        :param item: The string or dictionary to show on the time bar.
+        :param pos: Position to show, can be `'end'` or `'start'`.
         """
         if pos == 'end':
             if type(item) is str:
@@ -106,7 +106,7 @@ class _BaseManager():
 
     def print_info(self, **kwargs):
         """
-        Print information of the object itself.
+        Print information about the object itself.
         """
         self.print_parameters(**kwargs)
 
@@ -144,7 +144,7 @@ class BaseManager(_BaseManager):
 
     Public Methods
     --------------
-    ### Manager and members methods
+    ### Manager and members' methods
     ```python
     # get a member by type
     (method) get_member: (self: Self@BaseManager,
@@ -167,7 +167,7 @@ class BaseManager(_BaseManager):
                                 title: str = 'null',
                                 **kwargs: Any) -> None
 
-    # print information of the manager object itself
+    # print information about the manager object itself
     (method) print_info: (self: Self@BaseManager, **kwargs: Any) -> None
 
     # print information of the manager and its members
@@ -240,7 +240,7 @@ class BaseManager(_BaseManager):
 
     def print_info_all(self, include_self=True):
         """
-        Print information of the object itself and all its members.
+        Print information about the object itself and all its members.
         It is used to debug only.
         """
         if include_self:

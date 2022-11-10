@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 09:06:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-19 15:05:13
+@LastEditTime: 2022-11-10 11:22:26
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -41,7 +41,7 @@ def FDE_2D(pred: tf.Tensor,
            GT: tf.Tensor,
            coe: float = 1.0) -> tf.Tensor:
     """
-    Calculate `FDE` or `minFDE`
+    Calculate `FDE` or `minFDE`.
 
     :param pred: The predicted trajectories with shape = \
         `(batch, K, steps, 2)` or `(batch, steps, 2)`.
@@ -59,13 +59,13 @@ def diff(pred: tf.Tensor,
          ordd: int = 2,
          coe: float = 1.0) -> list[tf.Tensor]:
     """
-    loss_functions with diference limit
+    loss_functions with difference limit.
 
     :param pred: The predicted trajectories with shape = \
         `(batch, K, steps, 2)` or `(batch, steps, 2)`.
     :param GT: Ground truth future trajectory, shape = `(batch, steps, 2)`.
 
-    :return loss: a list of Tensor, `len(loss) = ord + 1`
+    :return loss: a list of Tensor, `len(loss) = ord + 1`.
     """
     pred_diff = __difference(pred, ordd=ordd)
     GT_diff = __difference(GT, ordd=ordd)
@@ -79,9 +79,9 @@ def diff(pred: tf.Tensor,
 
 def __difference(trajs: tf.Tensor, direction='back', ordd=1) -> list[tf.Tensor]:
     """
-    :param trajs: trajectories, shape = `[(K,) batch, pred, 2]`
-    :param direction: string, canbe `'back'` or `'forward'`
-    :param ord: repeat times
+    :param trajs: Trajectories, shape = `[(K,) batch, pred, 2]`.
+    :param direction: Direction of the difference, can be `'back'` or `'forward'`.
+    :param ord: Repeat times.
 
     :return result: results list, `len(results) = ord + 1`
     """

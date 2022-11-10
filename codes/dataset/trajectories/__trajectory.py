@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 10:44:39
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-30 17:19:19
+@LastEditTime: 2022-11-10 11:18:51
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -41,17 +41,17 @@ class Trajectory():
         """
         init
 
-        :param agent_index: ID of the trajectory
-        :param agent_type: type of the agent
-        :param neighbors: a list of lists that contain agents' ids \
-            who appear in each frames. \
+        :param agent_index: ID of the trajectory.
+        :param agent_type: The type of the agent.
+        :param neighbors: A list of lists that contain agents' ids \
+            who appear in each frame. \
             index are frame indexes.
-        :param trajectory: target trajectory, \
+        :param trajectory: The target trajectory, \
             shape = `(all_frames, 2)`.
-        :param frames: a list of frame ids, \
-            shaoe = `(all_frames)`.
-        :param init_position: default position that indicates \
-            agent has gone out of the scene.
+        :param frames: A list of frame ids, \
+            shape = `(all_frames)`.
+        :param init_position: The default position that indicates \
+            the agent has gone out of the scene.
         """
 
         self._id = agent_id
@@ -66,7 +66,7 @@ class Trajectory():
         diff = base[:-1] - base[1:]
 
         appear = np.where(diff > init_position/2)[0]
-        # disappear in next step
+        # disappear in the next step
         disappear = np.where(diff < -init_position/2)[0]
 
         self._start_frame = appear[0] + 1 if len(appear) else 0

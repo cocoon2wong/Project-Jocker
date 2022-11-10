@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 10:38:40
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-07 11:24:31
+@LastEditTime: 2022-11-10 11:14:08
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -16,7 +16,7 @@ from .__base import BaseProcessLayer
 class Move(BaseProcessLayer):
     """
     Move a specific point to (0, 0) according to the reference time step.
-    Default reference time step is the last obsetvation step.
+    The default reference time step is the last observation step.
     """
 
     def __init__(self, anntype: str = None, ref: int = -1,
@@ -33,8 +33,8 @@ class Move(BaseProcessLayer):
         """
         Move a specific point to (0, 0) according to the reference time step.
 
-        :param trajs: trajectories, shape = `[(batch,) (K,) obs, dim]`
-        :return trajs_moved: moved trajectories
+        :param trajs: Trajectories, shape = `[(batch,) (K,) obs, dim]`.
+        :return trajs_moved: Moved trajectories.
         """
         if use_new_paras:
             self.update_paras(trajs)
@@ -47,9 +47,9 @@ class Move(BaseProcessLayer):
         """
         Move trajectories back to their original positions.
 
-        :param trajs: trajectories moved to (0, 0) with reference point, \
-            shape = `[(batch,) (K,) pred, dim]`
-        :return trajs_moved: moved trajectories
+        :param trajs: Trajectories moved to (0, 0) with a reference point, \
+            shape = `[(batch,) (K,) pred, dim]`.
+        :return trajs_moved: Moved trajectories.
         """
         ref_point = self.paras
         trajs_moved = self.move(trajs, ref_point, inverse=True)

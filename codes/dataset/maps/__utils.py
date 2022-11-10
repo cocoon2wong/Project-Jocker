@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-10 09:38:32
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 09:38:46
+@LastEditTime: 2022-11-10 11:17:39
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -85,9 +85,9 @@ def cut(target_map: np.ndarray,
     """
     Cut several local maps from the target map.
 
-    :param target_map: target map, shape = (a, b)
-    :param centers: center positions (in grids), shape = (batch, 2)
-    :param half_size: half size of the cut map
+    :param target_map: The target map, shape = (a, b).
+    :param centers: Center positions (in grids), shape = (batch, 2).
+    :param half_size: The half-size of the cut map.
     """
     a, b = target_map.shape[-2:]
     centers = centers.astype(np.int32)

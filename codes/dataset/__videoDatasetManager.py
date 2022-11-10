@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:34:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 10:26:09
+@LastEditTime: 2022-11-10 11:22:01
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -72,10 +72,10 @@ class DatasetManager(BaseManager):
         """
         Load train samples in sub-datasets (i.e., video clips).
 
-        :param clips: clips to load. Set it to `'auto'` to load train agents
-        :param mode: load mode, canbe `'test'` or `'train'`
+        :param clips: Clips to load. Set it to `'auto'` to load train agents.
+        :param mode: The load mode, can be `'test'` or `'train'`.
 
-        :return dataset: the loaded `tf.data.Dataset` object
+        :return dataset: The loaded `tf.data.Dataset` object.
         """
         if type(clips) == str:
             clips = [clips]

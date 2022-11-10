@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 20:10:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-29 18:20:57
+@LastEditTime: 2022-11-10 11:07:59
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -84,8 +84,8 @@ DRAW_TEXT_IN_IMAGES = True
 
 def dir_check(target_dir: str) -> str:
     """
-    Used for check if the `target_dir` exists.
-    It not exist, it will make it.
+    Used for checking if the `target_dir` exists.
+    If it does not exist, it will make it.
     """
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
@@ -97,8 +97,8 @@ def load_from_plist(path: str) -> dict:
     """
     Load plist files into python `dict` object.
 
-    :param path: path of the plist file
-    :return dat: a `dict` object loaded from the file
+    :param path: The path of the plist file.
+    :return dat: A `dict` object loaded from the file.
     """
     with open(path, 'rb') as f:
         dat = plistlib.load(f)

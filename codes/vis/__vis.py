@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 10:35:10
+@LastEditTime: 2022-11-10 11:30:10
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -68,7 +68,7 @@ class Visualization(BaseManager):
         """
         Get a frame from the video
 
-        :param frame: frame number of the image
+        :param frame: The frame number of the image.
         """
         time = 1000 * frame / self.info.paras[1]
         self.video_capture.set(cv2.CAP_PROP_POS_MSEC, time - 1)
@@ -97,8 +97,8 @@ class Visualization(BaseManager):
         """
         Transfer coordinates from real scale to pixels.
 
-        :param real_pos: coordinates, shape = (n, 2) or (k, n, 2)
-        :return pixel_pos: coordinates in pixels
+        :param real_pos: Coordinates, shape = (n, 2) or (k, n, 2).
+        :return pixel_pos: Coordinates in pixels.
         """
         scale = self.info.datasetInfo.scale / self.info.datasetInfo.scale_vis
         weights = self.info.matrix
@@ -140,15 +140,15 @@ class Visualization(BaseManager):
         """
         Draw trajectories on the video.
 
-        :param agent: the agent object (`Agent`) to visualize
-        :param frames: frames of current observation steps
-        :param save_name: name to save the output video, which does not contain
-            the file format
-        :param draw_dis: choose if to draw trajectories as
-            distributions or single dots
-        :param interp: choose whether to draw the full video or only
-            draw on the sampled time steps
-        :param save_as_images: choose if to save as an image or a video clip
+        :param agent: The agent object (`Agent`) to visualize.
+        :param frames: A list frames of current observation steps.
+        :param save_name: The name to save the output video, which does not contain
+            the file format.
+        :param draw_dis: Choose if to draw trajectories as
+            distributions or single dots.
+        :param interp: Choose whether to draw the full video or only
+            draw on the sampled time steps.
+        :param save_as_images: Choose if to save as an image or a video clip.
         """
         f = None
         state = None
@@ -212,7 +212,7 @@ class Visualization(BaseManager):
         for frame in SecondaryBar(frames,
                                   manager=self.manager,
                                   desc='Processing frames...'):
-            # get new scene image
+            # get a new scene image
             if state == DRAW_ON_VIDEO:
                 f = self.get_image(frame)
             elif state == DRAW_ON_IMAGE:
@@ -252,13 +252,15 @@ class Visualization(BaseManager):
         """
         Draw one agent's observations, predictions, and groundtruths.
 
-        :param source: image file
-        :param obs: (optional) observations in *pixel* scale
-        :param gt: (optional) ground truth in *pixel* scale
-        :param pred: (optional) predictions in *pixel* scale, shape = `(K, steps, dim)`
-        :param neighbor: (optional) observed neighbors' positions in *pixel* scale, shape = `(batch, dim)`
-        :param draw_distribution: controls if draw as a distribution
-        :param alpha: alpha channel coefficient
+        :param source: The image file.
+        :param obs: (optional) The observations in *pixel* scale.
+        :param gt: (optional) The ground truth in *pixel* scale.
+        :param pred: (optional) The predictions in *pixel* scale,\
+            shape = `(K, steps, dim)`.
+        :param neighbor: (optional) The observed neighbors' positions\
+             in *pixel* scale, shape = `(batch, dim)`.
+        :param draw_distribution: Controls whether to draw as a distribution.
+        :param alpha: The alpha channel coefficient.
         """
         f = np.zeros([source.shape[0], source.shape[1], 4])
 
@@ -283,11 +285,11 @@ class Visualization(BaseManager):
         if gt is not None:
             f = self.helper.draw_traj(f, gt, self.gt_file)
 
-        # draw background image
+        # draw the background image
         if background is not None:
             f = ADD(background, f, [f.shape[1]//2, f.shape[0]//2])
 
-        # add original image
+        # add the original image
         f = ADD(source, f, [f.shape[1]//2, f.shape[0]//2])
         return f
 
@@ -343,7 +345,7 @@ class Visualization(BaseManager):
 def __draw_single_boundingbox(source, box: np.ndarray, png_file,
                               color, width, alpha):
     """
-    shape of `box` is `(4)`
+    The shape of `box` is `(4)`.
     """
     (y1, x1, y2, x2) = box[:4]
     cv2.rectangle(img=source,
@@ -357,7 +359,7 @@ def __draw_single_boundingbox(source, box: np.ndarray, png_file,
 def __draw_traj_boundingboxes(source, trajs, png_file,
                               color, width, alpha):
     """
-    shape of `trajs` is `(steps, 4)`
+    The shape of `trajs` is `(steps, 4)`.
     """
     for box in trajs:
         source = __draw_single_boundingbox(

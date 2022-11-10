@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 11:13:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-04 16:40:34
+@LastEditTime: 2022-11-10 11:24:55
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -24,8 +24,8 @@ class LossManager(BaseManager):
         """
         Init a `LossManager` object.
 
-        :param manager: manager object, usually a `Structure` object.
-        :param name: name of the manager, which could appear in all dict
+        :param manager: The manager object, usually a `Structure` object.
+        :param name: The name of the manager, which could appear in all dict
             keys in the final output `loss_dict`.
         """
 
@@ -64,7 +64,7 @@ class LossManager(BaseManager):
         """
         Set loss functions and their weights.
 
-        :param loss_dict: a dict of loss functions, where all dict keys
+        :param loss_dict: A dict of loss functions, where all dict keys
             are the callable loss function, and the dict values are the
             weights of the corresponding loss function.
         """
@@ -78,13 +78,13 @@ class LossManager(BaseManager):
         """
         Call all loss functions recorded in the `loss_list`.
 
-        :param outputs: a list of model's output tensors.
-        :param labels: ground truth tensor.
-        :param training: choose whether to run as the training mode.
-        :param coefficient: scale parameter on the loss functions.
+        :param outputs: A list of the model's output tensors.
+        :param labels: The ground truth tensor.
+        :param training: Choose whether to run as the training mode.
+        :param coefficient: The scale parameter on the loss functions.
 
-        :return summary: the weighted sum of all loss functions.
-        :return loss_dict: a dict of values of all loss functions.
+        :return summary: The weighted sum of all loss functions.
+        :return loss_dict: A dict of values of all loss functions.
         """
 
         loss_dict = {}
@@ -131,10 +131,10 @@ class LossManager(BaseManager):
         """
         l2 (2D-point-wise) loss on the keypoints.
 
-        :param outputs: a list of tensors, where `outputs[0].shape`
+        :param outputs: A list of tensors, where `outputs[0].shape`
             is `(batch, K, pred, 2)` or `(batch, pred, 2)`
-            or `(batch, K, n_key, 2)` or `(batch, n_key, 2)`
-        :param labels: shape is `(batch, pred, 2)`
+            or `(batch, K, n_key, 2)` or `(batch, n_key, 2)`.
+        :param labels: Shape is `(batch, pred, 2)`.
         """
         pred = outputs[0]
         if pred.ndim == 3:
@@ -155,9 +155,9 @@ class LossManager(BaseManager):
         l2 (2D-point-wise) loss.
         Support M-dimensional trajectories.
 
-        :param outputs: a list of tensors, where `outputs[0].shape` 
-            is `(batch, K, pred, 2)` or `(batch, pred, 2)`
-        :param labels: shape is `(batch, pred, 2)`
+        :param outputs: A list of tensors, where `outputs[0].shape` 
+            is `(batch, K, pred, 2)` or `(batch, pred, 2)`.
+        :param labels: Shape is `(batch, pred, 2)`.
         """
         pred = outputs[0]
 
@@ -203,10 +203,10 @@ class LossManager(BaseManager):
         l2 (2D-point-wise) loss on the last prediction point.
         Support M-dimensional trajectories.
 
-        :param outputs: a list of tensors, where 
+        :param outputs: A list of tensors, where 
             `outputs[0].shape` is `(batch, K, pred, 2)`
-            or `(batch, pred, 2)`
-        :param labels: shape is `(batch, pred, 2)`
+            or `(batch, pred, 2)`.
+        :param labels: Shape is `(batch, pred, 2)`.
         """
         pred = outputs[0]
 

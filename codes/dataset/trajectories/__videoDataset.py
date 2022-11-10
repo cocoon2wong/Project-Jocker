@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-19 11:19:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 10:04:59
+@LastEditTime: 2022-11-10 11:20:08
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -18,8 +18,8 @@ class Dataset():
     Dataset
     -------
     Manage a full trajectory prediction dataset.
-    A dataset may contains several video clips.
-    One `Dataset` object only controls on dataset split.
+    A dataset may contain several video clips.
+    One `Dataset` object only controls one dataset split.
 
     Properties
     ---
@@ -50,10 +50,8 @@ class Dataset():
 
     def __init__(self, name: str, split: str):
         """
-        init
-
-        :param name: name of the image dataset
-        :param split: split name of the dataset
+        :param name: The name of the image dataset.
+        :param split: The split name of the dataset.
         """
         split_path = self.CONFIG_FILE.format(name, split)
 

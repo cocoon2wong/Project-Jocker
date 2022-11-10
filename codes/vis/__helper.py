@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-29 09:53:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-20 19:49:36
+@LastEditTime: 2022-11-10 11:28:51
 @Description: png content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -29,9 +29,9 @@ class BaseVisHelper():
         """
         Draw a single trajectory point on the source image.
 
-        :param source: background image
-        :param inputs: single observation, shape = (dim)
-        :param png: png image
+        :param source: The background image.
+        :param inputs: A single observation, shape = (dim).
+        :param png: The target png image to put on the image.
         """
         raise NotImplementedError
 
@@ -44,9 +44,9 @@ class BaseVisHelper():
         """
         Draw one trajectory on the source image.
 
-        :param source: background image
-        :param inputs: single observation, shape = (steps, dim)
-        :param png: png image
+        :param source: The background image.
+        :param inputs: A single observation, shape = (steps, dim).
+        :param png: The target png image to put on the image.
         """
         raise NotImplementedError
 
@@ -57,8 +57,8 @@ class BaseVisHelper():
         """
         Draw model predicted trajectories in the distribution way.
 
-        :param source: background image
-        :param inputs: model predictions, shape = (steps, (K), dim)
+        :param source: The background image.
+        :param inputs: Model predictions, shape = (steps, (K), dim).
         """
         # reshape into (K, steps, dim)
         if inputs.ndim == 2:
@@ -186,12 +186,12 @@ def ADD(source: np.ndarray,
         alpha=1.0,
         type=None):
     """
-    Add a png png to the source image
+    Add a png to the source image
 
-    :param source: source image, shape = `(H, W, 3)` or `(H, W, 4)`
-    :param png: png image, shape = `(H, W, 3)` or `(H, W, 4)`
-    :param position: pixel-level position in the source image, shape = `(2)`
-    :param alpha: transparency
+    :param source: The source image, shape = `(H, W, 3)` or `(H, W, 4)`.
+    :param png: The png image, shape = `(H, W, 3)` or `(H, W, 4)`.
+    :param position: The pixel-level position in the source image, shape = `(2)`.
+    :param alpha: Transparency.
     """
     if type == 'auto':
         position = [source.shape[1]//2, source.shape[0]//2]

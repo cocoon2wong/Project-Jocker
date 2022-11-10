@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-10 09:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 10:36:36
+@LastEditTime: 2022-11-10 10:54:36
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -27,7 +27,7 @@ class TrajMapManager(BaseMapManager):
     ---
     The trajectory map is a map that builds from all agents'
     observed trajectories. It indicates all possible walkable
-    aeras around the target agent. The value of trajectory map
+    areas around the target agent. The value of the trajectory map
     is in the range `[0, 1]`. A higher value indicates that
     the area may not walkable.
     """
@@ -165,7 +165,7 @@ class TrajMapManager(BaseMapManager):
               source: np.ndarray = None,
               *args, **kwargs):
 
-        # Cut local trajectory map from the global map
+        # Cut the local trajectory map from the global map
         # Center point: the last observed point
         center_real = agent.traj[-1:, :]
         center_pixel = self.real2grid(center_real)
