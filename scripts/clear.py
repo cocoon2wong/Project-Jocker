@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-07-19 11:11:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-20 15:06:18
+@LastEditTime: 2022-11-11 09:35:32
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,6 +12,7 @@ import os
 import sys
 
 import numpy as np
+from utils import get_value
 
 
 def clean_logs(base_dir):
@@ -74,20 +75,10 @@ def clean_dirs(base_dir):
 
         files = os.listdir(cd)
 
-        if ((len(files) == 0) or 
-            (len(files) == 1 and files[0] == '.DS_Store')):
+        if ((len(files) == 0) or
+                (len(files) == 1 and files[0] == '.DS_Store')):
             os.system(f'rm -r {cd}')
             print(f'Removed `{cd}.`')
-
-
-def get_value(key: str, args: list[str]):
-    """
-    `key` is started with `--`.
-    For example, `--logs`.
-    """
-    args = np.array(args)
-    index = np.where(args == key)[0][0]
-    return str(args[index+1])
 
 
 if __name__ == '__main__':
