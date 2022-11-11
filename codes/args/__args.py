@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-21 15:41:08
+@LastEditTime: 2022-11-10 10:45:38
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -27,13 +27,13 @@ class Args():
 
     def __init__(self, terminal_args: list[str] = None) -> None:
 
-        # args that load from the saved json file
+        # args that load from the saved JSON file
         self._args_load: dict[str, Any] = {}
 
-        # args that obtained from terminal
+        # args obtained from terminal
         self._args_runnning: dict[str, Any] = {}
 
-        # args that set manually
+        # args that are set manually
         self._args_manually: dict[str, Any] = {}
 
         # default args
@@ -132,7 +132,7 @@ class Args():
 
         :param name: name of the arg
         :param default: default value of the arg
-        :param argtype: type of the arg, canbe
+        :param argtype: type of the arg, can be
             - `STATIC`
             - `DYNAMIC`
             - `TEMPORARY`
@@ -261,10 +261,10 @@ class Args():
     @property
     def gpu(self) -> str:
         """
-        Speed up training or test if you have at least one nvidia GPU. 
+        Speed up training or test if you have at least one NVidia GPU. 
         If you have no GPUs or want to run the code on your CPU, 
         please set it to `-1`.
-        NOTE: It only supports training or test on one GPU.
+        NOTE: It only supports training or testing on one GPU.
         """
         return self._get('gpu', '0', argtype=TEMPORARY)
 
@@ -279,7 +279,7 @@ class Args():
     def start_test_percent(self) -> float:
         """
         Set when (at which epoch) to start validation during training.
-        Range of this arg should be `0 <= x <= 1`. 
+        The range of this arg should be `0 <= x <= 1`. 
         Validation may start at epoch
         `args.epochs * args.start_test_percent`.
         """
@@ -317,7 +317,7 @@ class Args():
     @property
     def model(self) -> str:
         """
-        Model type used to train or test.
+        The model type used to train or test.
         """
         return self._get('model', 'none', argtype=STATIC)
 
@@ -339,7 +339,7 @@ class Args():
     @property
     def split(self) -> str:
         """
-        Dataset split used when training and evaluating.
+        The dataset split that used to train and evaluate.
         """
         if self.force_split != 'null':
             return self.force_split
@@ -411,7 +411,7 @@ class Args():
     @property
     def draw_distribution(self) -> int:
         """
-        Conrtols if draw distributions of predictions instead of points.
+        Controls if draw distributions of predictions instead of points.
         If `draw_distribution == 0`, it will draw results as normal coordinates;
         If `draw_distribution == 1`, it will draw all results in the distribution
         way, and points from different time steps will be drawn with different colors.
@@ -428,10 +428,10 @@ class Args():
     @property
     def test_mode(self) -> str:
         """
-        Test settings, canbe `'one'` or `'all'` or `'mix'`.
-        When set it to `one`, it will test the model on the `args.force_split` only;
-        When set it to `all`, it will test on each of the test dataset in `args.split`;
-        When set it to `mix`, it will test on all test dataset in `args.split` together.
+        Test settings. It can be `'one'`, `'all'`, or `'mix'`.
+        When setting it to `one`, it will test the model on the `args.force_split` only;
+        When setting it to `all`, it will test on each of the test datasets in `args.split`;
+        When setting it to `mix`, it will test on all test datasets in `args.split` together.
         """
         if self.draw_results != 'null' or self.draw_videos != 'null':
             self._set('test_mode', 'one')
@@ -448,7 +448,7 @@ class Args():
     @property
     def K(self) -> int:
         """
-        Number of multiple generations when test.
+        Number of multiple generations when testing.
         This arg only works for multiple-generation models.
         """
         return self._get('K', 20, argtype=DYNAMIC)
@@ -456,7 +456,7 @@ class Args():
     @property
     def K_train(self) -> int:
         """
-        Number of multiple generations when training.
+        The number of multiple generations when training.
         This arg only works for multiple-generation models.
         """
         return self._get('K_train', 10, argtype=STATIC)
@@ -495,14 +495,14 @@ class Args():
     def anntype(self) -> str:
         """
         Model's predicted annotation type.
-        Canbe `'coordinate'` or `'boundingbox'`.
+        Can be `'coordinate'` or `'boundingbox'`.
         """
         return self._get('anntype', 'coordinate', argtype=STATIC)
 
     @property
     def interval(self) -> float:
         """
-        Time interval of each sampled trajectory points.
+        Time interval of each sampled trajectory point.
         """
         return self._get('interval', 0.4, argtype=STATIC)
 

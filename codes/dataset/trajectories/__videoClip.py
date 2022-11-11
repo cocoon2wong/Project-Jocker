@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-19 10:32:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 16:10:47
+@LastEditTime: 2022-11-10 11:19:31
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,7 +11,7 @@
 import os
 from typing import Union
 
-from ..utils import DATASET_DIR, dir_check, load_from_plist
+from ...utils import DATASET_DIR, dir_check, load_from_plist
 from .__videoDataset import Dataset
 
 
@@ -36,7 +36,7 @@ class VideoClip():
     Public Methods
     ---
     ```python
-    # Load video clip infomation from the saved `plist` file
+    # Load video clip information from the saved `plist` file
     (method) get: (self: Self@VideoClip) -> VideoClip
 
     # Update dataset information (including dataset splits)
@@ -69,7 +69,7 @@ class VideoClip():
 
         self.CONFIG_FILE = self.CONFIG_FILE.format(self.dataset, self.name)
 
-        # init dataset infomation
+        # init dataset information
         self.datasetInfo = datasetInfo
         if datasetInfo is None:
             self.update_datasetInfo(dataset=dataset)
@@ -82,7 +82,7 @@ class VideoClip():
 
     def get(self):
         """
-        Load video clip infomation from the saved `plist` file.
+        Load video clip information from the saved `plist` file.
         """
         plist_path = self.CONFIG_FILE
 
@@ -98,8 +98,8 @@ class VideoClip():
         """
         Update dataset information (including dataset splits).
 
-        :param dataset: name of the dataset, or the `Dataset` object
-        :param split: name of the dataset split
+        :param dataset: The name of the dataset, or the `Dataset` object.
+        :param split: The name of the dataset split.
         """
         if type(dataset) is str:
             if not split:

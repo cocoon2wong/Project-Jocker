@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-12-21 15:25:47
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-09 18:19:04
+@LastEditTime: 2022-11-10 11:13:00
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -25,14 +25,14 @@ class TrajEncoding(tf.keras.layers.Layer):
                  channels_first=True,
                  *args, **kwargs):
         """
-        Init a trajectory encoding module
+        Init a trajectory encoding module.
 
-        :param units: feature dimension
-        :param activation: activations used in the output layer
-        :param transform_layer: controls if encode trajectories \
-            with some transform methods (like FFTs)
-        :param channels_first: controls if run computations on \
-            the last dimension of the inputs
+        :param units: Feature dimension.
+        :param activation: Activations used in the output layer.
+        :param transform_layer: Controls if encode trajectories \
+            with some transform methods (like FFTs).
+        :param channels_first: Controls if running computations on \
+            the last dimension of the inputs.
         """
 
         super().__init__(*args, **kwargs)
@@ -50,9 +50,9 @@ class TrajEncoding(tf.keras.layers.Layer):
         """
         Encode trajectories into the high-dimension features.
 
-        :param trajs: trajs, shape = `(batch, N, 2)`.
-        :return features: features, shape = `(batch, N, units)`.
-            NOTE: if transform layer was set, it will return a feature 
+        :param trajs: Trajs, shape = `(batch, N, 2)`.
+        :return features: Features, shape = `(batch, N, units)`.      
+            NOTE: If the transform layer was set, it will return a feature 
             with the `shape = (batch, Tsteps, units)`.
         """
         if self.Tlayer:
@@ -78,11 +78,11 @@ class ContextEncoding(tf.keras.layers.Layer):
                  activation=None,
                  *args, **kwargs):
         """
-        Init a context encoding module
+        Init a context encoding module.
 
-        :param output_channels: output channels 
-        :param units: output feature dimension
-        :param activation: activations used in the output layer
+        :param output_channels: Output channels.
+        :param units: Output feature dimension.
+        :param activation: Activations used in the output layer.
         """
 
         super().__init__(*args, **kwargs)
@@ -95,10 +95,10 @@ class ContextEncoding(tf.keras.layers.Layer):
 
     def call(self, context_map: tf.Tensor, **kwargs) -> tf.Tensor:
         """
-        Encode context maps into context features
+        Encode context maps into context features.
 
-        :param context_map: maps, shape = `(batch, a, a)`
-        :return feature: features, shape = `(batch, output_channels, units)`
+        :param context_map: Maps, shape = `(batch, a, a)`.
+        :return feature: Features, shape = `(batch, output_channels, units)`.
         """
         if not POOLING_BEFORE_SAVING:
             context_map = self.pool(context_map[:, :, :, tf.newaxis])

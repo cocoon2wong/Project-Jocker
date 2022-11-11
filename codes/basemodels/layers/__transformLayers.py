@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 15:47:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 15:21:32
+@LastEditTime: 2022-11-10 11:13:20
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -25,10 +25,8 @@ class _BaseTransformLayer(tf.keras.layers.Layer):
     def __init__(self, Oshape: tuple[int, int],
                  *args, **kwargs):
         """
-        init
-
-        :param Oshape: original shape of the layer inputs.\
-            It dose not contain the `batch_size`
+        :param Oshape: The original shape of the layer inputs.\
+            It does not contain the `batch_size`.
         """
 
         super().__init__(*args, **kwargs)
@@ -49,7 +47,7 @@ class _BaseTransformLayer(tf.keras.layers.Layer):
     @property
     def Oshape(self) -> tuple[int, int]:
         """
-        Original shape of the input sequences.
+        The original shape of the input sequences.
         It does not contain the `batch_size` item.
         For example, `(steps, channels)`.
         """
@@ -58,7 +56,7 @@ class _BaseTransformLayer(tf.keras.layers.Layer):
     @property
     def Tshape(self) -> tuple[int, int]:
         """
-        Shape after applying transfroms on the input sequences.
+        Shape after applying transforms on the input sequences.
         It does not contain the `batch_size` item.
         For example, `(steps, channels)`.
         """
@@ -122,7 +120,7 @@ class _BaseTransformLayer(tf.keras.layers.Layer):
     def kernel_function(self, inputs: tf.Tensor,
                         *args, **kwargs):
         """
-        Calculate any kinds of transform on a batch of trajectories.
+        Calculate any kind of transform on a batch of trajectories.
 
         :param inputs: a batch of agents' trajectories, \
             shape is `(batch, steps, channels)`

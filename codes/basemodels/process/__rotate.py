@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 11:15:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-07 11:19:12
+@LastEditTime: 2022-11-10 11:14:36
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -16,8 +16,8 @@ from .__base import BaseProcessLayer
 
 class Rotate(BaseProcessLayer):
     """
-    Rotate trajectories to the referce angle.
-    Default reference angle is 0.
+    Rotate trajectories to the reference angle.
+    The default reference angle is 0.
     """
 
     def __init__(self, anntype: str, ref,
@@ -43,7 +43,7 @@ class Rotate(BaseProcessLayer):
 
     def preprocess(self, trajs: tf.Tensor, use_new_paras=True) -> tf.Tensor:
         """
-        Rotate trajectories to the referce angle.
+        Rotate trajectories to the reference angle.
 
         :param trajs: observations, shape = `[(batch,) obs, dim]`
         :return trajs_rotated: moved trajectories
@@ -61,8 +61,8 @@ class Rotate(BaseProcessLayer):
         """
         Rotate trajectories back to their original angles.
 
-        :param trajs: trajectories, shape = `[(batch, ) pred, dim]`
-        :return trajs_rotated: rotated trajectories
+        :param trajs: Trajectories, shape = `[(batch, ) pred, dim]`.
+        :return trajs_rotated: Rotated trajectories.
         """
         angles = self.paras
         trajs_rotated = self.rotate(trajs,

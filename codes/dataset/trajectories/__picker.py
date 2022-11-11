@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-30 09:52:17
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-20 11:09:01
+@LastEditTime: 2022-11-10 11:18:17
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,7 +13,7 @@ from typing import Union
 import numpy as np
 import tensorflow as tf
 
-from ..base import BaseManager
+from ...base import BaseManager
 
 T_2D_COORDINATE = 'coordinate'
 T_2D_BOUNDINGBOX = 'boundingbox'
@@ -34,9 +34,9 @@ class _BaseAnnType():
         """
         Transfer the n-dim trajectory to the other m-dim trajectory.
 
-        :param target: an instance or subclass of `_BaseAnnType` that \
-            manages the m-dim trajectory 
-        :param traj: n-dim trajectory
+        :param target: An instance or subclass of `_BaseAnnType` that \
+            manages the m-dim trajectory.
+        :param traj: The n-dim trajectory.
         """
         T = type(target)
         if T == type(self):
@@ -131,15 +131,15 @@ class Picker():
 
     def __init__(self, datasetType: str, predictionType: str):
         """
-        Both argument `datasetType` and `predictionType` accept strings:
+        Both arguments `datasetType` and `predictionType` accept strings:
         - `'coordinate'`
         - `'boundingbox'`
         - `'boundingbox-rotate'`
         - `'3Dboundingbox'`
         - `'3Dboundingbox-rotate'`
 
-        :param datasetType: type of the dataset annotation files
-        :param predictionType: type of the model predictions
+        :param datasetType: The type of the dataset annotation files.
+        :param predictionType: The type of the model predictions.
         """
         super().__init__()
 
@@ -157,6 +157,13 @@ class Picker():
 
 
 class AnnotationManager(BaseManager):
+    """
+    Annotation Manager
+    ---
+    A manager to control all annotations and their transformations
+    in dataset files and prediction models. The `AnnotationManager`
+    object is managed by the `Structure` object directly.
+    """
 
     def __init__(self, manager: BaseManager,
                  dataset_type: str,
@@ -188,7 +195,7 @@ class AnnotationManager(BaseManager):
     def get_center(self, inputs: Union[tf.Tensor, np.ndarray]):
         """
         Get the center of trajectories from the processed data.
-        Note that annotation type of `inputs` is the same as model's
+        Note that the annotation type of `inputs` is the same as the model's
         prediction type. (Not the dataset's annotation type.)
         """
         return self.center_picker.get(inputs)
@@ -197,12 +204,12 @@ class AnnotationManager(BaseManager):
             -> Union[list[tf.Tensor], list[np.ndarray]]:
         """
         Reshape inputs trajectories into a series of single coordinates.
-        Note that annotation type of `inputs` is the same as model's
+        Note that the annotation type of `inputs` is the same as the model's
         prediction type. (Not the dataset's annotation type.)
-        For example, when inputs has the annotation type `boundingbox`,
+        For example, when inputs have the annotation type `boundingbox`,
         then this function will reshape it into two slices of single
         2D coordinates with shapes `(..., steps, 2)`, and then return
-        a list that containing them.
+        a list containing them.
         """
         return self.single_picker.get(inputs)
 

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:41:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-18 21:32:03
+@LastEditTime: 2022-11-10 19:12:45
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -22,14 +22,14 @@ class _BaseSilverballersArgs(Args):
     @property
     def Kc(self) -> int:
         """
-        Number of style channels in `Agent` model.
+        The number of style channels in `Agent` model.
         """
         return self._get('Kc', 20, argtype=STATIC)
 
     @property
     def key_points(self) -> str:
         """
-        A list of key-time-steps to be predicted in the agent model.
+        A list of key time steps to be predicted in the agent model.
         For example, `'0_6_11'`.
         """
         return self._get('key_points', '0_6_11', argtype=STATIC)
@@ -39,9 +39,9 @@ class _BaseSilverballersArgs(Args):
         """
         Controls if running any preprocess before model inference.
         Accept a 3-bit-like string value (like `'111'`):
-        - the first bit: `MOVE` trajectories to (0, 0);
-        - the second bit: re-`SCALE` trajectories;
-        - the third bit: `ROTATE` trajectories.
+        - The first bit: `MOVE` trajectories to (0, 0);
+        - The second bit: re-`SCALE` trajectories;
+        - The third bit: `ROTATE` trajectories.
         """
         return self._get('preprocess', '111', argtype=STATIC)
 
@@ -52,7 +52,7 @@ class _BaseSilverballersArgs(Args):
         trajectories.
         It could be:
         - `none`: no transformations
-        - `fft`: fast fourier transform
+        - `fft`: fast Fourier transform
         - `haar`: haar wavelet transform
         - `db2`: DB2 wavelet transform
         """
@@ -61,7 +61,7 @@ class _BaseSilverballersArgs(Args):
     @property
     def feature_dim(self) -> int:
         """
-        Feature dimension used in most layers.
+        Feature dimensions that are used in most layers.
         """
         return self._get('feature_dim', 128, argtype=STATIC)
 

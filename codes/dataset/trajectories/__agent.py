@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-09 16:56:13
+@LastEditTime: 2022-11-10 11:18:07
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,7 +12,7 @@ import copy
 
 import numpy as np
 
-from ..utils import INIT_POSITION
+from ...utils import INIT_POSITION
 from .__picker import AnnotationManager
 
 
@@ -132,7 +132,7 @@ class Agent():
     @property
     def frames(self) -> list:
         """
-        a list of frame index during observation and prediction time.
+        a list of frame indexes during observation and prediction time.
         shape = (obs + pred)
         """
         return self._frames + self._frames_future
@@ -140,7 +140,7 @@ class Agent():
     @property
     def frames_future(self) -> list:
         """
-        a list of frame index during prediction time.
+        a list of frame indexes during prediction time.
         shape = (pred)
         """
         return self._frames_future
@@ -275,11 +275,11 @@ def softmax(x):
 
 def __predict_linear(x, y, x_p, P):
     """
-    Linear prediction
+    Linear prediction.
 
-    :param x: shape = (batch, obs)
-    :param y: shape = (batch, pred)
-    :param P: shape = (obs, obs)
+    :param x: shape = (batch, obs).
+    :param y: shape = (batch, pred).
+    :param P: shape = (obs, obs).
     """
 
     A = np.stack([np.ones_like(x), x]).T        # (obs, 2)

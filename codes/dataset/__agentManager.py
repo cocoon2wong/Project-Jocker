@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-09 18:23:06
+@LastEditTime: 2022-11-10 11:21:37
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -16,9 +16,8 @@ from tqdm import tqdm
 
 from ..base import BaseManager
 from ..utils import POOLING_BEFORE_SAVING
-from .__agent import Agent
-from .__maps import SocialMapManager, TrajMapManager
-from .__picker import AnnotationManager
+from .maps import SocialMapManager, TrajMapManager
+from .trajectories import Agent, AnnotationManager
 
 
 class AgentManager(BaseManager):
@@ -26,6 +25,12 @@ class AgentManager(BaseManager):
     AgentManager
     ---
     Structure to manage several `Agent` objects.
+    The `AgentManager` object is managed by the `DatasetsManager` object.
+
+    Member Managers
+    ---
+    - Trajectory map manager (optional, dynamic): type is `TrajMapManager`;
+    - Social map manager (optional, dynamic): type is `SocialMapManager`.
 
     Public Methods
     ---
@@ -44,7 +49,7 @@ class AgentManager(BaseManager):
     # get labels
     (method) get_labels: (self: Self@AgentManager) -> list[Tensor]
 
-    # make inputs and labels into dataset
+    # make inputs and labels into a dataset object
     (method) make_dataset: (self: Self@AgentManager, 
                             shuffle: bool = False) -> DatasetV2
 
@@ -113,11 +118,11 @@ class AgentManager(BaseManager):
 
     def set_types(self, inputs_type: list[str], labels_type: list[str]):
         """
-        Set type of model inputs and outputs.
+        Set the type of model inputs and outputs.
 
-        :param inputs_type: a list of `str`, accept `'TRAJ'`,
-            `'MAP'`, `'DEST'`, and `'GT'`
-        :param labels_type: a list of `str`, accept `'GT'` and `'DEST'`
+        :param inputs_type: A list of `str`, accept `'TRAJ'`,
+            `'MAP'`, `'DEST'`, and `'GT'`.
+        :param labels_type: A list of `str`, accept `'GT'` and `'DEST'`.
         """
 
         self.model_inputs = inputs_type
@@ -166,7 +171,7 @@ class AgentManager(BaseManager):
         """
         Save data of all agents.
 
-        :param save_dir: directory to save agent data
+        :param save_dir: The directory to save agent data.
         """
         save_dict = {}
         for index, agent in enumerate(self.agents):
@@ -176,9 +181,9 @@ class AgentManager(BaseManager):
 
     def load(self, path: Union[str, list[Agent]]):
         """
-        Load agents' data from saved file.
+        Load agents' data from the saved file.
 
-        :param path: file path of the saved data
+        :param path: The file path of the saved data.
         """
         if not type(path) in [str, list]:
             raise ValueError(path)
@@ -226,9 +231,9 @@ class AgentManager(BaseManager):
         """
         Get model inputs from a list of `Agent`-like objects.
 
-        :param type_name: inputs names, accept `'TRAJ'`, 
-            `'MAP'`, `'DEST'`, and `'GT'`
-        :return inputs: a tensor of stacked inputs
+        :param type_name: Types of all inputs, accept `'TRAJ'`, 
+            `'MAP'`, `'DEST'`, and `'GT'`.
+        :return inputs: A tensor of stacked inputs.
         """
         if type_name == 'TRAJ':
             call = _get_obs_traj
@@ -251,8 +256,8 @@ def _get_obs_traj(input_agents: list[Agent]) -> tf.Tensor:
     """
     Get observed trajectories from agents.
 
-    :param input_agents: a list of input agents, type = `list[Agent]`
-    :return inputs: a Tensor of observed trajectories
+    :param input_agents: A list of input agents, type = `list[Agent]`.
+    :return inputs: A Tensor of observed trajectories.
     """
     inputs = []
     for agent in tqdm(input_agents, 'Prepare trajectories...'):
@@ -265,8 +270,8 @@ def _get_gt_traj(input_agents: list[Agent],
     """
     Get groundtruth trajectories from agents.
 
-    :param input_agents: a list of input agents, type = `list[Agent]`
-    :return inputs: a Tensor of gt trajectories
+    :param input_agents: A list of input agents, type = `list[Agent]`.
+    :return inputs: A Tensor of gt trajectories.
     """
     inputs = []
     for agent in tqdm(input_agents, 'Prepare groundtruth...'):
@@ -284,10 +289,10 @@ def _get_dest_traj(input_agents: list[Agent]) -> tf.Tensor:
 
 def _get_context_map(input_agents: list[Agent]) -> tf.Tensor:
     """
-    Get context map from agents.
+    Get the context map from agents.
 
-    :param input_agents: a list of input agents, type = `list[Agent]`
-    :return inputs: a Tensor of maps
+    :param input_agents: A list of input agents, type = `list[Agent]`.
+    :return inputs: A Tensor of maps.
     """
     inputs = []
     for agent in tqdm(input_agents, 'Prepare maps...'):

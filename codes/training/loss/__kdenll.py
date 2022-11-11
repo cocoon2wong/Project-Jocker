@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-19 09:07:47
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-20 09:15:24
+@LastEditTime: 2022-11-10 11:01:55
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -38,8 +38,8 @@ def KDENLL_2D(pred: tf.Tensor,
 
     batch_size, steps = pred.shape[:2]
 
-    # calculate kde nll
-    # now calculating on cpu with numpy (scipy)
+    # calculate KDE nll
+    # now calculating on CPU with numpy (scipy)
     pred = pred.numpy()
     GT = GT.numpy()
 

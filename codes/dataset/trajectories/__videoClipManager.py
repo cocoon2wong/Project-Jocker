@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:30:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-14 16:12:44
+@LastEditTime: 2022-11-10 10:58:02
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,8 +12,8 @@ import os
 
 import numpy as np
 
-from ..base import BaseManager, SecondaryBar
-from ..utils import INIT_POSITION, TEMP_PATH, dir_check
+from ...base import BaseManager, SecondaryBar
+from ...utils import INIT_POSITION, TEMP_PATH, dir_check
 from .__agent import Agent
 from .__trajectory import Trajectory
 from .__videoClip import VideoClip
@@ -29,10 +29,10 @@ class VideoClipManager(BaseManager):
     Public Methods
     --------------
     ```python
-    # Load trajectory data from the annotation txt file
+    # Load trajectory data from the annotation text file
     (method) load_dataset: (self: Self@VideoClipManager) -> tuple[dict, list]
 
-    # Process metadata of a video clip (like csv dataset files)
+    # Process metadata of a video clip (like CSV dataset files)
     (method) process_metadata: (self: Self@VideoClipManager) 
         -> tuple[ndarray, ndArray, list, list]
 
@@ -63,17 +63,17 @@ class VideoClipManager(BaseManager):
 
     def load_dataset(self):
         """
-        Load trajectory data from the annotation txt file.
-        Data format of the `ann.txt`:
+        Load trajectory data from the annotation text file.
+        The data format of the `ann.txt`:
         It is a matrix with the shape = `(N, M)`, where
         - `N` is the number of records in the file;
         - `M` is the length of each record.
 
-        A record may contains several items, where
+        A record may contain several items, where
         - `item[0]`: frame name (or called the frame id);
         - `item[1]`: agent name (or called the agent id);
         - `item[2:M-1]`: dataset records, like coordinates, 
-            bounding boxes, and other type of trajectory series.
+            bounding boxes, and other types of trajectory series.
         - `item[M-1]`: type of the agent
         """
 
@@ -108,7 +108,7 @@ class VideoClipManager(BaseManager):
 
     def process_metadata(self):
         """
-        Process metadata of a video clip (like csv dataset 
+        Process metadata of a video clip (like CSV dataset 
         files) into numpy ndarray.
         """
         # make directories

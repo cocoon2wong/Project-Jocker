@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-05-03 09:07:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-31 10:06:43
+@LastEditTime: 2022-11-11 09:35:59
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,6 +13,7 @@ import os
 import sys
 
 import numpy as np
+from utils import get_value
 
 
 def read_model_weights(base_path: str):
@@ -39,7 +40,7 @@ def read_model_weights(base_path: str):
         model_type = args['model']
         split = args['split']
 
-        model_dict.append({'type': model_type,
+        model_dict.append({'model': model_type,
                            'split': split,
                            'metric': metric,
                            'path': current_path})
@@ -47,20 +48,21 @@ def read_model_weights(base_path: str):
     return model_dict
 
 
-def sort_weights(base_path: str, model_dict: list[dict]):
+def sort_weights(base_path: str, model_dict: list[dict], sort_key: str = 'model'):
 
-    dataset_dict: dict[str, list[int]] = {}
+    sorted_dict: dict[str, list[int]] = {}
     for index, item in enumerate(model_dict):
+        sort_value = item[sort_key]
         ds = item['split']
 
-        if not ds in dataset_dict.keys():
-            dataset_dict[ds] = []
+        if not sort_value in sorted_dict.keys():
+            sorted_dict[sort_value] = []
 
-        dataset_dict[ds].append(index)
+        sorted_dict[sort_value].append(index)
 
     summary_dict = {}
-    for ds in sorted(dataset_dict.keys()):
-        items = [model_dict[i] for i in dataset_dict[ds]]
+    for ds in sorted(sorted_dict.keys()):
+        items = [model_dict[i] for i in sorted_dict[ds]]
         items = sorted(items, key=lambda x: x['metric'])
         summary_dict[ds] = items
 
@@ -78,11 +80,16 @@ def sort_weights(base_path: str, model_dict: list[dict]):
 
 
 if __name__ == '__main__':
-
-    try:
-        base_path = sys.argv[1]
-    except:
+    args = sys.argv
+    if '--logs' in args:
+        base_path = get_value('--logs', args)
+    else:
         base_path = './logs'
 
+    if '--sort' in args:
+        sort_type = get_value('--sort', args)
+    else:
+        sort_type = 'split'
+
     model_dict = read_model_weights(base_path)
-    sort_weights(base_path, model_dict)
+    sort_weights(base_path, model_dict, sort_type)

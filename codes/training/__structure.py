@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-21 14:20:05
+@LastEditTime: 2022-11-10 11:27:20
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -16,7 +16,7 @@ import tensorflow as tf
 from ..args import Args
 from ..base import BaseManager
 from ..basemodels import Model
-from ..dataset import AgentManager, DatasetManager, AnnotationManager
+from ..dataset import AgentManager, AnnotationManager, DatasetManager
 from ..utils import WEIGHTS_FORMAT, dir_check
 from ..vis import Visualization
 from .loss import LossManager
@@ -43,7 +43,7 @@ class Structure(BaseManager):
     (method) train_or_test: (self: Self@Structure) -> None
     ```
 
-    Other methods should be rewrote when subclassing.
+    Other methods should be rewritten when subclassing.
     """
 
     def __init__(self, args: list[str] = None,
@@ -91,7 +91,8 @@ class Structure(BaseManager):
         groundtruth_trajectory = ['traj', 'pred', 'gt']
         destination = ['des', 'inten']
 
-        :param input_names: type = `str`, accept several keywords
+        :param input_names: Name of the inputs.\
+            Type = `str`, accept several keywords.
         """
         self.model_label_type = []
         for item in args:
@@ -129,15 +130,15 @@ class Structure(BaseManager):
                             loss_move_average: tf.Variable,
                             *args, **kwargs) -> tuple[tf.Tensor, dict[str, tf.Tensor], tf.Tensor]:
         """
-        Run gradient dencent once during training.
+        Run gradient descent once during training.
 
-        :param inputs: model inputs
-        :param labels :ground truth
-        :param loss_move_average: Moving average loss
+        :param inputs: Model inputs.
+        :param labels: Ground truth.
+        :param loss_move_average: Moving average loss.
 
-        :return loss: sum of all single loss functions
-        :return loss_dict: a dict of all loss functions
-        :return loss_move_average: Moving average loss
+        :return loss: The sum of all single loss functions.
+        :return loss_dict: A dict of all loss functions.
+        :return loss_move_average: Moving average loss.
         """
 
         with tf.GradientTape() as tape:
@@ -159,14 +160,14 @@ class Structure(BaseManager):
                        labels: tf.Tensor,
                        training=None) -> tuple[list[tf.Tensor], tf.Tensor, dict[str, tf.Tensor]]:
         """
-        Run one step of forward and calculate metrics.
+        Run one step forward and calculate metrics.
 
-        :param inputs: model inputs
-        :param labels :ground truth
+        :param inputs: Model inputs.
+        :param labels: Ground truth.
 
-        :return model_output: model output
-        :return metrics: weighted sum of all loss 
-        :return loss_dict: a dict contains all loss
+        :return model_output: Model output.
+        :return metrics: The weighted sum of all loss.
+        :return loss_dict: A dict contains all loss.
         """
         outputs = self.model.forward(inputs, training)
         metrics, metrics_dict = \
@@ -217,7 +218,7 @@ class Structure(BaseManager):
 
     def test(self):
         """
-        Run test on the given dataset.
+        Run a test on the given dataset.
         """
         self.log(f'Start test with args = {self.args._args_runnning}')
         test_sets = self.dsmanager.info.test_sets
@@ -252,10 +253,10 @@ class Structure(BaseManager):
 
     def __train(self, ds_train: tf.data.Dataset, ds_val: tf.data.Dataset):
         """
-        Train model on the given dataset.
+        Train the model on the given dataset.
 
-        :param ds_train: train dataset
-        :param ds_val: val dataset
+        :param ds_train: The train dataset.
+        :param ds_val: The val dataset.
 
         :return loss_dict:
         :return metrics_dict:
@@ -267,7 +268,7 @@ class Structure(BaseManager):
         self.model.print_info()
         self.print_info()
 
-        # make log directory and save current args
+        # make a log directory and save current args
         self.args._save_as_json(self.args.log_dir)
 
         # open tensorboard
@@ -309,7 +310,7 @@ class Structure(BaseManager):
                 epoch=epoch,
             )
 
-            # Check if `nan` in loss dictionary
+            # Check if `nan` in the loss dictionary
             if tf.math.is_nan(loss):
                 self.log(e := 'Find `nan` values in the loss dictionary, stop training...',
                          level='error')
@@ -369,7 +370,7 @@ class Structure(BaseManager):
         """
         Test model on the given dataset.
 
-        :param ds_test: test dataset
+        :param ds_test: The test dataset.
 
         :return metric:
         :return metrics_dict
@@ -381,7 +382,7 @@ class Structure(BaseManager):
         self.model.print_info()
         self.print_info()
 
-        # make log directory and save current args
+        # make a log directory and save current args
         if self.args.update_saved_args:
             self.args._save_as_json(self.args.load)
 
@@ -401,20 +402,20 @@ class Structure(BaseManager):
                           return_results=False,
                           show_timebar=False):
         """
-        Run test on the given dataset.
+        Run a test on the given dataset.
 
-        :param ds: the test `tf.data.Dataset` object
-        :param return_results: controls items to return
+        :param ds: The test `tf.data.Dataset` object.
+        :param return_results: Controls items to return.
 
         Returns if `return_results == False`:
-        :return metric: the weighted sum of all metrics
-        :return metric_dict: a dict of all metrics
+        :return metric: The weighted sum of all metrics.
+        :return metric_dict: A dict of all metrics.
 
         Returns if `return_results == True`:
-        :return outputs: a list of model outputs
-        :return labels: model labels
-        :return metric: the weighted sum of all metrics
-        :return metric_dict: a dict of all metrics
+        :return outputs: A list of model outputs.
+        :return labels: Model labels.
+        :return metric: The weighted sum of all metrics.
+        :return metric_dict: A dict of all metrics.
         """
         # init variables for test
         outputs_all = []

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 10:40:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-07 11:23:17
+@LastEditTime: 2022-11-10 11:15:00
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -16,19 +16,19 @@ from .__base import BaseProcessLayer
 
 class Scale(BaseProcessLayer):
     """
-    Scale length of trajectories' direction vector into 1.
-    Reference point when scale is the `last` observation point.
+    Scaling length of trajectories' direction vector into 1.
+    The reference point when scaling is the `last` observation point.
     """
 
     def __init__(self, anntype: str, ref: int = -1,
                  *args, **kwargs):
         """
         `ref` is the index of reference point when scaling.
-        For example, when `ref == -1`, it will takes the last
+        For example, when `ref == -1`, it will take the last
         observation point as the reference point.
         The reference point will not be changed after scaling.
-        When `ref == 'autoref'`, it will takes the last observation
-        point as the refpoint when running preprocess, and takes the
+        When `ref == 'autoref'`, it will take the last observation
+        point as the refpoint when running preprocess, and take the
         first predicted point as the refpoint when running postprocess.
         """
 
@@ -68,11 +68,11 @@ class Scale(BaseProcessLayer):
 
     def preprocess(self, trajs: tf.Tensor, use_new_paras=True) -> tf.Tensor:
         """
-        Scale length of trajectories' direction vector into 1.
-        Reference point when scale is the `last` observation point.
+        Scaling length of trajectories' direction vector into 1.
+        The reference point when scaling is the `last` observation point.
 
-        :param trajs: input trajectories, shape = `[(batch,) obs, 2]`
-        :return trajs_scaled: scaled trajectories
+        :param trajs: Input trajectories, shape = `[(batch,) obs, 2]`.
+        :return trajs_scaled: Scaled trajectories.
         """
         if use_new_paras:
             self.update_paras(trajs)
@@ -87,11 +87,11 @@ class Scale(BaseProcessLayer):
     def postprocess(self, trajs: tf.Tensor) -> tf.Tensor:
         """
         Scale trajectories back to their original.
-        Reference point is the `first` prediction point.
+        The reference point is the `first` prediction point.
 
-        :param trajs: trajectories, shape = `[(batch,) (K,) pred, 2]`
-        :param para_dict: a dict of used parameters, contains `scale:tf.Tensor`
-        :return trajs_scaled: scaled trajectories
+        :param trajs: Trajectories, shape = `[(batch,) (K,) pred, 2]`.
+        :param para_dict: A dict of used parameters, contains `scale: tf.Tensor`.
+        :return trajs_scaled: Scaled trajectories.
         """
         (scales, ref_points) = self.paras
         trajs_scaled = self.scale(trajs, scales,

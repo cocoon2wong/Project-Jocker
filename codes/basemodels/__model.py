@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-09 16:48:54
+@LastEditTime: 2022-11-10 10:52:50
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -35,7 +35,7 @@ class Model(tf.keras.Model, BaseManager):
 
     Usage
     -----
-    When training or test new models, please subclass this class, and clarify
+    When training or testing new models, please subclass this class, and clarify
     model layers used in your model.
     ```python
     class MyModel(Model):
@@ -105,9 +105,9 @@ class Model(tf.keras.Model, BaseManager):
         """
         Run a forward implementation.
 
-        :param inputs: input tensor (or a `list` of tensors)
-        :param training: config if running as training or test mode
-        :return outputs_p: model's output. type=`list[tf.Tensor]`
+        :param inputs: Input tensor (or a `list` of tensors).
+        :param training: Config if running as training or test mode.
+        :return outputs_p: Model's output. type=`list[tf.Tensor]`.
         """
 
         inputs_p = self.process(inputs, preprocess=True, training=training)
@@ -126,7 +126,7 @@ class Model(tf.keras.Model, BaseManager):
         destination = ['des', 'inten']
         ```
 
-        :param input_names: type = `str`, accept several keywords
+        :param input_names: Type = `str`, accept several keywords.
         """
         self.input_type = []
         for item in args:
@@ -222,7 +222,7 @@ class Model(tf.keras.Model, BaseManager):
 
         info = {'Model type': type(self).__name__,
                 'Model name': self.args.model_name,
-                'Model predion type': self.args.anntype,
+                'Model prediction type': self.args.anntype,
                 'Preprocess used': p_layers}
 
         kwargs.update(**info)
