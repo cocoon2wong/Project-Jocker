@@ -1,11 +1,20 @@
 """
-@Author: Conghao Wong
-@Date: 2022-07-15 16:56:02
+@Author: Beihao Xia
+@Date: 2022-11-04 19:18:23
 @LastEditors: Beihao Xia
-@LastEditTime: 2022-10-29 20:35:59
+@LastEditTime: 2022-11-09 20:18:52
 @Description: file content
-@Github: https://github.com/cocoon2wong
-@Copyright 2022 Conghao Wong, All Rights Reserved.
+@Github: https://github.com/conghaowoooong
+@Copyright 2022 Beihao Xia, All Rights Reserved.
+"""
+"""
+@Author: Beihao Xia
+@Date: 2022-11-02 16:14:01
+@LastEditors: Beihao Xia
+@LastEditTime: 2022-11-04 19:16:18
+@Description: file content
+@Github: https://github.com/conghaowoooong
+@Copyright 2022 Beihao Xia, All Rights Reserved.
 """
 
 import tensorflow as tf
@@ -16,10 +25,7 @@ from ..__layers import OuterLayer, get_transform_layers
 from .__baseAgent import BaseAgentModel, BaseAgentStructure
 
 
-class Agent47BModel(BaseAgentModel):
-    """
-    `B` for bilinear for different frequency portions.
-    """
+class Agent47BCEModel(BaseAgentModel):
 
     def __init__(self, Args: AgentArgs,
                  feature_dim: int = 128,
@@ -29,25 +35,32 @@ class Agent47BModel(BaseAgentModel):
                  structure=None,
                  *args, **kwargs):
 
+        Args._set("key_points", "0_1_2_3_4_5_6_7_8_9_10_11")
         super().__init__(Args, feature_dim, id_depth,
                          keypoints_number, keypoints_index,
                          structure, *args, **kwargs)
+        self.set_inputs('obs', 'maps')
 
         # Layers
         self.Tlayer, self.ITlayer = get_transform_layers(self.args.T)
 
         # Transform layers
-        self.t1 = self.Tlayer(Oshape=(self.args.obs_frames, self.args.dim))
-        self.it1 = self.ITlayer(Oshape=(self.n_key, self.args.dim))
+        self.t1 = self.Tlayer((self.args.obs_frames, self.args.dim))
+        self.it1 = self.ITlayer((self.args.pred_frames, self.args.dim))
 
         # Trajectory encoding (with FFTs)
         self.te = layers.TrajEncoding(self.d//2, tf.nn.relu,
                                       transform_layer=self.t1,
                                       channels_first=False)
 
+        # Context Encoding
+        self.ce = layers.ContextEncoding(units=64,
+                                         output_channels=self.t1.Tshape[1],
+                                         activation=tf.nn.tanh)
+
         # steps and shapes after applying transforms
-        self.Tsteps_en = self.te.Tlayer.Tshape[0] if self.te.Tlayer else self.args.obs_frames
-        self.Tchannels_en = self.te.Tlayer.Tshape[1] if self.te.Tlayer else self.args.dim
+        self.Tsteps_en = self.t1.Tshape[0]
+        self.Tchannels_en = self.t1.Tshape[1]
         self.Tsteps_de, self.Tchannels_de = self.it1.Tshape
 
         # Bilinear structure (outer product + pooling + fc)
@@ -75,19 +88,20 @@ class Agent47BModel(BaseAgentModel):
         # Trainable adj matrix and gcn layer
         # It is used to generate multi-style predictions
         self.adj_fc = tf.keras.layers.Dense(self.args.Kc, tf.nn.tanh)
-        self.gcn = layers.GraphConv(units=self.d)
+        self.gcn = layers.GraphConv(units=2*self.d)
 
         # Decoder layers (with spectrums)
-        self.decoder_fc1 = tf.keras.layers.Dense(self.d, tf.nn.tanh)
+        self.decoder_fc1 = tf.keras.layers.Dense(2*self.d, tf.nn.tanh)
         self.decoder_fc2 = tf.keras.layers.Dense(
             self.Tsteps_de * self.Tchannels_de)
         self.decoder_reshape = tf.keras.layers.Reshape(
             [self.args.Kc, self.Tsteps_de, self.Tchannels_de])
 
     def call(self, inputs: list[tf.Tensor],
-             training=None, mask=None):
+             training=None, mask=None,
+             *args, **kwargs):
         """
-        Run the first stage `agent47CE` model.
+        Run the first stage `Agent47BCE` model.
 
         :param inputs: a list of tensors, including `trajs`
             - a batch of observed trajs, shape is `(batch, obs, 2)`
@@ -100,36 +114,39 @@ class Agent47BModel(BaseAgentModel):
 
         # unpack inputs
         trajs = inputs[0]   # (batch, obs, 2)
+        maps = inputs[1]
         bs = trajs.shape[0]
 
-        # feature embedding and encoding -> (batch, Tchannels, d/2)
+        # feature embedding and encoding -> (batch, Tsteps, d/2)
         # uses bilinear structure to encode features
-        f = self.te.call(trajs)             # (batch, Tchannels, d/2)
-        f = self.outer.call(f, f)           # (batch, Tchannels, d/2, d/2)
+        f = self.te.call(trajs)             # (batch, Tsteps, d/2)
+        f = self.outer.call(f, f)           # (batch, Tsteps, d/2, d/2)
         f = tf.transpose(f, [0, 2, 3, 1])   # (batch, d/2, d/2, Tsteps)
         f = self.pooling(f)                 # (batch, Tchannels, d/4, d/4)
         f = tf.transpose(f, [0, 3, 2, 1])   # (batch, Tsteps, d/4, d/4)
         f = tf.reshape(f, [f.shape[0], f.shape[1], -1])
-        spec_features = self.outer_fc(f)    # (batch, Tchannels, d/2)
+        spec_features = self.outer_fc(f)    # (batch, Tsteps, d/2)
+        # spec2_features = self.concat([spec_features, spec_features], axis=-2)
+        f_context = self.ce.call(maps)
+        fuse_features = self.concat([spec_features, f_context])
 
         # Sample random predictions
         all_predictions = []
         rep_time = self.args.K_train if training else self.args.K
 
         t_outputs = self.t1.call(trajs)  # (batch, Tsteps, Tchannels)
-        # reshape into (batch, Tchannels, Tsteps)
         t_outputs = tf.transpose(t_outputs, [0, 2, 1])
 
         for _ in range(rep_time):
-            # assign random ids and embedding -> (batch, Tchannels, d)
+            # assign random ids and embedding -> (batch, Tsteps, d)
             ids = tf.random.normal([bs, self.Tchannels_en, self.d_id])
             id_features = self.ie.call(ids)
 
             # transformer inputs
-            # shapes are (batch, Tchannels, d)
-            t_inputs = self.concat([spec_features, id_features])
+            # shapes are (batch, Tsteps, d)
+            t_inputs = self.concat([fuse_features, id_features])
 
-            # transformer -> (batch, Tchannels, d)
+            # transformer -> (batch, Tsteps, d)
             behavior_features, _ = self.T.call(inputs=t_inputs,
                                                targets=t_outputs,
                                                training=training)
@@ -138,7 +155,7 @@ class Agent47BModel(BaseAgentModel):
             adj = tf.transpose(self.adj_fc(t_inputs), [0, 2, 1])
             m_features = self.gcn.call(behavior_features, adj)
 
-            # predicted keypoints -> (batch, Kc, key, 2)
+            # predicted keypoints -> (batch, Kc, pred, 2)
             y = self.decoder_fc1(m_features)
             y = self.decoder_fc2(y)
             y = self.decoder_reshape(y)
@@ -149,10 +166,16 @@ class Agent47BModel(BaseAgentModel):
         return tf.concat(all_predictions, axis=1)
 
 
-class Agent47B(BaseAgentStructure):
+class Agent47BCE(BaseAgentStructure):
+
+    """
+    Training structure for the `Agent47BCE` model.
+    Note that it is only used to train the single model.
+    Please use the `Silverballers` structure if you want to test any
+    agent-handler based silverballers models.
+    """
 
     def __init__(self, terminal_args: list[str], manager=None):
-
         super().__init__(terminal_args, manager)
 
-        self.set_model_type(Agent47BModel)
+        self.set_model_type(new_type=Agent47BCEModel)

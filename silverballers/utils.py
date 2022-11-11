@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-07-27 20:47:50
-@LastEditors: Conghao Wong
-@LastEditTime: 2022-10-20 20:44:31
+@LastEditors: Beihao Xia
+@LastEditTime: 2022-11-04 19:22:09
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -48,8 +48,13 @@ __SILVERBALLERS_DICT = dict(
     agent=[agents.VA, agents.VAModel],
     vb=[handlers.VB, handlers.VBModel],
 
+    # agent27 series
+    agent27=[agents.Agent27, agents.Agent27Model],
+
     # agent47 series
     agent47B=[agents.Agent47B, agents.Agent47BModel],
+    agent47BE=[agents.Agent47BE, agents.Agent47BEModel],
+    agent47BCE=[agents.Agent47BCE, agents.Agent47BCEModel],
     agent47C=[agents.Agent47C, agents.Agent47CModel],
     agent47CE=[agents.Agent47CE, agents.Agent47CEModel],
 

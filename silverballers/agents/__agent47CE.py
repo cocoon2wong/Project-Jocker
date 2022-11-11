@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-22 20:00:17
-@LastEditors: Conghao Wong
-@LastEditTime: 2022-10-17 15:43:55
+@LastEditors: Beihao Xia
+@LastEditTime: 2022-11-02 16:17:37
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -29,6 +29,7 @@ class Agent47CEModel(BaseAgentModel):
         super().__init__(Args, feature_dim, id_depth,
                          keypoints_number, keypoints_index,
                          structure, *args, **kwargs)
+        self.args._set("key_points", "0_1_2_3_4_5_6_7_8_9_10_11")
 
         # Layers
         self.Tlayer, self.ITlayer = get_transform_layers(self.args.T)
@@ -39,7 +40,8 @@ class Agent47CEModel(BaseAgentModel):
 
         # Trajectory encoding (with FFTs)
         self.te = layers.TrajEncoding(self.d//2, tf.nn.relu,
-                                      transform_layer=self.t1)
+                                      transform_layer=self.t1,
+                                      channels_first=False)
 
         # steps and shapes after applying transforms
         self.Tsteps_en = self.t1.Tshape[0]
@@ -49,7 +51,7 @@ class Agent47CEModel(BaseAgentModel):
         self.outer = OuterLayer(self.d//2, self.d//2, reshape=False)
         self.pooling = tf.keras.layers.MaxPooling2D(
             pool_size=(2, 2),
-            data_format='channels_first')
+            data_format='channels_last')
         self.outer_fc = tf.keras.layers.Dense(self.d//2, tf.nn.tanh)
 
         # Random id encoding
@@ -101,7 +103,9 @@ class Agent47CEModel(BaseAgentModel):
         # uses bilinear structure to encode features
         f = self.te.call(trajs)             # (batch, Tsteps, d/2)
         f = self.outer.call(f, f)           # (batch, Tsteps, d/2, d/2)
-        f = self.pooling(f)                 # (batch, Tsteps, d/4, d/4)
+        f = tf.transpose(f, [0, 2, 3, 1])   # (batch, d/2, d/2, Tsteps)
+        f = self.pooling(f)                 # (batch, Tchannels, d/4, d/4)
+        f = tf.transpose(f, [0, 3, 2, 1])   # (batch, Tsteps, d/4, d/4)
         f = tf.reshape(f, [f.shape[0], f.shape[1], -1])
         spec_features = self.outer_fc(f)    # (batch, Tsteps, d/2)
 

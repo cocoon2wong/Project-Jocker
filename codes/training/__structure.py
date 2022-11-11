@@ -9,6 +9,8 @@
 """
 
 import os
+import time
+import datetime
 
 import numpy as np
 import tensorflow as tf
@@ -169,7 +171,10 @@ class Structure(BaseManager):
         :return metrics: The weighted sum of all loss.
         :return loss_dict: A dict contains all loss.
         """
+        t_start = time.time()
         outputs = self.model.forward(inputs, training)
+        t_end = time.time()
+        # self.log(f"time: {t_end - t_start}")
         metrics, metrics_dict = \
             self.metrics.call(outputs, labels,
                               training=None,
@@ -387,6 +392,7 @@ class Structure(BaseManager):
             self.args._save_as_json(self.args.load)
 
         # Run test
+        
         outputs, labels, metric, metrics_dict = self.__test_on_dataset(
             ds=ds_test,
             return_results=True,
