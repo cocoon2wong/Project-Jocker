@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-21 15:50:16
+@LastEditTime: 2022-11-11 13:37:54
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -60,11 +60,11 @@ class BaseAgentStructure(Structure):
 
     def __init__(self, terminal_args: list[str], manager: Structure = None):
 
-        super().__init__(args=terminal_args,
+        super().__init__(args=AgentArgs(terminal_args),
                          manager=manager,
                          name='Train Manager (First-Stage Sub-network)')
 
-        self.args: AgentArgs = AgentArgs(terminal_args)
+        self.args: AgentArgs
 
         self.set_labels('pred')
         self.loss.set({self.loss.l2: 1.0})
