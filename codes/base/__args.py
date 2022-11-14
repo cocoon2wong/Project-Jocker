@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-14 10:55:45
+@LastEditTime: 2022-11-14 16:09:12
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -54,8 +54,7 @@ class Args(ArgsManager):
 
             # This argument can only be set manually by codes
             # or read from the saved JSON file
-            elif ('dataset' not in self._args_manually.keys() and
-                    'dataset' not in self._args_load.keys()):
+            elif 'dataset' not in self._args_load.keys():
 
                 dirs = os.listdir(DATASET_DIR)
 
@@ -187,8 +186,7 @@ class Args(ArgsManager):
 
             # This argument can only be set manually by codes
             # or read from the saved JSON file
-            if ('log_dir' not in self._args_manually.keys() and
-                    'log_dir' not in self._args_load.keys()):
+            if 'log_dir' not in self._args_load.keys():
 
                 log_dir_current = (TIME +
                                    self.model_name +
@@ -232,7 +230,15 @@ class Args(ArgsManager):
         Path to restore the pre-trained weights before training.
         It will not restore any weights if `args.restore == 'null'`.
         """
-        return self._arg('restore', 'null', argtype=DYNAMIC)
+        return self._arg('restore', 'null', argtype=TEMPORARY)
+
+    @property
+    def restore_args(self) -> str:
+        """
+        Path to restore the reference args before training.
+        It will not restore any args if `args.restore_args == 'null'`.
+        """
+        return self._arg('restore_args', 'null', argtype=TEMPORARY)
 
     @property
     def test_step(self) -> int:
@@ -371,11 +377,9 @@ class Args(ArgsManager):
 
         def preprocess(self: Args):
             if self.anntype == 'coordinate':
-                dim = 2
-
+                self._set('dim', 2)
             elif self.anntype == 'boundingbox':
-                dim = 4
-
+                self._set('dim', 4)
             else:
                 raise ValueError(self.anntype)
 
