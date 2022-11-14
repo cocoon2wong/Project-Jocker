@@ -2,59 +2,81 @@
 @Author: Conghao Wong
 @Date: 2021-08-05 15:26:57
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-31 10:09:36
+@LastEditTime: 2022-11-14 11:19:23
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import re
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath('.'))
+
+from silverballers.__args import SilverballersArgs, AgentArgs, HandlerArgs
+from codes.args import Args
+
 
 FLAG = '<!-- DO NOT CHANGE THIS LINE -->'
 TARGET_FILE = './README.md'
 MAX_SPACE = 20
 
 
-def read_comments(file) -> list[str]:
-    with open(file, 'r') as f:
-        lines = f.readlines()
-
-    lines = ''.join(lines)
-    args = re.findall('@property[^@]*', lines)
+def read_comments(args: Args) -> list[str]:
 
     results = []
-    for arg in args:
-        name = re.findall('(def )(.+)(\()', arg)[0][1]
-        dtype = re.findall('(-> )(.*)(:)', arg)[0][1]
-        argtype = re.findall('(argtype=)(.*)(\))', arg)[0][1]
-        default = re.findall('(, )(.*)(, arg)', arg)[0][1]
-        comments = re.findall('(""")([\S\s]+)(""")', arg)[0][1]
-        comments = comments.replace('\n', ' ')
+    for arg in args._arg_list:
+
+        name = arg
+        default = args._args_default[name]
+        dtype = type(default).__name__
+        argtype = args._arg_type[name]
+
+        short_name_desc = ''
+        if name in args._arg_short_name.values():
+            short_names = []
+            for key in args._arg_short_name.keys():
+                if args._arg_short_name[key] == name:
+                    short_names.append(key)
+
+            ss = ' '.join(['`-{}`'.format(s) for s in short_names])
+            short_name_desc = f' (short for {ss})'
+
+        doc = getattr(args.__class__, arg).__doc__
+        doc = doc.replace('\n', ' ')
         for _ in range(MAX_SPACE):
-            comments = comments.replace('  ', ' ')
+            doc = doc.replace('  ', ' ')
 
-        comments = re.findall('( *)(.*)( *)', comments)[0][1]
-
-        if comments.endswith('. '):
-            comments = comments[:-1]
-
-        s = (f'- `--{name}`, type=`{dtype}`, argtype=`{argtype}`.\n  ' +
-             f'{comments}\n  The default value is `{default}`.')
+        s = (f'- `--{name}`' + short_name_desc +
+             f': type=`{dtype}`, argtype=`{argtype}`.\n' +
+             f' {doc}\n  The default value is `{default}`.')
         results.append(s + '\n')
         print(s)
 
     return results
 
 
-def update(md_file, files: list[str], titles: list[str]):
+def get_doc(args: list[Args], titles: list[str]) -> list[str]:
 
     new_lines = []
-    for f, title in zip(files, titles):
-        new_lines += [f'\n### {title}\n\n']
-        c = read_comments(f)
-        c.sort()
-        new_lines += c
+    all_args = []
 
+    for arg, title in zip(args, titles):
+        new_lines += [f'\n### {title}\n\n']
+        c = read_comments(arg)
+        c.sort()
+
+        for new_line in c:
+            name = new_line.split('`')[1]
+            if name not in all_args:
+                all_args.append(name)
+                new_lines.append(new_line)
+
+    return new_lines
+
+
+def update_readme(new_lines: list[str], md_file: str):
     with open(md_file, 'r') as f:
         lines = f.readlines()
     lines = ''.join(lines)
@@ -72,10 +94,39 @@ def update(md_file, files: list[str], titles: list[str]):
         f.writelines(all_lines)
 
 
+def print_help_info(value: str):
+
+    from codes.args import Args
+    from silverballers.__args import SilverballersArgs, AgentArgs, HandlerArgs
+    from scripts.update_readme import get_doc
+
+    files = [Args(is_temporary=True),
+             SilverballersArgs(is_temporary=True),
+             AgentArgs(is_temporary=True),
+             HandlerArgs(is_temporary=True)]
+
+    titles = ['Basic args',
+              'Silverballers args',
+              'First-stage silverballers args',
+              'Second-stage silverballers args']
+
+    doc_lines = get_doc(files, titles)
+    if value == 'all_args':
+        [print(doc) for doc in doc_lines]
+    else:
+        [print(doc) for doc in doc_lines if doc.startswith(value)]
+
+
 if __name__ == '__main__':
-    for model in ['Silverballers']:
-        files = ['./codes/args/__args.py',
-                 f'./{model}/__args.py']
-        titles = ['Basic args',
-                  f'{model} args']
-        update(TARGET_FILE.format(model), files, titles)
+    files = [Args(is_temporary=True),
+             SilverballersArgs(is_temporary=True),
+             AgentArgs(is_temporary=True),
+             HandlerArgs(is_temporary=True)]
+
+    titles = ['Basic args',
+              'Silverballers args',
+              'First-stage silverballers args',
+              'Second-stage silverballers args']
+
+    doc = get_doc(files, titles)
+    update_readme(doc, TARGET_FILE)

@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-07-27 20:47:50
-@LastEditors: Beihao Xia
-@LastEditTime: 2022-11-04 19:22:09
+@LastEditors: Conghao Wong
+@LastEditTime: 2022-11-14 09:50:36
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -20,13 +20,18 @@ class SilverballersMKII(BaseSilverballers):
 
     def __init__(self, terminal_args: list[str]):
 
-        min_args = SilverballersArgs(terminal_args)
-        minimal_agent_args = Args()._load_from_json(min_args.loada)
-        agent_model = get_model(minimal_agent_args.model)
+        min_args = SilverballersArgs(terminal_args, is_temporary=True)
+        a_model_path = min_args.loada
+        b_model_path = min_args.loadb
 
-        if not min_args.loadb.startswith('l'):
-            minimal_handler_args = Args()._load_from_json(min_args.loadb)
-            handler_model = get_model(minimal_handler_args.model)
+        # Assign the model type of the first-stage subnetwork
+        min_args_a = Args(is_temporary=True)._load_from_json(a_model_path)
+        agent_model = get_model(min_args_a.model)
+
+        # Assign the model type of the second-stage subnetwork
+        if not b_model_path.startswith('l'):
+            min_args_b = Args(is_temporary=True)._load_from_json(b_model_path)
+            handler_model = get_model(min_args_b.model)
         else:
             handler_model = None
 
@@ -58,6 +63,9 @@ __SILVERBALLERS_DICT = dict(
     agent47C=[agents.Agent47C, agents.Agent47CModel],
     agent47CE=[agents.Agent47CE, agents.Agent47CEModel],
 
+    # burnwood series
+    burnwoodC=[handlers.BurnwoodC, handlers.BurnwoodCModel],
+    # burnwoodM=[handlers.BurnwoodM, handlers.BurnwoodMModel],
 
     # Silverballers Structures (Traditional)
     V=[V, None],

@@ -2,13 +2,14 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-21 15:54:43
+@LastEditTime: 2022-11-14 09:45:28
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import tensorflow as tf
+
 from codes.managers import AnnotationManager, DatasetManager, Model, Structure
 
 from .__args import AgentArgs, SilverballersArgs
@@ -129,26 +130,29 @@ class BaseSilverballers(Structure):
 
     def __init__(self, terminal_args: list[str]):
 
-        # load args
-        self.args = SilverballersArgs(terminal_args)
+        # Load minimal args
+        min_args = SilverballersArgs(terminal_args, is_temporary=True)
 
-        # check weights
-        if 'null' in [self.args.loada, self.args.loadb]:
+        # Check args
+        if 'null' in [min_args.loada, min_args.loadb]:
             raise ('`Agent` or `Handler` not found!' +
                    ' Please specific their paths via `--loada` or `--loadb`.')
 
-        # load basic args from the saved agent model
-        agent_args = AgentArgs(terminal_args + ['--load', self.args.loada])
+        # Load basic args from the saved agent model
+        min_args_a = AgentArgs(terminal_args + ['--load', min_args.loada],
+                               is_temporary=True)
 
-        if self.args.batch_size > agent_args.batch_size:
-            self.args._set('batch_size', agent_args.batch_size)
+        # Assign args from the saved Agent-Model's args
+        extra_args = []
+        if min_args.batch_size > min_args_a.batch_size:
+            extra_args += ['--batch_size', str(min_args_a.batch_size)]
 
-        self.args._set('dataset', agent_args.dataset)
-        self.args._set('split', agent_args.split)
-        self.args._set('dim', agent_args.dim)
-        self.args._set('anntype', agent_args.anntype)
-        self.args._set('obs_frames', agent_args.obs_frames)
-        self.args._set('pred_frames', agent_args.pred_frames)
+        extra_args += ['--split', str(min_args_a.split),
+                       '--anntype', str(min_args_a.anntype),
+                       '--obs_frames', str(min_args_a.obs_frames),
+                       '--pred_frames', str(min_args_a.pred_frames)]
+
+        self.args = SilverballersArgs(terminal_args + extra_args)
 
         # init the structure
         super().__init__(self.args)
@@ -217,7 +221,7 @@ class BaseSilverballers(Structure):
             the structure's args
         """
 
-        struct = structure(args, manager=self)
+        struct = structure(args, manager=self, is_temporary=True)
         for key in kwargs.keys():
             struct.args._set(key, kwargs[key])
 
