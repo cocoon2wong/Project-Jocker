@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-08-05 15:26:57
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-14 11:19:23
+@LastEditTime: 2022-11-14 11:38:58
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -52,7 +52,7 @@ def read_comments(args: Args) -> list[str]:
              f': type=`{dtype}`, argtype=`{argtype}`.\n' +
              f' {doc}\n  The default value is `{default}`.')
         results.append(s + '\n')
-        print(s)
+        # print(s)
 
     return results
 
@@ -114,7 +114,8 @@ def print_help_info(value: str):
     if value == 'all_args':
         [print(doc) for doc in doc_lines]
     else:
-        [print(doc) for doc in doc_lines if doc.startswith(value)]
+        doc_lines = [doc for doc in doc_lines if doc[5:].startswith(value)]
+        [print(doc) for doc in doc_lines]
 
 
 if __name__ == '__main__':
