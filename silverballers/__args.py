@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:41:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-14 09:27:45
+@LastEditTime: 2022-11-14 10:28:18
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -39,8 +39,8 @@ class _BaseSilverballersArgs(Args):
     @property
     def preprocess(self) -> str:
         """
-        Controls if running any preprocess before model inference.
-        Accept a 3-bit-like string value (like `'111'`):
+        Controls whether to run any pre-process before the model inference.
+        It accepts a 3-bit-like string value (like `'111'`):
         - The first bit: `MOVE` trajectories to (0, 0);
         - The second bit: re-`SCALE` trajectories;
         - The third bit: `ROTATE` trajectories.
@@ -95,7 +95,7 @@ class HandlerArgs(_BaseSilverballersArgs):
     @property
     def points(self) -> int:
         """
-        Controls the number of keypoints accepted in the handler model.
+        The number of keypoints accepted in the handler model.
         """
         return self._arg('points', 1, argtype=STATIC)
 
@@ -110,13 +110,13 @@ class SilverballersArgs(_BaseSilverballersArgs):
     @property
     def loada(self) -> str:
         """
-        Path for agent model.
+        Path to load the first-stage agent model.
         """
         return self._arg('loada', 'null', argtype=TEMPORARY)
 
     @property
     def loadb(self) -> str:
         """
-        Path for handler model.
+        Path to load the second-stage handler model.
         """
         return self._arg('loadb', 'null', argtype=TEMPORARY)

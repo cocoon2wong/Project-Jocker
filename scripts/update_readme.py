@@ -2,58 +2,65 @@
 @Author: Conghao Wong
 @Date: 2021-08-05 15:26:57
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-31 10:09:36
+@LastEditTime: 2022-11-14 10:23:15
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import re
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath('.'))
+
+from codes.args import Args
+from silverballers.__args import SilverballersArgs, AgentArgs, HandlerArgs
+
 
 FLAG = '<!-- DO NOT CHANGE THIS LINE -->'
 TARGET_FILE = './README.md'
 MAX_SPACE = 20
 
 
-def read_comments(file) -> list[str]:
-    with open(file, 'r') as f:
-        lines = f.readlines()
-
-    lines = ''.join(lines)
-    args = re.findall('@property[^@]*', lines)
+def read_comments(args: Args) -> list[str]:
 
     results = []
-    for arg in args:
-        name = re.findall('(def )(.+)(\()', arg)[0][1]
-        dtype = re.findall('(-> )(.*)(:)', arg)[0][1]
-        argtype = re.findall('(argtype=)(.*)(\))', arg)[0][1]
-        default = re.findall('(, )(.*)(, arg)', arg)[0][1]
-        comments = re.findall('(""")([\S\s]+)(""")', arg)[0][1]
-        comments = comments.replace('\n', ' ')
+    for arg in args._arg_list:
+
+        name = arg
+        default = args._args_default[name]
+        dtype = type(default).__name__
+        argtype = args._arg_type[name]
+
+        doc = getattr(args.__class__, arg).__doc__
+        doc = doc.replace('\n', ' ')
         for _ in range(MAX_SPACE):
-            comments = comments.replace('  ', ' ')
+            doc = doc.replace('  ', ' ')
 
-        comments = re.findall('( *)(.*)( *)', comments)[0][1]
-
-        if comments.endswith('. '):
-            comments = comments[:-1]
-
-        s = (f'- `--{name}`, type=`{dtype}`, argtype=`{argtype}`.\n  ' +
-             f'{comments}\n  The default value is `{default}`.')
+        s = (f'- `--{name}`: type=`{dtype}`, argtype=`{argtype}`.\n' +
+             f' {doc}\n  The default value is `{default}`.')
         results.append(s + '\n')
         print(s)
 
     return results
 
 
-def update(md_file, files: list[str], titles: list[str]):
+def update(md_file, args: list[Args], titles: list[str]):
 
     new_lines = []
-    for f, title in zip(files, titles):
+    all_args = []
+
+    for arg, title in zip(args, titles):
         new_lines += [f'\n### {title}\n\n']
-        c = read_comments(f)
+        c = read_comments(arg)
         c.sort()
-        new_lines += c
+
+        for new_line in c:
+            name = new_line.split('`')[1]
+            if name not in all_args:
+                all_args.append(name)
+                new_lines.append(new_line)
 
     with open(md_file, 'r') as f:
         lines = f.readlines()
@@ -73,9 +80,14 @@ def update(md_file, files: list[str], titles: list[str]):
 
 
 if __name__ == '__main__':
-    for model in ['Silverballers']:
-        files = ['./codes/args/__args.py',
-                 f'./{model}/__args.py']
-        titles = ['Basic args',
-                  f'{model} args']
-        update(TARGET_FILE.format(model), files, titles)
+    files = [Args(is_temporary=True),
+             SilverballersArgs(is_temporary=True),
+             AgentArgs(is_temporary=True),
+             HandlerArgs(is_temporary=True)]
+
+    titles = ['Basic args',
+              'Silverballers args',
+              'First-stage silverballers args',
+              'Second-stage silverballers args']
+
+    update(TARGET_FILE, files, titles)
