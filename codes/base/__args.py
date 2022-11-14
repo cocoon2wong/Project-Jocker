@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-14 16:09:12
+@LastEditTime: 2022-11-14 16:35:45
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -32,7 +32,7 @@ class Args(ArgsManager):
         """
         Batch size when implementation.
         """
-        return self._arg('batch_size', 5000, argtype=DYNAMIC)
+        return self._arg('batch_size', 5000, argtype=DYNAMIC, short_name='bs')
 
     @property
     def dataset(self) -> str:
@@ -110,6 +110,7 @@ class Args(ArgsManager):
                 self._set('split', self.force_split)
 
         return self._arg('split', 'zara1', argtype=STATIC,
+                         short_name='s',
                          preprocess=preprocess)
 
     @property
@@ -255,14 +256,14 @@ class Args(ArgsManager):
         """
         Observation frames for prediction.
         """
-        return self._arg('obs_frames', 8, argtype=STATIC)
+        return self._arg('obs_frames', 8, argtype=STATIC, short_name='obs')
 
     @property
     def pred_frames(self) -> int:
         """
         Prediction frames.
         """
-        return self._arg('pred_frames', 12, argtype=STATIC)
+        return self._arg('pred_frames', 12, argtype=STATIC, short_name='pred')
 
     @property
     def draw_results(self) -> str:
