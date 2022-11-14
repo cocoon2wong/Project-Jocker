@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-11 12:41:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-14 09:29:21
+@LastEditTime: 2022-11-14 11:06:23
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -129,6 +129,14 @@ class ArgsManager(BaseObject):
 
             except IndexError:
                 break
+
+            except KeyError:
+                if self._is_temporary:
+                    index += 2
+                else:
+                    self.log(f'The abbreviation `-{name}` was not found,' +
+                             ' please check your spelling.',
+                             level='error', raiseError=KeyError)
 
         self._args_runnning = dic
         return self

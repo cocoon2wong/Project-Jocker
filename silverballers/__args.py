@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:41:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-14 10:28:18
+@LastEditTime: 2022-11-14 10:56:16
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -112,11 +112,11 @@ class SilverballersArgs(_BaseSilverballersArgs):
         """
         Path to load the first-stage agent model.
         """
-        return self._arg('loada', 'null', argtype=TEMPORARY)
+        return self._arg('loada', 'null', argtype=TEMPORARY, short_name='la')
 
     @property
     def loadb(self) -> str:
         """
         Path to load the second-stage handler model.
         """
-        return self._arg('loadb', 'null', argtype=TEMPORARY)
+        return self._arg('loadb', 'null', argtype=TEMPORARY, short_name='lb')

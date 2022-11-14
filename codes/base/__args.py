@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-14 09:23:45
+@LastEditTime: 2022-11-14 10:55:45
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -210,7 +210,7 @@ class Args(ArgsManager):
         training manager will start training new models according
         to other given args.
         """
-        return self._arg('load', 'null', argtype=TEMPORARY)
+        return self._arg('load', 'null', argtype=TEMPORARY, short_name='l')
 
     @property
     def model(self) -> str:
@@ -269,7 +269,7 @@ class Args(ArgsManager):
         on a blank canvas. Note that `test_mode` will be set to `'one'` and
         `force_split` will be set to `draw_results` if `draw_results != 'null'`.
         """
-        return self._arg('draw_results', 'null', argtype=TEMPORARY)
+        return self._arg('draw_results', 'null', argtype=TEMPORARY, short_name='dr')
 
     @property
     def draw_videos(self) -> str:
@@ -301,7 +301,7 @@ class Args(ArgsManager):
         If `draw_distribution == 1`, it will draw all results in the distribution
         way, and points from different time steps will be drawn with different colors.
         """
-        return self._arg('draw_distribution', 0, argtype=TEMPORARY)
+        return self._arg('draw_distribution', 0, argtype=TEMPORARY, short_name='dd')
 
     @property
     def step(self) -> int:

@@ -207,13 +207,13 @@ About the `argtype`:
 - `--dim`: type=`int`, argtype=`static`.
   Dimension of the `trajectory`. For example, - coordinate (x, y) -> `dim = 2`; - boundingbox (xl, yl, xr, yr) -> `dim = 4`. 
   The default value is `-1`.
-- `--draw_distribution`: type=`int`, argtype=`temporary`.
+- `--draw_distribution` (short for `-dd`): type=`int`, argtype=`temporary`.
   Controls if draw distributions of predictions instead of points. If `draw_distribution == 0`, it will draw results as normal coordinates; If `draw_distribution == 1`, it will draw all results in the distribution way, and points from different time steps will be drawn with different colors. 
   The default value is `0`.
 - `--draw_index`: type=`str`, argtype=`temporary`.
   Indexes of test agents to visualize. Numbers are split with `_`. For example, `'123_456_789'`. 
   The default value is `all`.
-- `--draw_results`: type=`str`, argtype=`temporary`.
+- `--draw_results` (short for `-dr`): type=`str`, argtype=`temporary`.
   Controls whether to draw visualized results on video frames. Accept the name of one video clip. The codes will first try to load the video file according to the path saved in the `plist` file (saved in `dataset_configs` folder), and if it loads successfully it will draw the results on that video, otherwise it will draw results on a blank canvas. Note that `test_mode` will be set to `'one'` and `force_split` will be set to `draw_results` if `draw_results != 'null'`. 
   The default value is `null`.
 - `--draw_videos`: type=`str`, argtype=`temporary`.
@@ -237,7 +237,7 @@ About the `argtype`:
 - `--interval`: type=`float`, argtype=`static`.
   Time interval of each sampled trajectory point. 
   The default value is `0.4`.
-- `--load`: type=`str`, argtype=`temporary`.
+- `--load` (short for `-l`): type=`str`, argtype=`temporary`.
   Folder to load model (to test). If set to `null`, the training manager will start training new models according to other given args. 
   The default value is `null`.
 - `--log_dir`: type=`str`, argtype=`static`.
@@ -309,10 +309,10 @@ About the `argtype`:
 - `--key_points`: type=`str`, argtype=`static`.
   A list of key time steps to be predicted in the agent model. For example, `'0_6_11'`. 
   The default value is `0_6_11`.
-- `--loada`: type=`str`, argtype=`temporary`.
+- `--loada` (short for `-la`): type=`str`, argtype=`temporary`.
   Path to load the first-stage agent model. 
   The default value is `null`.
-- `--loadb`: type=`str`, argtype=`temporary`.
+- `--loadb` (short for `-lb`): type=`str`, argtype=`temporary`.
   Path to load the second-stage handler model. 
   The default value is `null`.
 - `--preprocess`: type=`str`, argtype=`static`.
