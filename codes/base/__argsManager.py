@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-11 12:41:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-14 11:06:23
+@LastEditTime: 2022-11-14 16:10:33
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -38,6 +38,7 @@ class ArgsManager(BaseObject):
 
         self._is_temporary = is_temporary
         self._init_done = False
+        self._need_update = False
 
         # Args that load from the saved JSON file
         self._args_load: dict[str, Any] = {}
@@ -54,6 +55,7 @@ class ArgsManager(BaseObject):
         # The default args (default)
         self._args_default: dict[str, Any] = {}
 
+        # A list to save all registered args' names
         self._arg_list = []
         # Types of all args, e.g. `STATIC`.
         self._arg_type: dict[str, str] = {}
@@ -63,18 +65,27 @@ class ArgsManager(BaseObject):
         # Values: Full names.
         self._arg_short_name: dict[str, str] = {}
 
+        # A list to save all initialized args
+        self._processed_args: list[str] = []
+
         # Register all args used in this object
         self._visit_args()
         self._init_done = True
 
-        # Load args and run preprocess methods
+        # Load terminal args
         if terminal_args:
             self._load_from_terminal(terminal_args)
 
+        # Load json args
         if (l := self.load) != 'null':
             self._load_from_json(l)
 
+        # Visit all args to run initialize methods
         self._visit_args()
+
+        # Restore reference args before training and testing
+        if self.restore_args != 'null':
+            self._load_from_json(self.restore_args, 'default')
 
     def _visit_args(self):
         """
@@ -84,9 +95,20 @@ class ArgsManager(BaseObject):
             if not arg.startswith('_'):
                 getattr(self, arg)
 
-    def _load_from_json(self, dir_path: str):
+    def _update_args(self):
+        """
+        Update args by reapplying all preprocess methods.
+        """
+        self._need_update = True
+        self._visit_args()
+        self._need_update = False
+
+    def _load_from_json(self, dir_path: str, target='load'):
         """
         Load args from the saved JSON file.
+
+        :param dir_path: Path to the folder of the JSON file.
+        :param target: Target dictionary to load, can be `'load'` or `'default'`.
         """
         try:
             arg_paths = [(p := os.path.join(dir_path, item)) for item in os.listdir(dir_path) if (
@@ -95,7 +117,14 @@ class ArgsManager(BaseObject):
             with open(p, 'r') as f:
                 json_dict = json.load(f)
 
-            self._args_load = json_dict
+            if target == 'load':
+                self._args_load = json_dict
+            elif target == 'default':
+                self._args_default_manually = json_dict
+            else:
+                raise ValueError(target)
+
+            self._update_args()
 
         except:
             raise ValueError(f'Failed to load args from `{dir_path}`.')
@@ -193,8 +222,15 @@ class ArgsManager(BaseObject):
             return None
 
         else:
+            # The preprocess method only runs one time
             if preprocess is not None:
-                preprocess(self)
+                if self._need_update:
+                    preprocess(self)
+
+                elif name not in self._processed_args:
+                    preprocess(self)
+                    self._processed_args.append(name)
+
             return self._get(name)
 
     def _register(self, name: str,

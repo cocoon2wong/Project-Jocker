@@ -198,7 +198,7 @@ About the `argtype`:
 - `--auto_dimension`: type=`int`, argtype=`temporary`.
   Choose whether to handle the dimension adaptively. It is now only used for silverballers models that are trained with annotation type `coordinate` but want to test on datasets with annotation type `boundingbox`. 
   The default value is `0`.
-- `--batch_size`: type=`int`, argtype=`dynamic`.
+- `--batch_size` (short for `-bs`): type=`int`, argtype=`dynamic`.
   Batch size when implementation. 
   The default value is `5000`.
 - `--dataset`: type=`str`, argtype=`static`.
@@ -252,13 +252,13 @@ About the `argtype`:
 - `--model`: type=`str`, argtype=`static`.
   The model type used to train or test. 
   The default value is `none`.
-- `--obs_frames`: type=`int`, argtype=`static`.
+- `--obs_frames` (short for `-obs`): type=`int`, argtype=`static`.
   Observation frames for prediction. 
   The default value is `8`.
 - `--pmove`: type=`int`, argtype=`static`.
   Index of the reference point when moving trajectories. 
   The default value is `-1`.
-- `--pred_frames`: type=`int`, argtype=`static`.
+- `--pred_frames` (short for `-pred`): type=`int`, argtype=`static`.
   Prediction frames. 
   The default value is `12`.
 - `--protate`: type=`float`, argtype=`static`.
@@ -267,13 +267,16 @@ About the `argtype`:
 - `--pscale`: type=`str`, argtype=`static`.
   Index of the reference point when scaling trajectories. 
   The default value is `autoref`.
-- `--restore`: type=`str`, argtype=`dynamic`.
+- `--restore_args`: type=`str`, argtype=`temporary`.
+  Path to restore the reference args before training. It will not restore any args if `args.restore_args == 'null'`. 
+  The default value is `null`.
+- `--restore`: type=`str`, argtype=`temporary`.
   Path to restore the pre-trained weights before training. It will not restore any weights if `args.restore == 'null'`. 
   The default value is `null`.
 - `--save_base_dir`: type=`str`, argtype=`static`.
   Base folder to save all running logs. 
   The default value is `./logs`.
-- `--split`: type=`str`, argtype=`static`.
+- `--split` (short for `-s`): type=`str`, argtype=`static`.
   The dataset split that used to train and evaluate. 
   The default value is `zara1`.
 - `--start_test_percent`: type=`float`, argtype=`static`.
