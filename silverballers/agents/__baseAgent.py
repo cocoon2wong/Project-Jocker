@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-11 13:37:54
+@LastEditTime: 2022-11-14 09:35:50
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -58,11 +58,17 @@ class BaseAgentStructure(Structure):
 
     model_type: BaseAgentModel = None
 
-    def __init__(self, terminal_args: list[str], manager: Structure = None):
+    def __init__(self, terminal_args: list[str],
+                 manager: Structure = None,
+                 is_temporary=False):
 
-        super().__init__(args=AgentArgs(terminal_args),
+        name = 'Train Manager'
+        if is_temporary:
+            name += ' (First-Stage Sub-network)'
+
+        super().__init__(args=AgentArgs(terminal_args, is_temporary),
                          manager=manager,
-                         name='Train Manager (First-Stage Sub-network)')
+                         name=name)
 
         self.args: AgentArgs
 

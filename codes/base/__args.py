@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-11 14:03:57
+@LastEditTime: 2022-11-14 09:23:45
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -22,8 +22,10 @@ class Args(ArgsManager):
     A set of args used for training or evaluating prediction models.
     """
 
-    def __init__(self, terminal_args: list[str] = None) -> None:
-        super().__init__(terminal_args)
+    def __init__(self, terminal_args: list[str] = None,
+                 is_temporary=False) -> None:
+
+        super().__init__(terminal_args, is_temporary)
 
     @property
     def batch_size(self) -> int:
@@ -180,6 +182,9 @@ class Args(ArgsManager):
         """
 
         def preprocess(self: Args):
+            if self._is_temporary:
+                return
+
             # This argument can only be set manually by codes
             # or read from the saved JSON file
             if ('log_dir' not in self._args_manually.keys() and
@@ -189,6 +194,7 @@ class Args(ArgsManager):
                                    self.model_name +
                                    self.model +
                                    self.split)
+
                 default_log_dir = os.path.join(dir_check(self.save_base_dir),
                                                log_dir_current)
 

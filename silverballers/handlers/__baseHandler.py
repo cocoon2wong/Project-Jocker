@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-11 14:11:19
+@LastEditTime: 2022-11-14 09:34:56
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -143,10 +143,17 @@ class BaseHandlerStructure(Structure):
 
     model_type = None
 
-    def __init__(self, terminal_args: list[str], manager: Structure = None):
-        super().__init__(args=HandlerArgs(terminal_args),
+    def __init__(self, terminal_args: list[str],
+                 manager: Structure = None,
+                 is_temporary=False):
+
+        name = 'Train Manager'
+        if is_temporary:
+            name += ' (Second-Stage Sub-network)'
+
+        super().__init__(args=HandlerArgs(terminal_args, is_temporary),
                          manager=manager,
-                         name='Train Manager (Second-Stage Sub-network)')
+                         name=name)
 
         self.args: HandlerArgs
         self.set_labels('gt')

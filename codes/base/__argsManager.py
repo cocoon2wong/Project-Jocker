@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-11 12:41:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-11 14:05:13
+@LastEditTime: 2022-11-14 09:29:21
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -26,10 +26,17 @@ class ArgsManager(BaseObject):
     ---
     """
 
-    def __init__(self, terminal_args: list[str] = None) -> None:
-
+    def __init__(self, terminal_args: list[str] = None,
+                 is_temporary=False) -> None:
+        """
+        :param terminal_args: A set of args that received from the user input.
+        :param is_temporary: Controls whether this `Args` object is a set of\
+            temporary args or a set of args used for training. Temporary args\
+            will not initialize the `log_dir`.
+        """
         super().__init__(name='Args Manager')
 
+        self._is_temporary = is_temporary
         self._init_done = False
 
         # Args that load from the saved JSON file

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:41:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-11 13:50:17
+@LastEditTime: 2022-11-14 09:27:45
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,8 +13,10 @@ from codes.args import DYNAMIC, STATIC, TEMPORARY, Args
 
 class _BaseSilverballersArgs(Args):
 
-    def __init__(self, terminal_args: list[str] = None) -> None:
-        super().__init__(terminal_args)
+    def __init__(self, terminal_args: list[str] = None,
+                 is_temporary=False) -> None:
+
+        super().__init__(terminal_args, is_temporary)
 
         self._set_default('K', 1)
         self._set_default('K_train', 1)
@@ -68,8 +70,10 @@ class _BaseSilverballersArgs(Args):
 
 class AgentArgs(_BaseSilverballersArgs):
 
-    def __init__(self, terminal_args: list[str] = None) -> None:
-        super().__init__(terminal_args)
+    def __init__(self, terminal_args: list[str] = None,
+                 is_temporary=False) -> None:
+
+        super().__init__(terminal_args, is_temporary)
 
     @property
     def depth(self) -> int:
@@ -81,8 +85,10 @@ class AgentArgs(_BaseSilverballersArgs):
 
 class HandlerArgs(_BaseSilverballersArgs):
 
-    def __init__(self, terminal_args: list[str] = None) -> None:
-        super().__init__(terminal_args)
+    def __init__(self, terminal_args: list[str] = None,
+                 is_temporary=False) -> None:
+
+        super().__init__(terminal_args, is_temporary)
 
         self._set_default('key_points', 'null')
 
@@ -96,8 +102,10 @@ class HandlerArgs(_BaseSilverballersArgs):
 
 class SilverballersArgs(_BaseSilverballersArgs):
 
-    def __init__(self, terminal_args: list[str] = None) -> None:
-        super().__init__(terminal_args)
+    def __init__(self, terminal_args: list[str] = None,
+                 is_temporary=False) -> None:
+
+        super().__init__(terminal_args, is_temporary)
 
     @property
     def loada(self) -> str:

@@ -2,13 +2,14 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 11:27:20
+@LastEditTime: 2022-11-14 09:21:16
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import os
+from typing import Union
 
 import numpy as np
 import tensorflow as tf
@@ -46,7 +47,7 @@ class Structure(BaseManager):
     Other methods should be rewritten when subclassing.
     """
 
-    def __init__(self, args: list[str] = None,
+    def __init__(self, args: Union[list[str], Args] = None,
                  manager: BaseManager = None,
                  name='Train Manager'):
 
@@ -384,7 +385,10 @@ class Structure(BaseManager):
 
         # make a log directory and save current args
         if self.args.update_saved_args:
-            self.args._save_as_json(self.args.load)
+            if self.args.load != 'null':
+                self.args._save_as_json(self.args.load)
+            else:
+                self.args._save_as_json(self.args.log_dir)
 
         # Run test
         outputs, labels, metric, metrics_dict = self.__test_on_dataset(
