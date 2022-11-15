@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-11 10:05:11
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-11 13:07:44
+@LastEditTime: 2022-11-15 09:45:28
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -14,7 +14,7 @@ from typing import TypeVar, Union
 import tensorflow as tf
 from tqdm import tqdm
 
-from ..utils import MAX_PRINT_LIST_LEN
+from ..utils import LOG_FILE, LOG_MAX_LIST_LEN
 
 T = TypeVar('T')
 
@@ -61,19 +61,21 @@ class BaseObject():
         if not logger.hasHandlers():
             logger.setLevel(logging.INFO)
 
-            # add file handler
-            fhandler = logging.FileHandler(filename='./test.log', mode='a')
+            # Add the file handler (`./test.log`)
+            fhandler = logging.FileHandler(filename=LOG_FILE, mode='a')
             fhandler.setLevel(logging.INFO)
 
-            # add terminal handler
+            # Add the terminal handler
             thandler = logging.StreamHandler()
             thandler.setLevel(logging.INFO)
 
-            # add formatter
+            # Add formatters
+            # Files
             fformatter = logging.Formatter(
                 '[%(asctime)s][%(levelname)s] %(name)s: %(message)s')
             fhandler.setFormatter(fformatter)
 
+            # Terminal
             tformatter = logging.Formatter(
                 '[%(levelname)s] %(name)s: %(message)s')
             thandler.setFormatter(tformatter)
@@ -84,26 +86,28 @@ class BaseObject():
         self.logger = logger
         self.bar: tqdm = None
 
-    def log(self, s: str, level: str = 'info', raiseError=None):
+    def log(self, s: str, level: str = 'info', raiseError: type[BaseException] = None):
         """
         Log information to files and console.
 
         :param s: The text to log.
         :param level: Log level, can be `'info'` or `'error'` or `'debug'`.
+        :param raiseError: Some exception to raise after logging.
         """
         if level == 'info':
             self.logger.info(s)
 
         elif level == 'error':
             self.logger.error(s)
-            if raiseError:
-                raise raiseError(s)
 
         elif level == 'debug':
             self.logger.debug(s)
 
         else:
             raise NotImplementedError
+
+        if raiseError:
+            raise raiseError(s)
 
         return s
 
@@ -147,8 +151,8 @@ class BaseObject():
                 value = value.numpy()
 
             if (type(value) == list and
-                    len(value) > MAX_PRINT_LIST_LEN):
-                value = value[:MAX_PRINT_LIST_LEN] + ['...']
+                    len(value) > LOG_MAX_LIST_LEN):
+                value = value[:LOG_MAX_LIST_LEN] + ['...']
 
             print(f'    - {key}: {value}.')
 

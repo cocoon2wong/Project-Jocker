@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-14 09:45:28
+@LastEditTime: 2022-11-15 09:30:23
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -135,8 +135,9 @@ class BaseSilverballers(Structure):
 
         # Check args
         if 'null' in [min_args.loada, min_args.loadb]:
-            raise ('`Agent` or `Handler` not found!' +
-                   ' Please specific their paths via `--loada` or `--loadb`.')
+            self.log('`Agent` or `Handler` model not found!' +
+                     ' Please specific their paths via `--loada` or `--loadb`.',
+                     level='error', raiseError=KeyError)
 
         # Load basic args from the saved agent model
         min_args_a = AgentArgs(terminal_args + ['--load', min_args.loada],

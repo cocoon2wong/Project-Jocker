@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 20:10:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 11:07:59
+@LastEditTime: 2022-11-15 09:54:08
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -19,7 +19,10 @@ Configs
 """
 # Basic parameters
 TIME = time.strftime('%Y%m%d-%H%M%S', time.localtime(time.time()))
-DATASET_DIR = './dataset_configs'
+
+# Paths settings
+ROOT_TEMP_DIR = './temp_files'
+DATASET_CONFIG_DIR = './dataset_configs'
 
 # Dataset configs
 INIT_POSITION = 10000
@@ -51,11 +54,9 @@ GT_IMAGE = './figures/gt_small.png' if SMALL_POINTS else './figures/gt.png'
 PRED_IMAGE = './figures/pred_small.png' if SMALL_POINTS else './figures/pred.png'
 DISTRIBUTION_IMAGE = './figures/dis.png'
 
-# Log paths
-TEMP_PATH = './temp_files/{}'
-
-# Log configs
-MAX_PRINT_LIST_LEN = 10
+# Log paths and configs
+LOG_FILE = './test.log'
+LOG_MAX_LIST_LEN = 10
 
 # Weights configs
 WEIGHTS_FORMAT = '.tf'
@@ -76,7 +77,7 @@ DISTRIBUTION_COLORBAR = np.column_stack([
               np.array([0, 252, 255])),
 ])
 
-# Whether draw lines in images
+# Whether draw lines and text in images and videos
 DRAW_LINES = False
 DRAW_TEXT_IN_VIDEOS = False
 DRAW_TEXT_IN_IMAGES = True

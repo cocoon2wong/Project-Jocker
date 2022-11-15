@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 11:21:37
+@LastEditTime: 2022-11-15 09:22:39
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -194,15 +194,14 @@ class AgentManager(BaseManager):
 
         saved: dict = np.load(path, allow_pickle=True)
         if not len(saved):
-            s = f'Please delete file {path} and re-run the program.'
-            self.log(s, level='error')
-            raise FileNotFoundError(s)
+            self.log(f'Please delete file `{path}` and re-run the program.',
+                     level='error', raiseError=FileNotFoundError)
 
         if (v := saved['0'].tolist()['__version__']) < (v1 := Agent.__version__):
             self.log((f'Saved agent managers\' version is {v}, ' +
-                     f'which is lower than current {v1}. Please delete ' +
-                      'them and re-run this program, or there could ' +
-                      'happen something wrong.'),
+                      f'which is lower than current {v1}. Please delete' +
+                      ' them and re-run this program, or there could' +
+                      ' happen something wrong.'),
                      level='error')
 
         self.agents = [Agent().load_data(v.tolist()) for v in saved.values()]

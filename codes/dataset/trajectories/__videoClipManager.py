@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:30:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 10:58:02
+@LastEditTime: 2022-11-15 09:49:31
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,7 +13,7 @@ import os
 import numpy as np
 
 from ...base import BaseManager, SecondaryBar
-from ...utils import INIT_POSITION, TEMP_PATH, dir_check
+from ...utils import INIT_POSITION, ROOT_TEMP_DIR, dir_check
 from .__agent import Agent
 from .__trajectory import Trajectory
 from .__videoClip import VideoClip
@@ -54,7 +54,7 @@ class VideoClipManager(BaseManager):
         self.dataset = self.args.dataset
         self.clip_name = clip_name
 
-        self.path = TEMP_PATH.format(self.dataset)
+        self.path = os.path.join(ROOT_TEMP_DIR, self.dataset)
         self.info = VideoClip(name=clip_name, dataset=self.dataset).get()
 
         self.custom_list = custom_list
@@ -225,8 +225,9 @@ class VideoClipManager(BaseManager):
                     end = end_frame
 
                 else:
-                    raise ValueError(
-                        '`pred_frames` should be a positive integer or -1.')
+                    self.log('`pred_frames` should be a positive integer or -1, ' +
+                             f'got `{self.args.pred_frames}`',
+                             level='error', raiseError=ValueError)
 
                 train_samples.append(trajectory.sample(start_frame=p,
                                                        obs_frame=obs,
