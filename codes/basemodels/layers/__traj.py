@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-12-21 15:25:47
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 11:13:00
+@LastEditTime: 2022-11-17 09:34:59
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -77,6 +77,8 @@ class ContextEncoding(tf.keras.layers.Layer):
                  *args, **kwargs):
         """
         Init a context encoding module.
+        The context encoding layer finally outputs a `tf.Tensor`
+        with shape `(batch_size, output_channels, units)`.
 
         :param output_channels: Output channels.
         :param units: Output feature dimension.
