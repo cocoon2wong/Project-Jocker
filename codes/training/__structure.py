@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Beihao Xia
-@LastEditTime: 2022-11-22 19:36:38
+@LastEditTime: 2022-11-22 21:48:47
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -472,6 +472,9 @@ class Structure(BaseManager):
 
         # Inference time
         if not test_during_training:
+            if len(self.model.inference_times) < 3:
+                self.log('The "AverageInferenceTime" is for reference only and you can set a lower "batch_size" ' +
+                         'or change a bigger dataset to obtain a more accurate result.')
             metrics_dict_all['AverageInferenceTime'] = f'{self.model.average_inference_time} ms'
 
         if return_results:
