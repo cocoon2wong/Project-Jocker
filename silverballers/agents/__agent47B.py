@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-15 16:56:02
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-17 15:42:54
+@LastEditTime: 2022-11-22 09:26:25
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -52,9 +52,8 @@ class Agent47BModel(BaseAgentModel):
 
         # Bilinear structure (outer product + pooling + fc)
         self.outer = OuterLayer(self.d//2, self.d//2, reshape=False)
-        self.pooling = tf.keras.layers.MaxPooling2D(
-            pool_size=(2, 2),
-            data_format='channels_first')
+        self.pooling = layers.MaxPooling2D(pool_size=(2, 2), 
+                                           data_format='channels_first')
         self.outer_fc = tf.keras.layers.Dense(self.d//2, tf.nn.tanh)
 
         # Random id encoding

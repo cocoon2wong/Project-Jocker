@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-12-21 15:25:47
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-17 09:34:59
+@LastEditTime: 2022-11-22 09:16:39
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -88,7 +88,9 @@ class ContextEncoding(tf.keras.layers.Layer):
         super().__init__(*args, **kwargs)
 
         if not POOLING_BEFORE_SAVING:
-            self.pool = tf.keras.layers.MaxPooling2D([5, 5])
+            self.pool = tf.keras.layers.MaxPooling2D(pool_size=[5, 5],
+                                                     data_format='channels_last')
+
         self.flatten = tf.keras.layers.Flatten()
         self.fc = tf.keras.layers.Dense(output_channels * units, activation)
         self.reshape = tf.keras.layers.Reshape((output_channels, units))
@@ -102,6 +104,7 @@ class ContextEncoding(tf.keras.layers.Layer):
         """
         if not POOLING_BEFORE_SAVING:
             context_map = self.pool(context_map[:, :, :, tf.newaxis])
+
         flat = self.flatten(context_map)
         fc = self.fc(flat)
         return self.reshape(fc)

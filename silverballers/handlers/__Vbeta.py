@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-23 10:23:53
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-17 10:07:07
+@LastEditTime: 2022-11-21 10:11:17
 @Description: Second stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -124,4 +124,3 @@ class VB(BaseHandlerStructure):
         super().__init__(terminal_args, manager)
 
         self.set_model_type(new_type=VBModel)
-        self.args = HandlerArgs(terminal_args)

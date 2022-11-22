@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-10 09:27:06
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 11:16:21
+@LastEditTime: 2022-11-22 09:24:10
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -17,7 +17,7 @@ from ...base import BaseManager, SecondaryBar
 from ...utils import MAP_HALF_SIZE, dir_check
 from ..trajectories import Agent
 
-POOLING_LAYER = tf.keras.layers.MaxPool2D([5, 5])
+POOLING_LAYER = tf.keras.layers.MaxPool2D([5, 5], data_format='channels_last')
 
 
 class BaseMapManager(BaseManager):
