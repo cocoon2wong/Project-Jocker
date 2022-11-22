@@ -2,13 +2,14 @@
 @Author: Beihao Xia
 @Date: 2022-11-02 16:14:01
 @LastEditors: Beihao Xia
-@LastEditTime: 2022-11-04 19:18:40
+@LastEditTime: 2022-11-22 20:20:50
 @Description: file content
 @Github: https://github.com/conghaowoooong
 @Copyright 2022 Beihao Xia, All Rights Reserved.
 """
 
 import tensorflow as tf
+
 from codes.basemodels import layers, transformer
 
 from ..__args import AgentArgs
@@ -50,9 +51,8 @@ class Agent47BEModel(BaseAgentModel):
 
         # Bilinear structure (outer product + pooling + fc)
         self.outer = OuterLayer(self.d//2, self.d//2, reshape=False)
-        self.pooling = tf.keras.layers.MaxPooling2D(
-            pool_size=(2, 2),
-            data_format='channels_last')
+        self.pooling = layers.MaxPooling2D(pool_size=(2, 2),
+                                           data_format='channels_first')
         self.outer_fc = tf.keras.layers.Dense(self.d//2, tf.nn.tanh)
 
         # Random id encoding
@@ -92,53 +92,52 @@ class Agent47BEModel(BaseAgentModel):
 
         :param training: set to `True` when training, or leave it `None`
 
-        :return predictions: predicted keypoints, \
-            shape = `(batch, Kc, N_key, 2)`
+        :return predictions: predicted trajectory points,
+            shape = `(batch, Kc, pred, 2)`
         """
 
         # unpack inputs
         trajs = inputs[0]   # (batch, obs, 2)
         bs = trajs.shape[0]
 
-        # feature embedding and encoding -> (batch, Tsteps, d/2)
+        # feature embedding and encoding -> (batch, Tchannels, d/2)
         # uses bilinear structure to encode features
-        f = self.te.call(trajs)             # (batch, Tsteps, d/2)
-        f = self.outer.call(f, f)           # (batch, Tsteps, d/2, d/2)
-        f = tf.transpose(f, [0, 2, 3, 1])   # (batch, d/2, d/2, Tsteps)
-        f = self.pooling(f)                 # (batch, Tchannels, d/4, d/4)
-        f = tf.transpose(f, [0, 3, 2, 1])   # (batch, Tsteps, d/4, d/4)
-        f = tf.reshape(f, [f.shape[0], f.shape[1], -1])
-        spec_features = self.outer_fc(f)    # (batch, Tsteps, d/2)
+        f1 = self.te.call(trajs)             # (batch, Tchannels, d/2)
+        f2 = self.outer.call(f1, f1)           # (batch, Tchannels, d/2, d/2)
+        f3 = self.pooling(f2)                 # (batch, Tchannels, d/4, d/4)
+        f4 = tf.reshape(f3, [f3.shape[0], f3.shape[1], -1])
+        spec_features = self.outer_fc(f4)    # (batch, Tchannels, d/2)
 
         # Sample random predictions
         all_predictions = []
         rep_time = self.args.K_train if training else self.args.K
 
-        t_outputs = self.t1.call(trajs)  # (batch, Tsteps, Tchannels)
-        t_outputs = tf.transpose(t_outputs, [0, 2, 1])
+        # (batch, Tsteps, Tchannels)
+        t_outputs1 = self.t1.call(trajs)
+        # (batch, Tchannels, Tsteps)
+        t_outputs = tf.transpose(t_outputs1, [0, 2, 1])
 
         for _ in range(rep_time):
-            # assign random ids and embedding -> (batch, Tsteps, d)
+            # assign random ids and embedding -> (batch, Tchannels, d/2)
             ids = tf.random.normal([bs, self.Tchannels_en, self.d_id])
             id_features = self.ie.call(ids)
 
             # transformer inputs
-            # shapes are (batch, Tsteps, d)
+            # shapes are (batch, Tchannels, d)
             t_inputs = self.concat([spec_features, id_features])
 
-            # transformer -> (batch, Tsteps, d)
+            # transformer -> (batch, Tchannels, d)
             behavior_features, _ = self.T.call(inputs=t_inputs,
                                                targets=t_outputs,
                                                training=training)
 
-            # multi-style features -> (batch, Kc, d)
+            # multi-style features -> (batch, Kc, 2d)
             adj = tf.transpose(self.adj_fc(t_inputs), [0, 2, 1])
             m_features = self.gcn.call(behavior_features, adj)
 
-            # predicted keypoints -> (batch, Kc, pred, 2)
             y = self.decoder_fc1(m_features)
             y = self.decoder_fc2(y)
-            y = self.decoder_reshape(y)
+            y = self.decoder_reshape(y)  # (batch, Kc, Tsteps, Tchannels)
 
             y = self.it1.call(y)
             all_predictions.append(y)

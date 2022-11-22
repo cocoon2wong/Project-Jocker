@@ -100,7 +100,7 @@ class Agent47CModel(BaseAgentModel):
         # uses bilinear structure to encode features
         f = self.te.call(trajs)             # (batch, Tsteps, d/2)
         f = self.outer.call(f, f)           # (batch, Tsteps, d/2, d/2)
-        f = self.pooling(f)                 # (batch, d/4, d/4, Tsteps)
+        f = self.pooling(f)                 # (batch, Tsteps, d/4, d/4)
         f = tf.reshape(f, [f.shape[0], f.shape[1], -1])
         spec_features = self.outer_fc(f)    # (batch, Tsteps, d/2)
 
