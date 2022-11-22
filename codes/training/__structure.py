@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-14 09:21:16
+@LastEditTime: 2022-11-22 10:39:55
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -317,9 +317,8 @@ class Structure(BaseManager):
 
             # Check if `nan` in the loss dictionary
             if tf.math.is_nan(loss):
-                self.log(e := 'Find `nan` values in the loss dictionary, stop training...',
-                         level='error')
-                raise ValueError(e)
+                self.log('Find `nan` values in the loss dictionary, stop training...',
+                         level='error', raiseError=ValueError)
 
             # Run validation
             if ((epoch >= self.args.start_test_percent * self.args.epochs)
@@ -469,6 +468,9 @@ class Structure(BaseManager):
             metrics_dict_all[key] = \
                 (tf.reduce_sum(tf.stack(metrics_dict_all[key]) * weights) /
                  tf.reduce_sum(weights)).numpy()
+
+        # Inference time
+        metrics_dict_all['AverageInferenceTime'] = f'{self.model.average_inference_time} ms'
 
         if return_results:
             return outputs_all, labels_all, metrics_all, metrics_dict_all

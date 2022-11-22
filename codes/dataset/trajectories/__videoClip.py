@@ -11,7 +11,7 @@
 import os
 from typing import Union
 
-from ...utils import DATASET_DIR, dir_check, load_from_plist
+from ...utils import DATASET_CONFIG_DIR, dir_check, load_from_plist
 from .__videoDataset import Dataset
 
 
@@ -103,7 +103,7 @@ class VideoClip():
         """
         if type(dataset) is str:
             if not split:
-                ds_split_dir = os.path.join(DATASET_DIR, dataset)
+                ds_split_dir = os.path.join(DATASET_CONFIG_DIR, dataset)
                 split_names = [p.split('.plist')[0] for p in
                                os.listdir(ds_split_dir) if p.endswith('plist')]
                 split = split_names[0]

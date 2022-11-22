@@ -10,7 +10,7 @@
 
 import os
 
-from ...utils import DATASET_DIR, load_from_plist
+from ...utils import DATASET_CONFIG_DIR, load_from_plist
 
 
 class Dataset():
@@ -45,7 +45,7 @@ class Dataset():
     """
 
     # Saving paths
-    BASE_DIR = DATASET_DIR
+    BASE_DIR = DATASET_CONFIG_DIR
     CONFIG_FILE = os.path.join(BASE_DIR, '{}', '{}.plist')
 
     def __init__(self, name: str, split: str):

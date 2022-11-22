@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-14 09:45:28
+@LastEditTime: 2022-11-17 10:08:59
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,6 +10,7 @@
 
 import tensorflow as tf
 
+from codes.base import BaseObject
 from codes.managers import AnnotationManager, DatasetManager, Model, Structure
 
 from .__args import AgentArgs, SilverballersArgs
@@ -130,13 +131,18 @@ class BaseSilverballers(Structure):
 
     def __init__(self, terminal_args: list[str]):
 
+        # Init log-related functions
+        BaseObject.__init__(self)
+
         # Load minimal args
         min_args = SilverballersArgs(terminal_args, is_temporary=True)
 
         # Check args
         if 'null' in [min_args.loada, min_args.loadb]:
-            raise ('`Agent` or `Handler` not found!' +
-                   ' Please specific their paths via `--loada` or `--loadb`.')
+            self.log('`Agent` or `Handler` model not found!' +
+                     ' Please specific their paths via `--loada` (`-la`)' +
+                     ' or `--loadb` (`-lb`).',
+                     level='error', raiseError=KeyError)
 
         # Load basic args from the saved agent model
         min_args_a = AgentArgs(terminal_args + ['--load', min_args.loada],

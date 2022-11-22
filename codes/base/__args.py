@@ -11,7 +11,7 @@
 import os
 import re
 
-from ..utils import DATASET_DIR, TIME, dir_check
+from ..utils import DATASET_CONFIG_DIR, TIME, dir_check
 from .__argsManager import DYNAMIC, STATIC, TEMPORARY, ArgsManager
 
 NA = 'Unavailable'
@@ -56,12 +56,12 @@ class Args(ArgsManager):
             # or read from the saved JSON file
             elif 'dataset' not in self._args_load.keys():
 
-                dirs = os.listdir(DATASET_DIR)
+                dirs = os.listdir(DATASET_CONFIG_DIR)
 
                 plist_files = []
                 for d in dirs:
                     try:
-                        _path = os.path.join(DATASET_DIR, d)
+                        _path = os.path.join(DATASET_CONFIG_DIR, d)
                         for p in os.listdir(_path):
                             if p.endswith('.plist'):
                                 plist_files.append(os.path.join(_path, p))
@@ -71,7 +71,7 @@ class Args(ArgsManager):
                 dataset = None
                 for f in plist_files:
                     res = re.findall(
-                        f'{DATASET_DIR}/(.*)/({self.split}.plist)', f)
+                        f'{DATASET_CONFIG_DIR}/(.*)/({self.split}.plist)', f)
 
                     if len(res):
                         dataset = res[0][0]
