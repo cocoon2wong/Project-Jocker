@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-15 09:27:34
+@LastEditTime: 2022-11-22 10:39:55
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -463,6 +463,9 @@ class Structure(BaseManager):
             metrics_dict_all[key] = \
                 (tf.reduce_sum(tf.stack(metrics_dict_all[key]) * weights) /
                  tf.reduce_sum(weights)).numpy()
+
+        # Inference time
+        metrics_dict_all['AverageInferenceTime'] = f'{self.model.average_inference_time} ms'
 
         if return_results:
             return outputs_all, labels_all, metrics_all, metrics_dict_all

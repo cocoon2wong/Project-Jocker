@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 10:52:50
+@LastEditTime: 2022-11-22 10:39:28
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,6 +10,7 @@
 
 import os
 import re
+import time
 from typing import TypeVar
 
 import numpy as np
@@ -21,6 +22,8 @@ from ..utils import CHECKPOINT_FILENAME, WEIGHTS_FORMAT
 from . import process
 
 T = TypeVar('T')
+
+MAX_INFERENCE_TIME_STORGED = 100
 
 MOVE = 'MOVE'
 ROTATE = 'ROTATE'
@@ -86,6 +89,9 @@ class Model(tf.keras.Model, BaseManager):
                                       SCALE: Args.pscale,
                                       ROTATE: Args.protate}
 
+        # Inference times
+        self.inference_times: list[float] = []
+
     @property
     def structure(self) -> BaseManager:
         return self.manager
@@ -93,6 +99,17 @@ class Model(tf.keras.Model, BaseManager):
     @structure.setter
     def structure(self, value: T) -> T:
         self.manager = value
+
+    @property
+    def average_inference_time(self) -> int:
+        """
+        Average inference time (ms).
+        """
+        if len(self.inference_times):
+            t = np.mean(self.inference_times)
+            return int(1000 * t)
+        else:
+            return -1
 
     def call(self, inputs,
              training=None,
@@ -109,9 +126,22 @@ class Model(tf.keras.Model, BaseManager):
         :param training: Config if running as training or test mode.
         :return outputs_p: Model's output. type=`list[tf.Tensor]`.
         """
-
+        # Preprocess
         inputs_p = self.process(inputs, preprocess=True, training=training)
+
+        # Model inference
+        time_start = time.time()
         outputs = self(inputs_p, training=training)
+        time_end = time.time()
+
+        l = MAX_INFERENCE_TIME_STORGED
+        if len(self.inference_times) > l:
+            self.inference_times = self.inference_times[l//2:]
+
+        time_cost = time_end - time_start
+        self.inference_times.append(time_cost)
+
+        # Postprocess
         outputs_p = self.process(outputs, preprocess=False, training=training)
         return outputs_p
 
