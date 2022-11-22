@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
-@LastEditors: Conghao Wong
-@LastEditTime: 2022-11-22 10:39:28
+@LastEditors: Beihao Xia
+@LastEditTime: 2022-11-22 21:08:13
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -105,8 +105,10 @@ class Model(tf.keras.Model, BaseManager):
         """
         Average inference time (ms).
         """
-        if len(self.inference_times):
-            t = np.mean(self.inference_times)
+        if l := len(it := self.inference_times):
+            if l > 3:
+                it = it[1:-1]
+            t = np.mean(it)
             return int(1000 * t)
         else:
             return -1
