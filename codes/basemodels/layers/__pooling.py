@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-21 10:15:13
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-22 09:25:45
+@LastEditTime: 2022-11-22 09:54:57
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,8 +10,10 @@
 
 import tensorflow as tf
 
+from ...base import BaseObject
 
-class _BasePooling2D(tf.keras.layers.Layer):
+
+class _BasePooling2D(tf.keras.layers.Layer, BaseObject):
     """
     The base pooling layer that supports both CPU and GPU.
     """
@@ -23,10 +25,19 @@ class _BasePooling2D(tf.keras.layers.Layer):
                  data_format: str = None,
                  *args, **kwargs):
 
-        super().__init__(*args, **kwargs)
+        tf.keras.layers.Layer.__init__(self, *args, **kwargs)
+        BaseObject.__init__(self, name=self.name)
 
         self.gpu = is_gpu()
         self.data_format = data_format
+
+        # Pool layer with 'channels_first' runs only on gpus
+        if (not self.gpu) and (self.data_format == 'channels_first'):
+            self.log(f'Pooling layer with `data_format = "{self.data_format}"`' +
+                     ' can not run on CPUs. It has been automatically changed to' +
+                     ' `data_format = "channels_last"`.')
+            self.data_format = 'channels_last'
+
         self.pool_layer = self.pool_function(pool_size, strides,
                                              padding, data_format, **kwargs)
 
