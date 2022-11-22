@@ -171,10 +171,7 @@ class Structure(BaseManager):
         :return metrics: The weighted sum of all loss.
         :return loss_dict: A dict contains all loss.
         """
-        t_start = time.time()
         outputs = self.model.forward(inputs, training)
-        t_end = time.time()
-        # self.log(f"time: {t_end - t_start}")
         metrics, metrics_dict = \
             self.metrics.call(outputs, labels,
                               training=None,
