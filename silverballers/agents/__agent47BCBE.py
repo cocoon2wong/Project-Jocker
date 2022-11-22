@@ -1,14 +1,15 @@
 """
-@Author: Conghao Wong
-@Date: 2022-06-22 20:00:17
+@Author: Beihao Xia
+@Date: 2022-11-21 14:34:51
 @LastEditors: Beihao Xia
-@LastEditTime: 2022-11-22 20:24:16
+@LastEditTime: 2022-11-22 20:33:30
 @Description: file content
-@Github: https://github.com/cocoon2wong
-@Copyright 2022 Conghao Wong, All Rights Reserved.
+@Github: https://github.com/conghaowoooong
+@Copyright 2022 Beihao Xia, All Rights Reserved.
 """
 
 import tensorflow as tf
+
 from codes.basemodels import layers, transformer
 
 from ..__args import AgentArgs
@@ -16,7 +17,7 @@ from ..__layers import OuterLayer, get_transform_layers
 from .__baseAgent import BaseAgentModel, BaseAgentStructure
 
 
-class Agent47CEModel(BaseAgentModel):
+class Agent47BCBEModel(BaseAgentModel):
 
     def __init__(self, Args: AgentArgs,
                  feature_dim: int = 128,
@@ -30,6 +31,7 @@ class Agent47CEModel(BaseAgentModel):
         super().__init__(Args, feature_dim, id_depth,
                          keypoints_number, keypoints_index,
                          structure, *args, **kwargs)
+        self.set_inputs('obs', 'maps')
 
         # Layers
         self.Tlayer, self.ITlayer = get_transform_layers(self.args.T)
@@ -41,10 +43,16 @@ class Agent47CEModel(BaseAgentModel):
         # Trajectory encoding (with FFTs)
         self.te = layers.TrajEncoding(self.d//2, tf.nn.relu,
                                       transform_layer=self.t1,
-                                      channels_first=True)
+                                      channels_first=False)
+
+        # Context Encoding
+        self.ce = layers.ContextEncoding(units=64,
+                                         output_channels=self.t1.Tshape[1],
+                                         activation=tf.nn.tanh)
 
         # steps and shapes after applying transforms
         self.Tsteps_en = self.t1.Tshape[0]
+        self.Tchannels_en = self.t1.Tshape[1]
         self.Tsteps_de, self.Tchannels_de = self.it1.Tshape
 
         # Bilinear structure (outer product + pooling + fc)
@@ -64,8 +72,8 @@ class Agent47CEModel(BaseAgentModel):
                                          dff=512,
                                          input_vocab_size=None,
                                          target_vocab_size=None,
-                                         pe_input=self.Tsteps_en,
-                                         pe_target=self.Tsteps_en,
+                                         pe_input=self.Tchannels_en,
+                                         pe_target=self.Tchannels_en,
                                          include_top=False)
 
         # Trainable adj matrix and gcn layer
@@ -81,9 +89,10 @@ class Agent47CEModel(BaseAgentModel):
             [self.args.Kc, self.Tsteps_de, self.Tchannels_de])
 
     def call(self, inputs: list[tf.Tensor],
-             training=None, mask=None):
+             training=None, mask=None,
+             *args, **kwargs):
         """
-        Run the first stage `agent47CE` model.
+        Run the first stage `Agent47BCBE` model.
 
         :param inputs: a list of tensors, including `trajs`
             - a batch of observed trajs, shape is `(batch, obs, 2)`
@@ -96,25 +105,40 @@ class Agent47CEModel(BaseAgentModel):
 
         # unpack inputs
         trajs = inputs[0]   # (batch, obs, 2)
+        maps = inputs[1]
         bs = trajs.shape[0]
+        f_context = self.ce.call(maps)
 
         # feature embedding and encoding -> (batch, Tsteps, d/2)
         # uses bilinear structure to encode features
         f = self.te.call(trajs)             # (batch, Tsteps, d/2)
-        f = self.outer.call(f, f)           # (batch, Tsteps, d/2, d/2)
-        f = self.pooling(f)                 # (batch, Tsteps, d/4, d/4)
+        f = self.outer.call(f, f_context)           # (batch, Tsteps, d/2, d/2)
+        # f = tf.transpose(f, [0, 2, 3, 1])   # (batch, d/2, d/2, Tsteps)
+        f = self.pooling(f)                 # (batch, Tchannels, d/4, d/4)
+        # f = tf.transpose(f, [0, 3, 2, 1])   # (batch, Tsteps, d/4, d/4)
         f = tf.reshape(f, [f.shape[0], f.shape[1], -1])
         spec_features = self.outer_fc(f)    # (batch, Tsteps, d/2)
+        # spec2_features = self.concat([spec_features, spec_features], axis=-2)
+
+        # fuse_features = self.concat([spec_features, f_context])
+
+        # bilinear(fuse_features, fuse_features)
+        # fr = self.outer.call(fr, fr)
+        # fr = tf.transpose(fr, [0, 2, 3, 1])
+        # fr = self.pooling(fr)
+        # fr = tf.transpose(fr, [0, 3, 2, 1])
+        # fr = tf.reshape(fr, [fr.shape[0], fr.shape[1], -1])
 
         # Sample random predictions
         all_predictions = []
         rep_time = self.args.K_train if training else self.args.K
 
         t_outputs = self.t1.call(trajs)  # (batch, Tsteps, Tchannels)
+        t_outputs = tf.transpose(t_outputs, [0, 2, 1])
 
         for _ in range(rep_time):
             # assign random ids and embedding -> (batch, Tsteps, d)
-            ids = tf.random.normal([bs, self.Tsteps_en, self.d_id])
+            ids = tf.random.normal([bs, self.Tchannels_en, self.d_id])
             id_features = self.ie.call(ids)
 
             # transformer inputs
@@ -130,7 +154,7 @@ class Agent47CEModel(BaseAgentModel):
             adj = tf.transpose(self.adj_fc(t_inputs), [0, 2, 1])
             m_features = self.gcn.call(behavior_features, adj)
 
-            # predicted keypoints -> (batch, Kc, Tsteps, Tchannels)
+            # predicted keypoints -> (batch, Kc, pred, 2)
             y = self.decoder_fc1(m_features)
             y = self.decoder_fc2(y)
             y = self.decoder_reshape(y)
@@ -141,10 +165,10 @@ class Agent47CEModel(BaseAgentModel):
         return tf.concat(all_predictions, axis=1)
 
 
-class Agent47CE(BaseAgentStructure):
+class Agent47BCBE(BaseAgentStructure):
 
     """
-    Training structure for the `Agent47CE` model.
+    Training structure for the `Agent47BCBE` model.
     Note that it is only used to train the single model.
     Please use the `Silverballers` structure if you want to test any
     agent-handler based silverballers models.
@@ -153,4 +177,4 @@ class Agent47CE(BaseAgentStructure):
     def __init__(self, terminal_args: list[str], manager=None):
         super().__init__(terminal_args, manager)
 
-        self.set_model_type(new_type=Agent47CEModel)
+        self.set_model_type(new_type=Agent47BCBEModel)

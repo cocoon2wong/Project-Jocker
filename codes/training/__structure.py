@@ -1,14 +1,15 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
-@LastEditors: Conghao Wong
-@LastEditTime: 2022-11-22 10:39:55
+@LastEditors: Beihao Xia
+@LastEditTime: 2022-11-22 19:36:38
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import os
+import time
 from typing import Union
 
 import numpy as np
@@ -325,7 +326,8 @@ class Structure(BaseManager):
                 metric, metrics_dict = self.__test_on_dataset(
                     ds=ds_val,
                     return_results=False,
-                    show_timebar=False
+                    show_timebar=False,
+                    test_during_training=True
                 )
                 test_epochs.append(epoch)
 
@@ -390,6 +392,7 @@ class Structure(BaseManager):
                 self.args._save_as_json(self.args.log_dir)
 
         # Run test
+
         outputs, labels, metric, metrics_dict = self.__test_on_dataset(
             ds=ds_test,
             return_results=True,
@@ -403,12 +406,15 @@ class Structure(BaseManager):
 
     def __test_on_dataset(self, ds: tf.data.Dataset,
                           return_results=False,
-                          show_timebar=False):
+                          show_timebar=False,
+                          test_during_training=False):
         """
         Run a test on the given dataset.
 
         :param ds: The test `tf.data.Dataset` object.
         :param return_results: Controls items to return.
+        :param show_timebar: Controls whether to show the process.
+        :param test_during_training: Indicates whether to test during training.
 
         Returns if `return_results == False`:
         :return metric: The weighted sum of all metrics.
@@ -465,7 +471,8 @@ class Structure(BaseManager):
                  tf.reduce_sum(weights)).numpy()
 
         # Inference time
-        metrics_dict_all['AverageInferenceTime'] = f'{self.model.average_inference_time} ms'
+        if not test_during_training:
+            metrics_dict_all['AverageInferenceTime'] = f'{self.model.average_inference_time} ms'
 
         if return_results:
             return outputs_all, labels_all, metrics_all, metrics_dict_all

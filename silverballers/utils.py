@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-07-27 20:47:50
-@LastEditors: Conghao Wong
-@LastEditTime: 2022-11-14 09:50:36
+@LastEditors: Beihao Xia
+@LastEditTime: 2022-11-22 20:25:53
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -55,12 +55,14 @@ __SILVERBALLERS_DICT = dict(
 
     # agent47 series
     agent47B=[agents.Agent47B, agents.Agent47BModel],
+    agent47BE=[agents.Agent47BE, agents.Agent47BEModel],
+    agent47BCBE=[agents.Agent47BCBE, agents.Agent47BCBEModel],
+    agent47BCE=[agents.Agent47BCE, agents.Agent47BCEModel],
     agent47C=[agents.Agent47C, agents.Agent47CModel],
     agent47CE=[agents.Agent47CE, agents.Agent47CEModel],
 
     # burnwood series
     burnwoodC=[handlers.BurnwoodC, handlers.BurnwoodCModel],
-    # burnwoodM=[handlers.BurnwoodM, handlers.BurnwoodMModel],
 
     # Silverballers Structures (Traditional)
     V=[V, None],

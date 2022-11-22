@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-11-21 10:15:13
-@LastEditors: Conghao Wong
-@LastEditTime: 2022-11-22 09:54:57
+@LastEditors: Beihao Xia
+@LastEditTime: 2022-11-22 11:25:50
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -29,6 +29,7 @@ class _BasePooling2D(tf.keras.layers.Layer, BaseObject):
         BaseObject.__init__(self, name=self.name)
 
         self.gpu = is_gpu()
+        self.transpose = False
         self.data_format = data_format
 
         # Pool layer with 'channels_first' runs only on gpus
@@ -37,9 +38,10 @@ class _BasePooling2D(tf.keras.layers.Layer, BaseObject):
                      ' can not run on CPUs. It has been automatically changed to' +
                      ' `data_format = "channels_last"`.')
             self.data_format = 'channels_last'
+            self.transpose = True
 
         self.pool_layer = self.pool_function(pool_size, strides,
-                                             padding, data_format, **kwargs)
+                                             padding, self.data_format, **kwargs)
 
     def call(self, inputs: tf.Tensor, *args, **kwargs):
         """
@@ -48,7 +50,7 @@ class _BasePooling2D(tf.keras.layers.Layer, BaseObject):
         :param inputs: The input tensor, shape = `(batch, channels, a, b)`
         """
         # Pool layer with 'channels_first' runs only on gpus
-        if (not self.gpu) and (self.data_format == 'channels_first'):
+        if self.transpose:
             # Reshape the input to (batch, a, b, channels)
             i_reshape = tf.transpose(inputs, [0, 2, 3, 1])
             pooled = self.pool_layer(i_reshape)

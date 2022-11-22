@@ -50,8 +50,10 @@ class TrajEncoding(tf.keras.layers.Layer):
         """
         Encode trajectories into the high-dimension features.
 
-        :param trajs: Trajectories, shape = `(batch, N, 2)`.
-        :return features: Features, shape = `(batch, N, units)`.
+        :param trajs: Trajs, shape = `(batch, N, 2)`.
+        :return features: Features, shape = `(batch, N, units)`.      
+            NOTE: If the transform layer was set, it will return a feature 
+            with the `shape = (batch, Tsteps, units)`.
         """
         if self.Tlayer:
             t = self.Tlayer(trajs)  # (batch, Tsteps, Tchannels)

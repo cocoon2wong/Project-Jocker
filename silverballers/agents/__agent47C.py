@@ -37,7 +37,7 @@ class Agent47CModel(BaseAgentModel):
         self.t1 = self.Tlayer(Oshape=(self.args.obs_frames, self.args.dim))
         self.it1 = self.ITlayer(Oshape=(self.n_key, self.args.dim))
 
-        # Trajectory encoding (with FFTs)
+        # Trajectory encoding
         self.te = layers.TrajEncoding(self.d//2, tf.nn.relu,
                                       transform_layer=self.t1)
 
