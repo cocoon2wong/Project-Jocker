@@ -1,8 +1,8 @@
 """
 @Author: Beihao Xia
-@Date: 2022-11-04 19:18:23
+@Date: 2022-11-21 14:34:51
 @LastEditors: Beihao Xia
-@LastEditTime: 2022-11-22 20:01:09
+@LastEditTime: 2022-11-22 20:33:30
 @Description: file content
 @Github: https://github.com/conghaowoooong
 @Copyright 2022 Beihao Xia, All Rights Reserved.
@@ -17,7 +17,7 @@ from ..__layers import OuterLayer, get_transform_layers
 from .__baseAgent import BaseAgentModel, BaseAgentStructure
 
 
-class Agent47BCEModel(BaseAgentModel):
+class Agent47BCBEModel(BaseAgentModel):
 
     def __init__(self, Args: AgentArgs,
                  feature_dim: int = 128,
@@ -92,32 +92,42 @@ class Agent47BCEModel(BaseAgentModel):
              training=None, mask=None,
              *args, **kwargs):
         """
-        Run the first stage `Agent47BCE` model.
+        Run the first stage `Agent47BCBE` model.
 
         :param inputs: a list of tensors, including `trajs`
             - a batch of observed trajs, shape is `(batch, obs, 2)`
 
         :param training: set to `True` when training, or leave it `None`
 
-        :return predictions: predicted trajectory points,
-            shape = `(batch, Kc, pred, 2)`
+        :return predictions: predicted keypoints, \
+            shape = `(batch, Kc, N_key, 2)`
         """
 
         # unpack inputs
         trajs = inputs[0]   # (batch, obs, 2)
         maps = inputs[1]
         bs = trajs.shape[0]
+        f_context = self.ce.call(maps)
 
         # feature embedding and encoding -> (batch, Tsteps, d/2)
         # uses bilinear structure to encode features
         f = self.te.call(trajs)             # (batch, Tsteps, d/2)
-        f = self.outer.call(f, f)           # (batch, Tsteps, d/2, d/2)
+        f = self.outer.call(f, f_context)           # (batch, Tsteps, d/2, d/2)
+        # f = tf.transpose(f, [0, 2, 3, 1])   # (batch, d/2, d/2, Tsteps)
         f = self.pooling(f)                 # (batch, Tchannels, d/4, d/4)
+        # f = tf.transpose(f, [0, 3, 2, 1])   # (batch, Tsteps, d/4, d/4)
         f = tf.reshape(f, [f.shape[0], f.shape[1], -1])
         spec_features = self.outer_fc(f)    # (batch, Tsteps, d/2)
         # spec2_features = self.concat([spec_features, spec_features], axis=-2)
-        f_context = self.ce.call(maps)
-        fuse_features = self.concat([spec_features, f_context])
+
+        # fuse_features = self.concat([spec_features, f_context])
+
+        # bilinear(fuse_features, fuse_features)
+        # fr = self.outer.call(fr, fr)
+        # fr = tf.transpose(fr, [0, 2, 3, 1])
+        # fr = self.pooling(fr)
+        # fr = tf.transpose(fr, [0, 3, 2, 1])
+        # fr = tf.reshape(fr, [fr.shape[0], fr.shape[1], -1])
 
         # Sample random predictions
         all_predictions = []
@@ -133,7 +143,7 @@ class Agent47BCEModel(BaseAgentModel):
 
             # transformer inputs
             # shapes are (batch, Tsteps, d)
-            t_inputs = self.concat([fuse_features, id_features])
+            t_inputs = self.concat([spec_features, id_features])
 
             # transformer -> (batch, Tsteps, d)
             behavior_features, _ = self.T.call(inputs=t_inputs,
@@ -155,10 +165,10 @@ class Agent47BCEModel(BaseAgentModel):
         return tf.concat(all_predictions, axis=1)
 
 
-class Agent47BCE(BaseAgentStructure):
+class Agent47BCBE(BaseAgentStructure):
 
     """
-    Training structure for the `Agent47BCE` model.
+    Training structure for the `Agent47BCBE` model.
     Note that it is only used to train the single model.
     Please use the `Silverballers` structure if you want to test any
     agent-handler based silverballers models.
@@ -167,4 +177,4 @@ class Agent47BCE(BaseAgentStructure):
     def __init__(self, terminal_args: list[str], manager=None):
         super().__init__(terminal_args, manager)
 
-        self.set_model_type(new_type=Agent47BCEModel)
+        self.set_model_type(new_type=Agent47BCBEModel)
