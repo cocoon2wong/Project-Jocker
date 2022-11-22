@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-20 21:50:44
-@LastEditors: Conghao Wong
-@LastEditTime: 2022-11-04 16:32:07
+@LastEditors: Beihao Xia
+@LastEditTime: 2022-11-22 19:43:09
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -55,43 +55,6 @@ class OuterLayer(tf.keras.layers.Layer):
             return outer
         else:
             return tf.reshape(outer, list(outer.shape[:-2]) + [self.M*self.N])
-
-
-class RandomMaskLayer(tf.keras.layers.Layer):
-    def __init__(self, start_step: int,
-                 end_step: int,
-                 leave_number: int,
-                 all_steps: int,
-                 *args, **kwargs):
-
-        super().__init__(*args, **kwargs)
-
-        self.start = start_step
-        self.end = end_step
-        self.number = leave_number 
-
-        self.target_mask = tf.sequence_mask(self.number, self.end-self.start)
-        self.all_mask = tf.ones([all_steps], tf.bool)
-
-    def get_mask(self):
-        target_mask = tf.random.shuffle(self.target_mask)
-        mask = tf.concat([self.all_mask[:self.start],
-                          target_mask,
-                          self.all_mask[self.end:]], axis=0)
-        return tf.cast(mask, tf.float32)
-
-    def call(self, inputs: tf.Tensor, *args, **kwargs):
-        """
-        Random sample trajecotries (or spectrums) on steps.
-
-        :param inputs: input tensor, shape = `(batch, steps, channels)`.
-        """
-        # transpose to (steps, batch, channels)
-        inputs_t = tf.transpose(inputs, [1, 0, 2])
-        inputs_t_mask = self.get_mask()[:, tf.newaxis, tf.newaxis] * inputs_t
-
-        # transpose to (batch, steps, channels)
-        return tf.transpose(inputs_t_mask, [1, 0, 2])
 
 
 def get_transform_layers(Tname: str) -> \
