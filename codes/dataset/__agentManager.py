@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-23 19:42:32
+@LastEditTime: 2022-11-23 20:36:01
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -92,7 +92,7 @@ class AgentManager(BaseManager):
         self.maps_dir: str = None
 
         # Transform layer
-        self.t_layer: _BaseTransformLayer = None
+        self.t_layers: dict[str, _BaseTransformLayer] = {}
 
     @property
     def agents(self) -> list[Agent]:
@@ -248,12 +248,27 @@ class AgentManager(BaseManager):
             return _get_gt_traj(self.agents)
 
         elif t == INPUT_TYPES.GROUNDTRUTH_SPECTRUM:
-            if self.t_layer is None:
+            if t not in self.t_layers.keys():
                 t_type, _ = get_transform_layers(self.args.T)
-                self.t_layer = t_type((self.args.pred_frames, self.args.dim))
+                self.t_layers[t] = t_type(
+                    (self.args.pred_frames, self.args.dim))
 
-            return self.t_layer.call(
-                _get_gt_traj(self.agents, text='groundtruth spectrums'))
+            t_layer = self.t_layers[t]
+            return t_layer(_get_gt_traj(self.agents, text='groundtruth spectrums'))
+
+        elif t == INPUT_TYPES.ALL_SPECTRUM:
+            if t not in self.t_layers.keys():
+                t_type, _ = get_transform_layers(self.args.T)
+                steps = self.args.obs_frames + self.args.pred_frames
+                self.t_layers[t] = t_type((steps, self.args.dim))
+
+            trajs = []
+            for agent in tqdm(self.agents, 'Prepare trajectory spectrums (all)...'):
+                trajs.append(np.concatenate(
+                    [agent.traj, agent.groundtruth], axis=-2))
+
+            t_layer = self.t_layers[t]
+            return t_layer(tf.cast(trajs, tf.float32))
 
         else:
             raise ValueError(type_name)

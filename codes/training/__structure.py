@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-23 19:31:13
+@LastEditTime: 2022-11-23 20:37:41
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -72,7 +72,8 @@ class Structure(BaseManager):
         self.optimizer = self.set_optimizer()
 
         # Set labels, loss functions, and metrics
-        self.set_labels('pred')
+        self.label_types: list[str] = []
+        self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
         self.loss.set({self.loss.ADE: 1.0})
 
         if self.args.anntype == 'boundingbox':
@@ -87,27 +88,21 @@ class Structure(BaseManager):
 
     def set_labels(self, *args):
         """
-        Set ground truths of the model
+        Set label types when calculating loss and metrics.
         Accept keywords:
         ```python
-        groundtruth_trajectory = ['traj', 'pred', 'gt']
-        groundtruth_spectrums = ['spectrum', 'spec']
-        destination = ['des', 'inten']
+        codes.constant.INPUT_TYPES.OBSERVED_TRAJ
+        codes.constant.INPUT_TYPES.MAP
+        codes.constant.INPUT_TYPES.DESTINATION_TRAJ
+        codes.constant.INPUT_TYPES.GROUNDTRUTH_TRAJ
+        codes.constant.INPUT_TYPES.GROUNDTRUTH_SPECTRUM
+        codes.constant.INPUT_TYPES.ALL_SPECTRUM
         ```
 
         :param input_names: Name of the inputs.\
             Type = `str`, accept several keywords.
         """
-        self.model_label_type = []
-        for item in args:
-            if 'traj' in item or 'gt' in item or 'pred' in item:
-                self.model_label_type.append(INPUT_TYPES.GROUNDTRUTH_TRAJ)
-
-            elif 'des' in item or 'inten' in item:
-                self.model_label_type.append(INPUT_TYPES.DESTINATION_TRAJ)
-
-            elif 'spec' in item:
-                self.model_label_type.append(INPUT_TYPES.GROUNDTRUTH_SPECTRUM)
+        self.label_types = [item for item in args]
 
     def set_optimizer(self, epoch: int = None) -> tf.keras.optimizers.Optimizer:
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.args.lr)
@@ -187,8 +182,8 @@ class Structure(BaseManager):
         """
         # init model and dataset manager
         self.model = self.create_model()
-        self.dsmanager.set_types(inputs_type=self.model.input_type,
-                                 labels_type=self.model_label_type)
+        self.dsmanager.set_types(inputs_type=self.model.input_types,
+                                 labels_type=self.label_types)
 
         # start training or testing
         if self.noTraining:
@@ -307,7 +302,7 @@ class Structure(BaseManager):
                 epochs.append(epoch)
 
             # Run training once
-            len_labels = len(self.model_label_type)
+            len_labels = len(self.label_types)
             loss, loss_dict, loss_move = self.gradient_operations(
                 inputs=dat[:-len_labels],
                 labels=dat[-len_labels:],
@@ -443,7 +438,7 @@ class Structure(BaseManager):
 
         test_numbers = []
         for dat in timebar:
-            len_labels = len(self.model_label_type)
+            len_labels = len(self.label_types)
             outputs, metrics, metrics_dict = self.model_validate(
                 inputs=dat[:-len_labels],
                 labels=dat[-len_labels:],

@@ -1,8 +1,8 @@
 """
 @Author: Beihao Xia
 @Date: 2022-11-21 14:34:51
-@LastEditors: Beihao Xia
-@LastEditTime: 2022-11-22 20:33:30
+@LastEditors: Conghao Wong
+@LastEditTime: 2022-11-23 20:22:41
 @Description: file content
 @Github: https://github.com/conghaowoooong
 @Copyright 2022 Beihao Xia, All Rights Reserved.
@@ -11,9 +11,10 @@
 import tensorflow as tf
 
 from codes.basemodels import layers, transformer
+from codes.constant import INPUT_TYPES
 
 from ..__args import AgentArgs
-from ..__layers import OuterLayer, get_transform_layers
+from ..__layers import OuterLayer
 from .__baseAgent import BaseAgentModel, BaseAgentStructure
 
 
@@ -31,10 +32,10 @@ class Agent47BCBEModel(BaseAgentModel):
         super().__init__(Args, feature_dim, id_depth,
                          keypoints_number, keypoints_index,
                          structure, *args, **kwargs)
-        self.set_inputs('obs', 'maps')
+        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ, INPUT_TYPES.MAP)
 
         # Layers
-        self.Tlayer, self.ITlayer = get_transform_layers(self.args.T)
+        self.Tlayer, self.ITlayer = layers.get_transform_layers(self.args.T)
 
         # Transform layers
         self.t1 = self.Tlayer((self.args.obs_frames, self.args.dim))

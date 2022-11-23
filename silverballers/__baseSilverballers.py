@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-17 10:08:59
+@LastEditTime: 2022-11-23 20:41:30
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,6 +11,7 @@
 import tensorflow as tf
 
 from codes.base import BaseObject
+from codes.constant import INPUT_TYPES
 from codes.managers import AnnotationManager, DatasetManager, Model, Structure
 
 from .__args import AgentArgs, SilverballersArgs
@@ -50,14 +51,14 @@ class BaseSilverballersModel(Model):
         self.handler = handlerModel
 
         # Set model inputs
-        a_type = self.agent.input_type
-        h_type = self.handler.input_type[:-1]
-        self.input_type = list(set(a_type + h_type))
+        a_type = self.agent.input_types
+        h_type = self.handler.input_types[:-1]
+        self.input_types = list(set(a_type + h_type))
         self.agent_input_index = self.get_input_index(a_type)
         self.handler_input_index = self.get_input_index(h_type)
 
     def get_input_index(self, input_type: list[str]):
-        return [self.input_type.index(t) for t in input_type]
+        return [self.input_types.index(t) for t in input_type]
 
     def call(self, inputs: list[tf.Tensor],
              training=None, mask=None,
@@ -206,7 +207,7 @@ class BaseSilverballers(Structure):
                                          key_points=self.agent.args.key_points)
 
         # set labels
-        self.set_labels('gt')
+        self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
 
     def substructure(self, structure: type[BaseAgentStructure],
                      args: list[str],

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-14 09:34:56
+@LastEditTime: 2022-11-23 20:40:05
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,6 +10,8 @@
 
 import numpy as np
 import tensorflow as tf
+
+from codes.constant import INPUT_TYPES
 from codes.managers import Model, SecondaryBar, Structure
 
 from ..__args import HandlerArgs
@@ -31,7 +33,9 @@ class BaseHandlerModel(Model):
         self.structure: BaseHandlerStructure = structure
 
         # GT in the inputs is only used when training
-        self.set_inputs('trajs', 'maps', 'gt')
+        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
+                        INPUT_TYPES.MAP,
+                        INPUT_TYPES.GROUNDTRUTH_TRAJ)
 
         # Parameters
         self.asHandler = asHandler
@@ -156,7 +160,7 @@ class BaseHandlerStructure(Structure):
                          name=name)
 
         self.args: HandlerArgs
-        self.set_labels('gt')
+        self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
         self.loss.set({self.loss.l2: 1.0})
 
         if self.args.key_points == 'null':

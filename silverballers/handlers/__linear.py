@@ -2,14 +2,16 @@
 @Author: Conghao Wong
 @Date: 2022-09-14 10:38:00
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-15 10:43:52
+@LastEditTime: 2022-11-23 20:40:58
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import tensorflow as tf
+
 from codes.basemodels import layers
+from codes.constant import INPUT_TYPES
 
 from ..__args import HandlerArgs
 from .__baseHandler import BaseHandlerModel
@@ -33,7 +35,8 @@ class LinearHandlerModel(BaseHandlerModel):
                          *args, **kwargs)
 
         self.args._set('T', 'none')
-        self.set_inputs('obs', 'gt')
+        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
+                        INPUT_TYPES.GROUNDTRUTH_TRAJ)
         self.set_preprocess()
         self.linear = layers.LinearInterpolation()
         self.accept_batchK_inputs = True

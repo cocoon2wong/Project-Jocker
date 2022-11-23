@@ -2,14 +2,16 @@
 @Author: Conghao Wong
 @Date: 2022-09-13 21:18:29
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-17 15:44:43
+@LastEditTime: 2022-11-23 20:39:50
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import tensorflow as tf
+
 from codes.basemodels import transformer
+from codes.constant import INPUT_TYPES
 
 from ..__args import AgentArgs
 from .__baseAgent import BaseAgentModel, BaseAgentStructure
@@ -42,7 +44,7 @@ class MSNAlphaModel(BaseAgentModel):
                          keypoints_number, keypoints_index,
                          structure, *args, **kwargs)
 
-        self.set_inputs('traj', 'maps')
+        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ, INPUT_TYPES.MAP)
         self.set_preprocess(move=0)
 
         # Force args

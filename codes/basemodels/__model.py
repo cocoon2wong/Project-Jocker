@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-23 18:37:36
+@LastEditTime: 2022-11-23 20:20:33
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -76,8 +76,8 @@ class Model(tf.keras.Model, BaseManager):
         BaseManager.__init__(self, manager=structure, name=self.name)
 
         # Model inputs
-        self.input_type: list[str] = []
-        self.set_inputs('obs')
+        self.input_types: list[str] = []
+        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ)
 
         # preprocess
         self.processor: process.ProcessModel = None
@@ -145,30 +145,20 @@ class Model(tf.keras.Model, BaseManager):
 
     def set_inputs(self, *args):
         """
-        Set variables to input to the model.
+        Set input types of the model.
         Accept keywords:
         ```python
-        historical_trajectory = ['traj', 'obs']
-        groundtruth_trajectory = ['pred', 'gt']
-        context_map = ['map']
-        destination = ['des', 'inten']
+        codes.constant.INPUT_TYPES.OBSERVED_TRAJ
+        codes.constant.INPUT_TYPES.MAP
+        codes.constant.INPUT_TYPES.DESTINATION_TRAJ
+        codes.constant.INPUT_TYPES.GROUNDTRUTH_TRAJ
+        codes.constant.INPUT_TYPES.GROUNDTRUTH_SPECTRUM
+        codes.constant.INPUT_TYPES.ALL_SPECTRUM
         ```
 
         :param input_names: Type = `str`, accept several keywords.
         """
-        self.input_type = []
-        for item in args:
-            if 'traj' in item or 'obs' in item:
-                self.input_type.append(INPUT_TYPES.OBSERVED_TRAJ)
-
-            elif 'context' in item or 'map' in item:
-                self.input_type.append(INPUT_TYPES.MAP)
-
-            elif 'des' in item or 'inten' in item:
-                self.input_type.append(INPUT_TYPES.DESTINATION_TRAJ)
-
-            elif 'gt' in item or 'pred' in item:
-                self.input_type.append(INPUT_TYPES.GROUNDTRUTH_TRAJ)
+        self.input_types = [item for item in args]
 
     def set_preprocess(self, **kwargs):
         """
