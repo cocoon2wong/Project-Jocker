@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
-@LastEditors: Beihao Xia
-@LastEditTime: 2022-11-22 21:08:13
+@LastEditors: Conghao Wong
+@LastEditTime: 2022-11-23 18:37:36
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -18,17 +18,13 @@ import tensorflow as tf
 
 from ..args import Args
 from ..base import BaseManager
+from ..constant import INPUT_TYPES, PROCESS_TYPES
 from ..utils import CHECKPOINT_FILENAME, WEIGHTS_FORMAT
 from . import process
 
 T = TypeVar('T')
 
 MAX_INFERENCE_TIME_STORGED = 100
-
-MOVE = 'MOVE'
-ROTATE = 'ROTATE'
-SCALE = 'SCALE'
-UPSAMPLING = 'UPSAMPLING'
 
 
 class Model(tf.keras.Model, BaseManager):
@@ -85,9 +81,9 @@ class Model(tf.keras.Model, BaseManager):
 
         # preprocess
         self.processor: process.ProcessModel = None
-        self._default_process_para = {MOVE: Args.pmove,
-                                      SCALE: Args.pscale,
-                                      ROTATE: Args.protate}
+        self._default_process_para = {PROCESS_TYPES.MOVE: Args.pmove,
+                                      PROCESS_TYPES.SCALE: Args.pscale,
+                                      PROCESS_TYPES.ROTATE: Args.protate}
 
         # Inference times
         self.inference_times: list[float] = []
@@ -162,21 +158,17 @@ class Model(tf.keras.Model, BaseManager):
         """
         self.input_type = []
         for item in args:
-            if 'traj' in item or \
-                    'obs' in item:
-                self.input_type.append('TRAJ')
+            if 'traj' in item or 'obs' in item:
+                self.input_type.append(INPUT_TYPES.OBSERVED_TRAJ)
 
-            elif 'context' in item or \
-                    'map' in item:
-                self.input_type.append('MAP')
+            elif 'context' in item or 'map' in item:
+                self.input_type.append(INPUT_TYPES.MAP)
 
-            elif 'des' in item or \
-                    'inten' in item:
-                self.input_type.append('DEST')
+            elif 'des' in item or 'inten' in item:
+                self.input_type.append(INPUT_TYPES.DESTINATION_TRAJ)
 
-            elif 'gt' in item or \
-                    'pred' in item:
-                self.input_type.append('GT')
+            elif 'gt' in item or 'pred' in item:
+                self.input_type.append(INPUT_TYPES.GROUNDTRUTH_TRAJ)
 
     def set_preprocess(self, **kwargs):
         """
@@ -194,9 +186,9 @@ class Model(tf.keras.Model, BaseManager):
         """
 
         preprocess_dict: dict[str, tuple[str, type[process.BaseProcessLayer]]] = {
-            MOVE: ('.*[Mm][Oo][Vv][Ee].*', process.Move),
-            ROTATE: ('.*[Rr][Oo][Tt].*', process.Rotate),
-            SCALE: ('.*[Ss][Cc][Aa].*', process.Scale),
+            PROCESS_TYPES.MOVE: ('.*[Mm][Oo][Vv][Ee].*', process.Move),
+            PROCESS_TYPES.ROTATE: ('.*[Rr][Oo][Tt].*', process.Rotate),
+            PROCESS_TYPES.SCALE: ('.*[Ss][Cc][Aa].*', process.Scale),
         }
 
         process_list = []

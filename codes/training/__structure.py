@@ -1,15 +1,14 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
-@LastEditors: Beihao Xia
-@LastEditTime: 2022-11-22 21:48:47
+@LastEditors: Conghao Wong
+@LastEditTime: 2022-11-23 19:31:13
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import os
-import time
 from typing import Union
 
 import numpy as np
@@ -18,6 +17,7 @@ import tensorflow as tf
 from ..args import Args
 from ..base import BaseManager
 from ..basemodels import Model
+from ..constant import INPUT_TYPES
 from ..dataset import AgentManager, AnnotationManager, DatasetManager
 from ..utils import WEIGHTS_FORMAT, dir_check
 from ..vis import Visualization
@@ -91,21 +91,23 @@ class Structure(BaseManager):
         Accept keywords:
         ```python
         groundtruth_trajectory = ['traj', 'pred', 'gt']
+        groundtruth_spectrums = ['spectrum', 'spec']
         destination = ['des', 'inten']
+        ```
 
         :param input_names: Name of the inputs.\
             Type = `str`, accept several keywords.
         """
         self.model_label_type = []
         for item in args:
-            if 'traj' in item or \
-                'gt' in item or \
-                    'pred' in item:
-                self.model_label_type.append('GT')
+            if 'traj' in item or 'gt' in item or 'pred' in item:
+                self.model_label_type.append(INPUT_TYPES.GROUNDTRUTH_TRAJ)
 
-            elif 'des' in item or \
-                    'inten' in item:
-                self.model_label_type.append('DEST')
+            elif 'des' in item or 'inten' in item:
+                self.model_label_type.append(INPUT_TYPES.DESTINATION_TRAJ)
+
+            elif 'spec' in item:
+                self.model_label_type.append(INPUT_TYPES.GROUNDTRUTH_SPECTRUM)
 
     def set_optimizer(self, epoch: int = None) -> tf.keras.optimizers.Optimizer:
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.args.lr)
@@ -305,9 +307,10 @@ class Structure(BaseManager):
                 epochs.append(epoch)
 
             # Run training once
+            len_labels = len(self.model_label_type)
             loss, loss_dict, loss_move = self.gradient_operations(
-                inputs=dat[:-1],
-                labels=dat[-1],
+                inputs=dat[:-len_labels],
+                labels=dat[-len_labels:],
                 loss_move_average=loss_move,
                 epoch=epoch,
             )
@@ -440,9 +443,10 @@ class Structure(BaseManager):
 
         test_numbers = []
         for dat in timebar:
+            len_labels = len(self.model_label_type)
             outputs, metrics, metrics_dict = self.model_validate(
-                inputs=dat[:-1],
-                labels=dat[-1],
+                inputs=dat[:-len_labels],
+                labels=dat[-len_labels:],
                 training=False,
             )
 

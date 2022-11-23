@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-15 09:22:39
+@LastEditTime: 2022-11-23 19:42:32
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -15,6 +15,8 @@ import tensorflow as tf
 from tqdm import tqdm
 
 from ..base import BaseManager
+from ..basemodels.layers import _BaseTransformLayer, get_transform_layers
+from ..constant import INPUT_TYPES
 from ..utils import POOLING_BEFORE_SAVING
 from .maps import SocialMapManager, TrajMapManager
 from .trajectories import Agent, AnnotationManager
@@ -89,6 +91,9 @@ class AgentManager(BaseManager):
         self.npz_path: str = None
         self.maps_dir: str = None
 
+        # Transform layer
+        self.t_layer: _BaseTransformLayer = None
+
     @property
     def agents(self) -> list[Agent]:
         return self._agents
@@ -119,12 +124,8 @@ class AgentManager(BaseManager):
     def set_types(self, inputs_type: list[str], labels_type: list[str]):
         """
         Set the type of model inputs and outputs.
-
-        :param inputs_type: A list of `str`, accept `'TRAJ'`,
-            `'MAP'`, `'DEST'`, and `'GT'`.
-        :param labels_type: A list of `str`, accept `'GT'` and `'DEST'`.
+        Accept all types in `INPUT_TYPES`.
         """
-
         self.model_inputs = inputs_type
         self.model_labels = labels_type
 
@@ -145,10 +146,9 @@ class AgentManager(BaseManager):
         Get model inputs and labels (only trajectories) from all agents.
         """
         inputs = self.get_inputs()
-        labels = self.get_labels()[0]
+        labels = self.get_labels()
 
-        inputs.append(labels)
-        return tuple(inputs)
+        return tuple(inputs + labels)
 
     def make_dataset(self, shuffle=False) -> tf.data.Dataset:
         """
@@ -228,24 +228,35 @@ class AgentManager(BaseManager):
 
     def _get(self, type_name: str) -> tf.Tensor:
         """
-        Get model inputs from a list of `Agent`-like objects.
+        Get model inputs or labels from a list of `Agent`-like objects.
 
-        :param type_name: Types of all inputs, accept `'TRAJ'`, 
-            `'MAP'`, `'DEST'`, and `'GT'`.
+        :param type_name: Types of all inputs, accept all type names \
+            in `INPUT_TYPES`.
         :return inputs: A tensor of stacked inputs.
         """
-        if type_name == 'TRAJ':
-            call = _get_obs_traj
-        elif type_name == 'MAP':
-            call = _get_context_map
-        elif type_name == 'DEST':
-            call = _get_dest_traj
-        elif type_name == 'GT':
-            call = _get_gt_traj
+        t = type_name
+        if t == INPUT_TYPES.OBSERVED_TRAJ:
+            return _get_obs_traj(self.agents)
+
+        elif t == INPUT_TYPES.MAP:
+            return _get_context_map(self.agents)
+
+        elif t == INPUT_TYPES.DESTINATION_TRAJ:
+            return _get_dest_traj(self.agents)
+
+        elif t == INPUT_TYPES.GROUNDTRUTH_TRAJ:
+            return _get_gt_traj(self.agents)
+
+        elif t == INPUT_TYPES.GROUNDTRUTH_SPECTRUM:
+            if self.t_layer is None:
+                t_type, _ = get_transform_layers(self.args.T)
+                self.t_layer = t_type((self.args.pred_frames, self.args.dim))
+
+            return self.t_layer.call(
+                _get_gt_traj(self.agents, text='groundtruth spectrums'))
+
         else:
             raise ValueError(type_name)
-
-        return call(self.agents)
 
     def print_info(self, **kwargs):
         pass
@@ -265,7 +276,8 @@ def _get_obs_traj(input_agents: list[Agent]) -> tf.Tensor:
 
 
 def _get_gt_traj(input_agents: list[Agent],
-                 destination=False) -> tf.Tensor:
+                 destination=False,
+                 text='groundtruth') -> tf.Tensor:
     """
     Get groundtruth trajectories from agents.
 
@@ -273,7 +285,7 @@ def _get_gt_traj(input_agents: list[Agent],
     :return inputs: A Tensor of gt trajectories.
     """
     inputs = []
-    for agent in tqdm(input_agents, 'Prepare groundtruth...'):
+    for agent in tqdm(input_agents, f'Prepare {text}...'):
         if destination:
             inputs.append(np.expand_dims(agent.groundtruth[-1], 0))
         else:
@@ -283,7 +295,7 @@ def _get_gt_traj(input_agents: list[Agent],
 
 
 def _get_dest_traj(input_agents: list[Agent]) -> tf.Tensor:
-    return _get_gt_traj(input_agents, destination=True)
+    return _get_gt_traj(input_agents, destination=True, text='destinations')
 
 
 def _get_context_map(input_agents: list[Agent]) -> tf.Tensor:

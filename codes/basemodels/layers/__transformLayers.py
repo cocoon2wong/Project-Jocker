@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 15:47:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 11:13:20
+@LastEditTime: 2022-11-23 19:39:02
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -211,8 +211,8 @@ class Haar1D(_BaseTransformLayer):
             raise ValueError('`steps` in haar wavelet must be an even')
 
         self.haar = WaveTFFactory.build(kernel_type='haar',
-                                               dim=1,
-                                               inverse=False)
+                                        dim=1,
+                                        inverse=False)
 
     def set_Tshape(self) -> Union[list[int], tuple[int, int]]:
         return (self.steps//2, self.channels*2)
@@ -234,8 +234,8 @@ class InverseHaar1D(_BaseTransformLayer):
             raise ValueError('`steps` in haar wavelet must be an even')
 
         self.haar = WaveTFFactory.build(kernel_type='haar',
-                                               dim=1,
-                                               inverse=True)
+                                        dim=1,
+                                        inverse=True)
 
     def set_Tshape(self) -> Union[list[int], tuple[int, int]]:
         return (self.steps//2, self.channels*2)
@@ -255,8 +255,8 @@ class DB2_1D(_BaseTransformLayer):
         super().__init__(Oshape, *args, **kwargs)
 
         self.daub = WaveTFFactory.build(kernel_type='db2',
-                                               dim=1,
-                                               inverse=False)
+                                        dim=1,
+                                        inverse=False)
 
     def set_Tshape(self) -> Union[list[int], tuple[int, int]]:
         return (self.steps//2, self.channels*2)
@@ -271,12 +271,47 @@ class InverseDB2_1D(_BaseTransformLayer):
         super().__init__(Oshape, *args, **kwargs)
 
         self.daub = WaveTFFactory.build(kernel_type='db2',
-                                               dim=1,
-                                               inverse=True)
+                                        dim=1,
+                                        inverse=True)
 
     def set_Tshape(self) -> Union[list[int], tuple[int, int]]:
         return (self.steps//2, self.channels*2)
 
     def kernel_function(self, inputs: tf.Tensor, *args, **kwargs):
         return self.daub.call(inputs)
-        
+
+
+def get_transform_layers(Tname: str) -> \
+        tuple[type[_BaseTransformLayer],
+              type[_BaseTransformLayer]]:
+    """
+    Set transformation layers used when encoding or 
+    decoding trajectories.
+
+    :param Tname: name of the transform, canbe
+        - `'none'`
+        - `'fft'`
+        - `'haar'`
+        - `'db2'`
+    """
+
+    if Tname == 'none':
+        Tlayer = NoneTransformLayer
+        ITlayer = NoneTransformLayer
+
+    elif Tname == 'fft':
+        Tlayer = FFTLayer
+        ITlayer = IFFTLayer
+
+    elif Tname == 'haar':
+        Tlayer = Haar1D
+        ITlayer = InverseHaar1D
+
+    elif Tname == 'db2':
+        Tlayer = DB2_1D
+        ITlayer = InverseDB2_1D
+
+    else:
+        raise ValueError('Transform name not found.')
+
+    return Tlayer, ITlayer
