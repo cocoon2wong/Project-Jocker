@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-23 20:41:30
+@LastEditTime: 2022-11-29 10:05:41
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,14 +10,13 @@
 
 import tensorflow as tf
 
+from codes import INPUT_TYPES, INTERPOLATION_TYPES
 from codes.base import BaseObject
-from codes.constant import INPUT_TYPES
 from codes.managers import AnnotationManager, DatasetManager, Model, Structure
 
 from .__args import AgentArgs, SilverballersArgs
 from .agents import BaseAgentModel, BaseAgentStructure
-from .handlers import (BaseHandlerModel, BaseHandlerStructure,
-                       LinearHandlerModel)
+from .handlers import BaseHandlerModel, BaseHandlerStructure, interp
 
 
 class BaseSilverballersModel(Model):
@@ -130,6 +129,14 @@ class BaseSilverballers(Structure):
     handler_model = None
     silverballer_model = BaseSilverballersModel
 
+    # Interp handlers:
+    INTERP_HANDLER_DICT = {
+        INTERPOLATION_TYPES.LINEAR: interp.LinearHandlerModel,
+        INTERPOLATION_TYPES.LINEAR_SPEED: interp.LinearSpeedHandlerModel,
+        INTERPOLATION_TYPES.LINEAR_ACC: interp.LinearAccHandlerModel,
+        INTERPOLATION_TYPES.NEWTON: interp.NewtonHandlerModel,
+    }
+
     def __init__(self, terminal_args: list[str]):
 
         # Init log-related functions
@@ -183,14 +190,16 @@ class BaseSilverballers(Structure):
         self.noTraining = True
 
         # config second-stage model
-        if self.args.loadb.startswith('l'):
-            handler_args = None
-            handler_type = LinearHandlerModel
-            handler_path = None
-        else:
+        htype = INTERPOLATION_TYPES.get_type(self.args.loadb)
+        if htype is None:
             handler_args = terminal_args + ['--load', self.args.loadb]
             handler_type = self.handler_model
             handler_path = self.args.loadb
+
+        else:
+            handler_args = None
+            handler_path = None
+            handler_type = self.INTERP_HANDLER_DICT[htype]
 
         # assign substructures
         self.agent = self.substructure(self.agent_structure,

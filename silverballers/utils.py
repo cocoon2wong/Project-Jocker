@@ -1,13 +1,14 @@
 """
 @Author: Conghao Wong
 @Date: 2022-07-27 20:47:50
-@LastEditors: Beihao Xia
-@LastEditTime: 2022-11-22 20:25:53
+@LastEditors: Conghao Wong
+@LastEditTime: 2022-11-29 10:06:07
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
+from codes import INTERPOLATION_TYPES
 from codes.args import Args
 
 from . import agents, handlers
@@ -29,7 +30,7 @@ class SilverballersMKII(BaseSilverballers):
         agent_model = get_model(min_args_a.model)
 
         # Assign the model type of the second-stage subnetwork
-        if not b_model_path.startswith('l'):
+        if not INTERPOLATION_TYPES.get_type(b_model_path):
             min_args_b = Args(is_temporary=True)._load_from_json(b_model_path)
             handler_model = get_model(min_args_b.model)
         else:
@@ -52,6 +53,7 @@ __SILVERBALLERS_DICT = dict(
     va=[agents.VA, agents.VAModel],
     agent=[agents.VA, agents.VAModel],
     vb=[handlers.VB, handlers.VBModel],
+    # burnwoodV=[handlers.BurnwoodV, handlers.VBModel],
 
     # agent47 series
     agent47B=[agents.Agent47B, agents.Agent47BModel],

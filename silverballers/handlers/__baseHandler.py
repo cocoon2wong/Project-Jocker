@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-23 20:40:05
+@LastEditTime: 2022-11-29 09:52:18
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -175,7 +175,8 @@ class BaseHandlerStructure(Structure):
         self.model_type = new_type
 
     def create_model(self, asHandler=False):
-        return self.model_type(self.args, 128,
+        return self.model_type(self.args,
+                               feature_dim=self.args.feature_dim,
                                points=self.args.points,
                                asHandler=asHandler,
                                key_points=self.args.key_points,

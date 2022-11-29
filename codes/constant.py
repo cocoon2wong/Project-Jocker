@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-23 18:01:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-23 18:29:01
+@LastEditTime: 2022-11-29 09:55:12
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -29,3 +29,23 @@ class PROCESS_TYPES():
     ROTATE = 'ROTATE'
     SCALE = 'SCALE'
     UPSAMPLING = 'UPSAMPLING'
+
+
+class INTERPOLATION_TYPES():
+    """
+    Names of all interpolation methods.
+    """
+
+    LINEAR = 'l'
+    LINEAR_SPEED = 'speed'
+    LINEAR_ACC = 'acc'
+    NEWTON = 'newton'
+
+    @classmethod
+    def get_type(cls, s: str):
+        for _s in [cls.LINEAR, cls.LINEAR_ACC,
+                   cls.LINEAR_SPEED, cls.NEWTON]:
+            if s.startswith(_s):
+                return _s
+        return None
+    
