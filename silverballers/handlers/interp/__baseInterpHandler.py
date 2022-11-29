@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-29 09:26:00
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-29 10:01:47
+@LastEditTime: 2022-11-29 10:25:49
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -17,6 +17,13 @@ from ..__baseHandler import BaseHandlerModel
 
 
 class _BaseInterpHandlerModel(BaseHandlerModel):
+    """
+    The basic interpolation handler model.
+    Subclass this class and rewrite the `interp` method to add 
+    different interpolation layers.
+    """
+
+    is_interp_handler = True
 
     def __init__(self, Args: HandlerArgs,
                  structure=None, *args, **kwargs):

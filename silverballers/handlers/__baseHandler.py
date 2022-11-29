@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-29 09:52:18
+@LastEditTime: 2022-11-29 10:26:53
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,13 +11,15 @@
 import numpy as np
 import tensorflow as tf
 
-from codes.constant import INPUT_TYPES
+from codes import INPUT_TYPES
 from codes.managers import Model, SecondaryBar, Structure
 
 from ..__args import HandlerArgs
 
 
 class BaseHandlerModel(Model):
+
+    is_interp_handler = False
 
     def __init__(self, Args: HandlerArgs,
                  feature_dim: int,

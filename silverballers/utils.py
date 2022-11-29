@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-27 20:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-29 10:06:07
+@LastEditTime: 2022-11-29 10:20:12
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -30,11 +30,12 @@ class SilverballersMKII(BaseSilverballers):
         agent_model = get_model(min_args_a.model)
 
         # Assign the model type of the second-stage subnetwork
-        if not INTERPOLATION_TYPES.get_type(b_model_path):
+        interp_model = INTERPOLATION_TYPES.get_type(b_model_path)
+        if interp_model is None:
             min_args_b = Args(is_temporary=True)._load_from_json(b_model_path)
             handler_model = get_model(min_args_b.model)
         else:
-            handler_model = None
+            handler_model = get_model(interp_model)
 
         self.set_models(agentModel=agent_model, handlerModel=handler_model)
 
@@ -71,6 +72,14 @@ __SILVERBALLERS_DICT = dict(
     sb47C=[Silverballers47C, None],
     MKII=[SilverballersMKII, None],
 )
+
+# Interpolation Handlers
+__SILVERBALLERS_DICT.update({
+    INTERPOLATION_TYPES.LINEAR: [None, handlers.interp.LinearHandlerModel],
+    INTERPOLATION_TYPES.LINEAR_SPEED: [None, handlers.interp.LinearSpeedHandlerModel],
+    INTERPOLATION_TYPES.LINEAR_ACC: [None, handlers.interp.LinearAccHandlerModel],
+    INTERPOLATION_TYPES.NEWTON: [None, handlers.interp.NewtonHandlerModel],
+})
 
 
 def get_structure(model_name: str):
