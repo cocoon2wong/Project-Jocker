@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-11 12:41:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-15 09:19:23
+@LastEditTime: 2022-11-29 11:30:36
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -206,11 +206,17 @@ class ArgsManager(BaseObject):
         """
         self._args_manually[name] = value
 
-    def _set_default(self, name: str, value: Any):
+    def _set_default(self, name: str, value: Any, overwrite=True):
         """
         Set default argument values.
         """
-        self._args_default_manually[name] = value
+        write = True
+        if name in self._args_default_manually.keys():
+            if not overwrite:
+                write = False
+        
+        if write:
+            self._args_default_manually[name] = value
 
     def _arg(self, name: str,
              default: Any,

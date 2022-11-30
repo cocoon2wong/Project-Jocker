@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-23 20:20:33
+@LastEditTime: 2022-11-29 11:10:27
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -107,7 +107,7 @@ class Model(tf.keras.Model, BaseManager):
             t = np.mean(it)
             return int(1000 * t)
         else:
-            return -1
+            return '(Not Available)'
 
     def call(self, inputs,
              training=None,

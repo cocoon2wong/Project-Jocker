@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-23 20:39:34
+@LastEditTime: 2022-11-30 09:19:35
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -75,7 +75,7 @@ class BaseAgentStructure(Structure):
         self.args: AgentArgs
 
         self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
-        self.loss.set({self.loss.l2: 1.0})
+        self.loss.set({self.loss.keyl2: 1.0})
         self.metrics.set({self.metrics.avgKey: 1.0,
                           self.metrics.FDE: 0.0})
 

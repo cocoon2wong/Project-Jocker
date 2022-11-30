@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 11:13:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-23 19:36:20
+@LastEditTime: 2022-11-30 09:18:37
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -123,7 +123,17 @@ class LossManager(BaseManager):
         l2 loss on the keypoints.
         Support M-dimensional trajectories.
         """
-        labels_pickled = tf.gather(labels[0], self.p_index, axis=1)
+        return ADE_2D(outputs[0], labels[0], coe=coe)
+
+    def keyl2(self, outputs: list[tf.Tensor],
+              labels: list[tf.Tensor],
+              coe: float = 1.0,
+              *args, **kwargs):
+        """
+        l2 loss on the keypoints.
+        Support M-dimensional trajectories.
+        """
+        labels_pickled = tf.gather(labels[0], self.p_index, axis=-2)
         return ADE_2D(outputs[0], labels_pickled, coe=coe)
 
     def avgKey(self, outputs: list[tf.Tensor],
