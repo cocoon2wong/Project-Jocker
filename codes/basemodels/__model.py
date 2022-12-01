@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-12-01 11:34:46
+@LastEditTime: 2022-12-01 12:12:00
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -114,8 +114,11 @@ class Model(tf.keras.Model, BaseManager):
         """
         The fastest inference time (ms).
         """
-        if len(it := self.inference_times):
-            return int(1000 * min(it))
+        if l := len(it := self.inference_times):
+            if l > 3:
+                it = it[1:-1]
+            t = min(it)
+            return int(1000 * t)
         else:
             return '(Not Available)'
 
