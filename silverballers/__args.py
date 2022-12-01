@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:41:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-14 10:56:16
+@LastEditTime: 2022-11-29 11:29:52
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -90,7 +90,7 @@ class HandlerArgs(_BaseSilverballersArgs):
 
         super().__init__(terminal_args, is_temporary)
 
-        self._set_default('key_points', 'null')
+        self._set_default('key_points', 'null', overwrite=False)
 
     @property
     def points(self) -> int:

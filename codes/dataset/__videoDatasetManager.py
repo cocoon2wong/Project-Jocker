@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:34:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 11:22:01
+@LastEditTime: 2022-11-23 18:43:41
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -14,6 +14,7 @@ import random
 import tensorflow as tf
 
 from ..base import BaseManager
+from ..constant import INPUT_TYPES
 from .__agentManager import AgentManager
 from .trajectories import Dataset, VideoClipManager
 
@@ -58,12 +59,8 @@ class DatasetManager(BaseManager):
     def set_types(self, inputs_type: list[str], labels_type: list[str] = None):
         """
         Set types of model inputs and labels in this dataset.
-
-        :param inputs_type: a list of `str`, accept `'TRAJ'`,
-            `'MAP'`, `'DEST'`, and `'GT'`
-        :param labels_type: a list of `str`, accept `'GT'` and `'DEST'`
+        Accept all types in `INPUT_TYPES`.
         """
-
         self.model_input_type = inputs_type
         if labels_type is not None:
             self.model_label_type = labels_type
@@ -120,7 +117,7 @@ class DatasetManager(BaseManager):
                 agents.load(data_path)
 
             # load or make context maps
-            if 'MAP' in self.model_input_type:
+            if INPUT_TYPES.MAP in self.model_input_type:
                 agents.init_map_managers(map_type=self.info.type,
                                          base_path=agents.maps_dir)
 

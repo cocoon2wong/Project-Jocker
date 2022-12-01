@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 11:18:07
+@LastEditTime: 2022-11-23 20:11:18
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -165,7 +165,7 @@ class Agent():
     def groundtruth(self) -> np.ndarray:
         """
         ground truth future trajectory.
-        shape = (pred, 2)
+        shape = (pred, dim)
         """
         return self.picker.get(self._traj_future)
 

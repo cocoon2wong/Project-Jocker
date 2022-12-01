@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 11:13:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 11:24:55
+@LastEditTime: 2022-11-30 09:18:37
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -72,14 +72,16 @@ class LossManager(BaseManager):
         self.loss_weights = [v for v in loss_dict.values()]
 
     def call(self, outputs: list[tf.Tensor],
-             labels: tf.Tensor,
+             labels: list[tf.Tensor],
              training=None,
              coefficient: float = 1.0):
         """
         Call all loss functions recorded in the `loss_list`.
 
-        :param outputs: A list of the model's output tensors.
-        :param labels: The ground truth tensor.
+        :param outputs: A list of the model's output tensors. \
+            `outputs[0]` should be the predicted trajectories.
+        :param labels: A list of groundtruth tensors. \
+            `labels[0]` should be the groundtruth trajectories.
         :param training: Choose whether to run as the training mode.
         :param coefficient: The scale parameter on the loss functions.
 
@@ -114,18 +116,28 @@ class LossManager(BaseManager):
     ####################################
 
     def l2(self, outputs: list[tf.Tensor],
-           labels: tf.Tensor,
+           labels: list[tf.Tensor],
            coe: float = 1.0,
            *args, **kwargs):
         """
         l2 loss on the keypoints.
         Support M-dimensional trajectories.
         """
-        labels_pickled = tf.gather(labels, self.p_index, axis=1)
+        return ADE_2D(outputs[0], labels[0], coe=coe)
+
+    def keyl2(self, outputs: list[tf.Tensor],
+              labels: list[tf.Tensor],
+              coe: float = 1.0,
+              *args, **kwargs):
+        """
+        l2 loss on the keypoints.
+        Support M-dimensional trajectories.
+        """
+        labels_pickled = tf.gather(labels[0], self.p_index, axis=-2)
         return ADE_2D(outputs[0], labels_pickled, coe=coe)
 
     def avgKey(self, outputs: list[tf.Tensor],
-               labels: tf.Tensor,
+               labels: list[tf.Tensor],
                coe: float = 1.0,
                *args, **kwargs):
         """
@@ -134,7 +146,7 @@ class LossManager(BaseManager):
         :param outputs: A list of tensors, where `outputs[0].shape`
             is `(batch, K, pred, 2)` or `(batch, pred, 2)`
             or `(batch, K, n_key, 2)` or `(batch, n_key, 2)`.
-        :param labels: Shape is `(batch, pred, 2)`.
+        :param labels: Shape of `labels[0]` is `(batch, pred, 2)`.
         """
         pred = outputs[0]
         if pred.ndim == 3:
@@ -143,12 +155,12 @@ class LossManager(BaseManager):
         if pred.shape[-2] != self.p_len:
             pred = tf.gather(pred, self.p_index, axis=-2)
 
-        labels_key = tf.gather(labels, self.p_index, axis=-2)
+        labels_key = tf.gather(labels[0], self.p_index, axis=-2)
 
-        return self.ADE([pred], labels_key, coe)
+        return self.ADE([pred], [labels_key], coe)
 
     def ADE(self, outputs: list[tf.Tensor],
-            labels: tf.Tensor,
+            labels: list[tf.Tensor],
             coe: float = 1.0,
             *args, **kwargs):
         """
@@ -157,7 +169,7 @@ class LossManager(BaseManager):
 
         :param outputs: A list of tensors, where `outputs[0].shape` 
             is `(batch, K, pred, 2)` or `(batch, pred, 2)`.
-        :param labels: Shape is `(batch, pred, 2)`.
+        :param labels: Shape of `labels[0]` is `(batch, pred, 2)`.
         """
         pred = outputs[0]
 
@@ -166,37 +178,35 @@ class LossManager(BaseManager):
 
         ade = []
         for p, gt in zip(self.picker.get_coordinate_series(pred),
-                         self.picker.get_coordinate_series(labels)):
+                         self.picker.get_coordinate_series(labels[0])):
             ade.append(ADE_2D(p, gt, coe))
 
         return tf.reduce_mean(ade)
 
     def avgCenter(self, outputs: list[tf.Tensor],
-                  labels: tf.Tensor,
+                  labels: list[tf.Tensor],
                   coe: float = 1.0,
                   *args, **kwargs):
         """
         Average displacement error on the center of each prediction.
         """
-        pred = outputs[0]
-        pred_center = self.picker.get_center(pred)
-        gt_center = self.picker.get_center(labels)
+        pred_center = self.picker.get_center(outputs[0])
+        gt_center = self.picker.get_center(labels[0])
         return ADE_2D(pred_center, gt_center, coe)
 
     def finalCenter(self, outputs: list[tf.Tensor],
-                    labels: tf.Tensor,
+                    labels: list[tf.Tensor],
                     coe: float = 1.0,
                     *args, **kwargs):
         """
         Final displacement error on the center of each prediction.
         """
-        pred = outputs[0]
-        pred_center = self.picker.get_center(pred)
-        gt_center = self.picker.get_center(labels)
+        pred_center = self.picker.get_center(outputs[0])
+        gt_center = self.picker.get_center(labels[0])
         return ADE_2D(pred_center[..., -1:, :], gt_center[..., -1:, :], coe)
 
     def FDE(self, outputs: list[tf.Tensor],
-            labels: tf.Tensor,
+            labels: list[tf.Tensor],
             coe: float = 1.0,
             *args, **kwargs):
         """
@@ -206,7 +216,7 @@ class LossManager(BaseManager):
         :param outputs: A list of tensors, where 
             `outputs[0].shape` is `(batch, K, pred, 2)`
             or `(batch, pred, 2)`.
-        :param labels: Shape is `(batch, pred, 2)`.
+        :param labels: Shape of `labels[0]` is `(batch, pred, 2)`.
         """
         pred = outputs[0]
 
@@ -214,12 +224,12 @@ class LossManager(BaseManager):
             pred = pred[:, tf.newaxis, :, :]
 
         pred_final = pred[..., -1:, :]
-        labels_final = labels[..., -1:, :]
+        labels_final = labels[0][..., -1:, :]
 
-        return self.ADE([pred_final], labels_final, coe)
+        return self.ADE([pred_final], [labels_final], coe)
 
     def HIoU(self, outputs: list[tf.Tensor],
-             labels: tf.Tensor,
+             labels: list[tf.Tensor],
              coe: float = 1.0,
              *args, **kwargs):
 

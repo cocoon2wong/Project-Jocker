@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
-@LastEditors: Beihao Xia
-@LastEditTime: 2022-11-22 21:08:13
+@LastEditors: Conghao Wong
+@LastEditTime: 2022-12-01 12:12:00
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -18,17 +18,13 @@ import tensorflow as tf
 
 from ..args import Args
 from ..base import BaseManager
+from ..constant import INPUT_TYPES, PROCESS_TYPES
 from ..utils import CHECKPOINT_FILENAME, WEIGHTS_FORMAT
 from . import process
 
 T = TypeVar('T')
 
 MAX_INFERENCE_TIME_STORGED = 100
-
-MOVE = 'MOVE'
-ROTATE = 'ROTATE'
-SCALE = 'SCALE'
-UPSAMPLING = 'UPSAMPLING'
 
 
 class Model(tf.keras.Model, BaseManager):
@@ -80,14 +76,14 @@ class Model(tf.keras.Model, BaseManager):
         BaseManager.__init__(self, manager=structure, name=self.name)
 
         # Model inputs
-        self.input_type: list[str] = []
-        self.set_inputs('obs')
+        self.input_types: list[str] = []
+        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ)
 
         # preprocess
         self.processor: process.ProcessModel = None
-        self._default_process_para = {MOVE: Args.pmove,
-                                      SCALE: Args.pscale,
-                                      ROTATE: Args.protate}
+        self._default_process_para = {PROCESS_TYPES.MOVE: Args.pmove,
+                                      PROCESS_TYPES.SCALE: Args.pscale,
+                                      PROCESS_TYPES.ROTATE: Args.protate}
 
         # Inference times
         self.inference_times: list[float] = []
@@ -111,7 +107,20 @@ class Model(tf.keras.Model, BaseManager):
             t = np.mean(it)
             return int(1000 * t)
         else:
-            return -1
+            return '(Not Available)'
+
+    @property
+    def fastest_inference_time(self) -> int:
+        """
+        The fastest inference time (ms).
+        """
+        if l := len(it := self.inference_times):
+            if l > 3:
+                it = it[1:-1]
+            t = min(it)
+            return int(1000 * t)
+        else:
+            return '(Not Available)'
 
     def call(self, inputs,
              training=None,
@@ -149,34 +158,20 @@ class Model(tf.keras.Model, BaseManager):
 
     def set_inputs(self, *args):
         """
-        Set variables to input to the model.
+        Set input types of the model.
         Accept keywords:
         ```python
-        historical_trajectory = ['traj', 'obs']
-        groundtruth_trajectory = ['pred', 'gt']
-        context_map = ['map']
-        destination = ['des', 'inten']
+        codes.constant.INPUT_TYPES.OBSERVED_TRAJ
+        codes.constant.INPUT_TYPES.MAP
+        codes.constant.INPUT_TYPES.DESTINATION_TRAJ
+        codes.constant.INPUT_TYPES.GROUNDTRUTH_TRAJ
+        codes.constant.INPUT_TYPES.GROUNDTRUTH_SPECTRUM
+        codes.constant.INPUT_TYPES.ALL_SPECTRUM
         ```
 
         :param input_names: Type = `str`, accept several keywords.
         """
-        self.input_type = []
-        for item in args:
-            if 'traj' in item or \
-                    'obs' in item:
-                self.input_type.append('TRAJ')
-
-            elif 'context' in item or \
-                    'map' in item:
-                self.input_type.append('MAP')
-
-            elif 'des' in item or \
-                    'inten' in item:
-                self.input_type.append('DEST')
-
-            elif 'gt' in item or \
-                    'pred' in item:
-                self.input_type.append('GT')
+        self.input_types = [item for item in args]
 
     def set_preprocess(self, **kwargs):
         """
@@ -194,9 +189,9 @@ class Model(tf.keras.Model, BaseManager):
         """
 
         preprocess_dict: dict[str, tuple[str, type[process.BaseProcessLayer]]] = {
-            MOVE: ('.*[Mm][Oo][Vv][Ee].*', process.Move),
-            ROTATE: ('.*[Rr][Oo][Tt].*', process.Rotate),
-            SCALE: ('.*[Ss][Cc][Aa].*', process.Scale),
+            PROCESS_TYPES.MOVE: ('.*[Mm][Oo][Vv][Ee].*', process.Move),
+            PROCESS_TYPES.ROTATE: ('.*[Rr][Oo][Tt].*', process.Rotate),
+            PROCESS_TYPES.SCALE: ('.*[Ss][Cc][Aa].*', process.Scale),
         }
 
         process_list = []

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 10:50:35
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 11:23:28
+@LastEditTime: 2022-11-23 19:33:43
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,7 +12,7 @@ import tensorflow as tf
 
 
 def AIoU(outputs: list[tf.Tensor],
-         GT: tf.Tensor,
+         labels: list[tf.Tensor],
          coe: float = 1.0,
          *args, **kwargs) -> tf.Tensor:
     """
@@ -21,6 +21,7 @@ def AIoU(outputs: list[tf.Tensor],
     Each dimension of the predictions should be `(xl, yl, xr, yr)`.
     """
     pred = outputs[0]
+    GT = labels[0]
 
     if pred.ndim == 3:
         pred = pred[:, tf.newaxis, :, :]
@@ -36,7 +37,7 @@ def AIoU(outputs: list[tf.Tensor],
 
 
 def FIoU(outputs: list[tf.Tensor],
-         GT: tf.Tensor,
+         labels: list[tf.Tensor],
          coe: float = 1.0,
          index: int = -1,
          length: int = 1,
@@ -47,10 +48,12 @@ def FIoU(outputs: list[tf.Tensor],
     Each dimension of the predictions should be `(xl, yl, xr, yr)`.
     """
     pred = outputs[0]
+    GT = labels[0]
+
     steps = pred.shape[-2]
     index = tf.math.mod(index, steps)
     return AIoU([pred[..., index:index+length, :]],
-                GT[..., index:index+length, :])
+                [GT[..., index:index+length, :]])
 
 
 def __IoU_single_2Dbox(box1: tf.Tensor, box2: tf.Tensor) -> tf.Tensor:

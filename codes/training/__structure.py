@@ -1,16 +1,15 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
-@LastEditors: Beihao Xia
-@LastEditTime: 2022-11-22 21:48:47
+@LastEditors: Conghao Wong
+@LastEditTime: 2022-12-01 12:06:20
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import os
-import time
-from typing import Union
+from typing import Union, overload
 
 import numpy as np
 import tensorflow as tf
@@ -18,6 +17,7 @@ import tensorflow as tf
 from ..args import Args
 from ..base import BaseManager
 from ..basemodels import Model
+from ..constant import INPUT_TYPES
 from ..dataset import AgentManager, AnnotationManager, DatasetManager
 from ..utils import WEIGHTS_FORMAT, dir_check
 from ..vis import Visualization
@@ -72,7 +72,8 @@ class Structure(BaseManager):
         self.optimizer = self.set_optimizer()
 
         # Set labels, loss functions, and metrics
-        self.set_labels('pred')
+        self.label_types: list[str] = []
+        self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
         self.loss.set({self.loss.ADE: 1.0})
 
         if self.args.anntype == 'boundingbox':
@@ -87,25 +88,21 @@ class Structure(BaseManager):
 
     def set_labels(self, *args):
         """
-        Set ground truths of the model
+        Set label types when calculating loss and metrics.
         Accept keywords:
         ```python
-        groundtruth_trajectory = ['traj', 'pred', 'gt']
-        destination = ['des', 'inten']
+        codes.constant.INPUT_TYPES.OBSERVED_TRAJ
+        codes.constant.INPUT_TYPES.MAP
+        codes.constant.INPUT_TYPES.DESTINATION_TRAJ
+        codes.constant.INPUT_TYPES.GROUNDTRUTH_TRAJ
+        codes.constant.INPUT_TYPES.GROUNDTRUTH_SPECTRUM
+        codes.constant.INPUT_TYPES.ALL_SPECTRUM
+        ```
 
         :param input_names: Name of the inputs.\
             Type = `str`, accept several keywords.
         """
-        self.model_label_type = []
-        for item in args:
-            if 'traj' in item or \
-                'gt' in item or \
-                    'pred' in item:
-                self.model_label_type.append('GT')
-
-            elif 'des' in item or \
-                    'inten' in item:
-                self.model_label_type.append('DEST')
+        self.label_types = [item for item in args]
 
     def set_optimizer(self, epoch: int = None) -> tf.keras.optimizers.Optimizer:
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.args.lr)
@@ -185,8 +182,8 @@ class Structure(BaseManager):
         """
         # init model and dataset manager
         self.model = self.create_model()
-        self.dsmanager.set_types(inputs_type=self.model.input_type,
-                                 labels_type=self.model_label_type)
+        self.dsmanager.set_types(inputs_type=self.model.input_types,
+                                 labels_type=self.label_types)
 
         # start training or testing
         if self.noTraining:
@@ -248,7 +245,7 @@ class Structure(BaseManager):
 
         # Write test results
         if r:
-            metric, metrics_dict, outputs, labels = r
+            metric, metrics_dict, outputs = r
             self.print_test_results(metrics_dict)
             self.write_test_results(outputs=outputs,
                                     clips=self.dsmanager.processed_clips['test'])
@@ -305,16 +302,20 @@ class Structure(BaseManager):
                 epochs.append(epoch)
 
             # Run training once
+            len_labels = len(self.label_types)
             loss, loss_dict, loss_move = self.gradient_operations(
-                inputs=dat[:-1],
-                labels=dat[-1],
+                inputs=dat[:-len_labels],
+                labels=dat[-len_labels:],
                 loss_move_average=loss_move,
                 epoch=epoch,
             )
 
             # Check if `nan` in the loss dictionary
             if tf.math.is_nan(loss):
-                self.log('Find `nan` values in the loss dictionary, stop training...',
+                self.log(f'Find `nan` values in the loss dictionary, ' +
+                         f'stop training... ' +
+                         f'Best metrics obtained from the last epoch: ' +
+                         f'{best_metrics_dict}.',
                          level='error', raiseError=ValueError)
 
             # Run validation
@@ -325,7 +326,6 @@ class Structure(BaseManager):
 
                 metric, metrics_dict = self.__test_on_dataset(
                     ds=ds_val,
-                    return_results=False,
                     show_timebar=False,
                     test_during_training=True
                 )
@@ -345,30 +345,28 @@ class Structure(BaseManager):
                     np.savetxt(os.path.join(self.args.log_dir, 'best_ade_epoch.txt'),
                                np.array([best_metric, best_epoch]))
 
-            # Update time bar
-            loss_dict = dict(epoch=epoch,
-                             best=tf.stack(list(best_metrics_dict.values())),
-                             **loss_dict,
-                             **metrics_dict)
+            # Save results into log files
+            log_dict = dict(epoch=epoch,
+                            best=list(best_metrics_dict.values()),
+                            **loss_dict,
+                            **metrics_dict)
 
-            for key, value in loss_dict.items():
-                if issubclass(type(value), tf.Tensor):
-                    loss_dict[key] = value.numpy()
-
-            self.update_timebar(loss_dict, pos='end')
+            # Show to users
+            self.update_timebar(log_dict, pos='end')
 
             # Write tensorboard
             with tb.as_default():
-                for loss_name in loss_dict:
-                    if loss_name == 'best':
+                for name in log_dict.keys():
+                    if name == 'best':
                         continue
 
-                    value = loss_dict[loss_name]
-                    tf.summary.scalar(loss_name, value, step=epoch)
+                    value = log_dict[name]
+                    tf.summary.scalar(name, value, step=epoch)
 
-        return loss_dict, metrics_dict, best_metric, best_epoch
+        return log_dict, metrics_dict, best_metric, best_epoch
 
-    def __test(self, ds_test: tf.data.Dataset):
+    def __test(self, ds_test: tf.data.Dataset) -> \
+            tuple[float, dict[str, float], list[tf.Tensor]]:
         """
         Test model on the given dataset.
 
@@ -377,7 +375,6 @@ class Structure(BaseManager):
         :return metric:
         :return metrics_dict
         :return outputs: model outputs
-        :return labels: model labels
         """
         # Print test information
         self.dsmanager.print_info()
@@ -392,17 +389,26 @@ class Structure(BaseManager):
                 self.args._save_as_json(self.args.log_dir)
 
         # Run test
-
-        outputs, labels, metric, metrics_dict = self.__test_on_dataset(
+        outputs, metric, metrics_dict = self.__test_on_dataset(
             ds=ds_test,
             return_results=True,
             show_timebar=True,
         )
 
-        outputs = stack_results(outputs)
-        labels = stack_results(labels)
+        return metric, metrics_dict, outputs
 
-        return metric, metrics_dict, outputs, labels
+    @overload
+    def __test_on_dataset(self, ds: tf.data.Dataset,
+                          show_timebar=False,
+                          test_during_training=False) \
+        -> tuple[float, dict[str, float]]: ...
+
+    @overload
+    def __test_on_dataset(self, ds: tf.data.Dataset,
+                          return_results=False,
+                          show_timebar=False,
+                          test_during_training=False) \
+        -> tuple[list[tf.Tensor], float, dict[str, float]]: ...
 
     def __test_on_dataset(self, ds: tf.data.Dataset,
                           return_results=False,
@@ -412,7 +418,7 @@ class Structure(BaseManager):
         Run a test on the given dataset.
 
         :param ds: The test `tf.data.Dataset` object.
-        :param return_results: Controls items to return.
+        :param return_results: Controls items to return (the defaule value is `False`).
         :param show_timebar: Controls whether to show the process.
         :param test_during_training: Indicates whether to test during training.
 
@@ -422,13 +428,11 @@ class Structure(BaseManager):
 
         Returns if `return_results == True`:
         :return outputs: A list of model outputs.
-        :return labels: Model labels.
         :return metric: The weighted sum of all metrics.
         :return metric_dict: A dict of all metrics.
         """
         # init variables for test
         outputs_all = []
-        labels_all = []
         metrics_all = []
         metrics_dict_all = {}
 
@@ -438,49 +442,45 @@ class Structure(BaseManager):
         # hide time bar when training
         timebar = self.timebar(ds, 'Test...') if show_timebar else ds
 
-        test_numbers = []
+        count = []
         for dat in timebar:
+            len_labels = len(self.label_types)
             outputs, metrics, metrics_dict = self.model_validate(
-                inputs=dat[:-1],
-                labels=dat[-1],
+                inputs=dat[:-len_labels],
+                labels=dat[-len_labels:],
                 training=False,
             )
 
-            test_numbers.append(outputs[0].shape[0])
+            # Add metrics and outputs to their dicts
+            count.append(outputs[0].shape[0])
+            metrics_all.append(metrics)
+            metrics_dict_all = append_batch_results(
+                metrics_dict_all, metrics_dict)
 
             if return_results:
-                outputs_all = append_results_to_list(outputs, outputs_all)
-                labels_all = append_results_to_list(dat[-1:], labels_all)
+                outputs_all = append_batch_results(outputs_all, outputs)
 
-            # add metrics to metrics dict
-            metrics_all.append(metrics)
-            for key, value in metrics_dict.items():
-                if not key in metrics_dict_all.keys():
-                    metrics_dict_all[key] = []
-                metrics_dict_all[key].append(value)
+        # Stack all model results
+        if return_results:
+            outputs_all = stack_results(outputs_all)
 
         # calculate average metric
-        weights = tf.cast(tf.stack(test_numbers), tf.float32)
-        metrics_all = \
-            (tf.reduce_sum(tf.stack(metrics_all) * weights) /
-             tf.reduce_sum(weights)).numpy()
-
-        for key in metrics_dict_all:
-            metrics_dict_all[key] = \
-                (tf.reduce_sum(tf.stack(metrics_dict_all[key]) * weights) /
-                 tf.reduce_sum(weights)).numpy()
+        m_avg = weighted_avg_results([metrics_all], count, numpy=True)[0]
+        mdict_avg = weighted_avg_results(metrics_dict_all, count, numpy=True)
 
         # Inference time
         if not test_during_training:
             if len(self.model.inference_times) < 3:
                 self.log('The "AverageInferenceTime" is for reference only and you can set a lower "batch_size" ' +
                          'or change a bigger dataset to obtain a more accurate result.')
-            metrics_dict_all['AverageInferenceTime'] = f'{self.model.average_inference_time} ms'
+
+            mdict_avg['Average Inference Time'] = f'{self.model.average_inference_time} ms'
+            mdict_avg['Fastest Inference Time'] = f'{self.model.fastest_inference_time} ms'
 
         if return_results:
-            return outputs_all, labels_all, metrics_all, metrics_dict_all
+            return outputs_all, m_avg, mdict_avg
         else:
-            return metrics_all, metrics_dict_all
+            return m_avg, mdict_avg
 
     def print_info(self, **kwargs):
         info = {'Batch size': self.args.batch_size,
@@ -571,14 +571,81 @@ class Structure(BaseManager):
             self.log(f'Prediction result images are saved at {img_dir}')
 
 
-def append_results_to_list(results: list[tf.Tensor], target: list):
-    if not len(target):
-        [target.append([]) for _ in range(len(results))]
-    [target[index].append(results[index]) for index in range(len(results))]
-    return target
-
-
 def stack_results(results: list[tf.Tensor]):
     for index, tensor in enumerate(results):
         results[index] = tf.concat(tensor, axis=0)
     return results
+
+
+@overload
+def append_batch_results(results_container: list[list[tf.Tensor]],
+                         new_results: list[tf.Tensor]) -> list[list[tf.Tensor]]: ...
+
+
+@overload
+def append_batch_results(results_container: dict[str, list[tf.Tensor]],
+                         new_results: dict[str, tf.Tensor]) -> dict[str, list[tf.Tensor]]: ...
+
+
+def append_batch_results(source, new):
+    if type(new) in [list, tuple]:
+        if not len(source):
+            for _ in range(len(new)):
+                source.append([])
+
+        for index, value in enumerate(new):
+            source[index].append(value)
+
+    elif type(new) in [dict]:
+        if not len(source):
+            for key in new.keys():
+                source[key] = []
+
+        for [key, value] in new.items():
+            source[key].append(value)
+
+    else:
+        raise TypeError(new)
+
+    return source
+
+
+@overload
+def weighted_avg_results(target: list[list[tf.Tensor]],
+                         weights: list,
+                         numpy=False) -> list[tf.Tensor]: ...
+
+
+@overload
+def weighted_avg_results(target: dict[str, list[tf.Tensor]],
+                         weights: list,
+                         numpy=False) -> dict[str, tf.Tensor]: ...
+
+
+def weighted_avg_results(target, weights: list, numpy=False):
+
+    weights = tf.cast(weights, tf.float32)
+    count = tf.reduce_sum(weights)
+
+    if type(target) in [list, tuple]:
+        new_res = []
+        for item in target:
+            sum = tf.reduce_sum(item * weights)
+            res = sum/count
+            if numpy:
+                res = res.numpy()
+            new_res.append(res)
+
+    elif type(target) in [dict]:
+        new_res = {}
+        for key, value in target.items():
+            sum = tf.reduce_sum(value * weights)
+            res = sum/count
+            if numpy:
+                res = res.numpy()
+            new_res[key] = res
+
+    else:
+        raise TypeError(target)
+
+    return new_res

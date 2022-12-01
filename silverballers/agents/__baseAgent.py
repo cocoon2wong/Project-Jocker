@@ -2,13 +2,15 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-14 09:35:50
+@LastEditTime: 2022-11-30 09:19:35
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import tensorflow as tf
+
+from codes.constant import INPUT_TYPES
 from codes.managers import Model, Structure
 
 from ..__args import AgentArgs
@@ -30,7 +32,7 @@ class BaseAgentModel(Model):
         self.structure: BaseAgentStructure = structure
 
         # Model input types
-        self.set_inputs('obs')
+        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ)
 
         # Parameters
         self.d = feature_dim
@@ -72,8 +74,8 @@ class BaseAgentStructure(Structure):
 
         self.args: AgentArgs
 
-        self.set_labels('pred')
-        self.loss.set({self.loss.l2: 1.0})
+        self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
+        self.loss.set({self.loss.keyl2: 1.0})
         self.metrics.set({self.metrics.avgKey: 1.0,
                           self.metrics.FDE: 0.0})
 
