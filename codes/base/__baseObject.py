@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-11 10:05:11
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-15 09:45:28
+@LastEditTime: 2022-12-01 11:52:01
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -122,6 +122,14 @@ class BaseObject():
         :param item: The string or dictionary to show on the time bar.
         :param pos: Position to show, can be `'end'` or `'start'`.
         """
+        if issubclass(type(item), dict):
+            for key, value in item.items():
+                if issubclass(type(value), tf.Tensor):
+                    item[key] = value.numpy()
+        
+        elif issubclass(type(item), tf.Tensor):
+            item = item.numpy()
+            
         if pos == 'end':
             if type(item) is str:
                 self.bar.set_postfix_str(item)
