@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-29 10:26:53
+@LastEditTime: 2022-12-05 20:37:58
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -112,9 +112,9 @@ class BaseHandlerModel(Model):
             gt_processed = keypoints_p[0]
 
             if self.key_points == 'null':
-                index = np.random.choice(np.arange(self.args.pred_frames-1),
-                                         self.points-1)
-                index = tf.concat([np.sort(index),
+                index = np.arange(self.args.pred_frames-1)
+                np.random.shuffle(index)
+                index = tf.concat([np.sort(index[:self.points-1]),
                                    [self.args.pred_frames-1]], axis=0)
             else:
                 index = tf.cast(self.points_index, tf.int32)
