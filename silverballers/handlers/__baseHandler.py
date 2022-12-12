@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-29 10:26:53
+@LastEditTime: 2022-12-06 10:01:45
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -84,10 +84,16 @@ class BaseHandlerModel(Model):
                                   manager=self.structure.manager,
                                   desc='Running Stage-2 Sub-Network...'):
 
-                # single shape is (batch, pred, 2)
-                p_all.append(self.call(inputs=inputs,
-                                       keypoints=keypoints[:, k, :, :],
-                                       keypoints_index=keypoints_index))
+                # Run stage-2 network on a batch of inputs
+                pred = self.call(inputs=inputs,
+                                 keypoints=keypoints[:, k, :, :],
+                                 keypoints_index=keypoints_index)
+
+                if type(pred) not in [list, tuple]:
+                    pred = [pred]
+
+                # A single output shape is (batch, pred, dim).
+                p_all.append(pred[0])
 
             return tf.transpose(tf.stack(p_all), [1, 0, 2, 3])
 
@@ -112,9 +118,9 @@ class BaseHandlerModel(Model):
             gt_processed = keypoints_p[0]
 
             if self.key_points == 'null':
-                index = np.random.choice(np.arange(self.args.pred_frames-1),
-                                         self.points-1)
-                index = tf.concat([np.sort(index),
+                index = np.arange(self.args.pred_frames-1)
+                np.random.shuffle(index)
+                index = tf.concat([np.sort(index[:self.points-1]),
                                    [self.args.pred_frames-1]], axis=0)
             else:
                 index = tf.cast(self.points_index, tf.int32)
