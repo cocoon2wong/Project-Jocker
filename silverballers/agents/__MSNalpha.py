@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-09-13 21:18:29
-@LastEditors: Conghao Wong
-@LastEditTime: 2022-11-23 20:39:50
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-03-02 20:57:07
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,6 +12,7 @@ import tensorflow as tf
 
 from codes.basemodels import transformer
 from codes.constant import INPUT_TYPES
+from codes.utils import POOLING_BEFORE_SAVING
 
 from ..__args import AgentArgs
 from .__baseAgent import BaseAgentModel, BaseAgentStructure
@@ -53,8 +54,10 @@ class MSNAlphaModel(BaseAgentModel):
 
         # Layers
         # context feature
-        self.average_pooling = tf.keras.layers.AveragePooling2D([5, 5],
-                                                                input_shape=[100, 100, 1])
+        if not POOLING_BEFORE_SAVING:
+            self.average_pooling = tf.keras.layers.AveragePooling2D([5, 5],
+                                                                    input_shape=[100, 100, 1])
+
         self.flatten = tf.keras.layers.Flatten()
         self.context_dense1 = tf.keras.layers.Dense(self.args.obs_frames * 64,
                                                     activation=tf.nn.tanh)
@@ -89,7 +92,11 @@ class MSNAlphaModel(BaseAgentModel):
         positions_embedding = self.pos_embedding(positions)
 
         # context feature, shape == (batch, obs, 64)
-        average_pooling = self.average_pooling(maps[:, :, :, tf.newaxis])
+        if not POOLING_BEFORE_SAVING:
+            average_pooling = self.average_pooling(maps[:, :, :, tf.newaxis])
+        else:
+            average_pooling = maps
+
         flatten = self.flatten(average_pooling)
         context_feature = self.context_dense1(flatten)
         context_feature = tf.reshape(context_feature,
