@@ -2,7 +2,7 @@
 @Author: Beihao Xia
 @Date: 2023-03-20 16:15:25
 @LastEditors: Beihao Xia
-@LastEditTime: 2023-03-20 18:29:52
+@LastEditTime: 2023-03-20 18:55:50
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Beihao Xia, All Rights Reserved.
@@ -72,7 +72,7 @@ class MinimalVModel(Model):
                                          pe_target=self.Tsteps_en,
                                          include_top=False)
 
-        self.adj_fc = tf.keras.layers.Dense(self.args.pred_frames, tf.nn.tanh)
+        self.adj_fc = tf.keras.layers.Dense(self.Tsteps_de, tf.nn.tanh)
         self.gcn = layers.GraphConv(units=self.d)
 
         # Random id encoding
@@ -80,12 +80,8 @@ class MinimalVModel(Model):
         self.concat = tf.keras.layers.Concatenate(axis=-1)
 
         # Decoder layers (with spectrums)
-        gamma = self.Tsteps_de/self.Osteps_de
         self.decoder_fc1 = tf.keras.layers.Dense(2*self.d, tf.nn.tanh)
-        # self.decoder_fc2 = tf.keras.layers.Dense(int(gamma*self.Tchannels_de))
         self.decoder_fc2 = tf.keras.layers.Dense(self.Tchannels_de)
-        self.decoder_reshape = tf.keras.layers.Reshape(
-            [-1, self.Tsteps_de, self.Tchannels_de])
 
     def call(self, inputs, training=None, mask=None, *args, **kwargs):
 
@@ -113,7 +109,6 @@ class MinimalVModel(Model):
 
             y = self.decoder_fc1(t_features)
             y = self.decoder_fc2(y)
-            # y = self.decoder_reshape(y)
 
             y = self.it1.call(y)
 
