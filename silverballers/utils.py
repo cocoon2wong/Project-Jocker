@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-07-27 20:47:50
-@LastEditors: Conghao Wong
-@LastEditTime: 2022-11-29 10:20:12
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-03-20 16:38:24
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -15,6 +15,7 @@ from . import agents, handlers
 from .__args import SilverballersArgs
 from .__baseSilverballers import BaseSilverballers
 from .__silverballers import Silverballers47C, V
+from .__MiniV import MinimalVModel, MinimalV
 
 
 class SilverballersMKII(BaseSilverballers):
@@ -71,6 +72,7 @@ __SILVERBALLERS_DICT = dict(
     V=[V, None],
     sb47C=[Silverballers47C, None],
     MKII=[SilverballersMKII, None],
+    mv=[MinimalV, MinimalVModel],
 )
 
 # Interpolation Handlers
