@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 10:38:49
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-09-07 11:23:48
+@LastEditTime: 2023-03-21 11:37:50
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -66,6 +66,8 @@ class BaseProcessLayer(tf.keras.layers.Layer):
             order = [[0, 1]]
         elif anntype == 'boundingbox':
             order = [[0, 1], [2, 3]]
+        elif anntype == '3Dboundingbox':
+            order = [[0, 1, 2], [3, 4, 5]]
         else:
             raise NotImplementedError(anntype)
 
