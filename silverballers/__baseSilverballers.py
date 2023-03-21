@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-29 10:30:16
+@LastEditTime: 2023-03-21 20:40:01
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -160,24 +160,12 @@ class BaseSilverballers(Structure):
 
         self.args = SilverballersArgs(terminal_args + extra_args)
 
-        # init the structure
-        super().__init__(self.args)
-
         if self.args.auto_dimension:
             self.args._set('anntype', self.get_member(
                 DatasetManager).info.anntype)
 
-        if self.args.anntype == 'boundingbox':
-            self.metrics.set({self.metrics.ADE: 1.0,
-                              self.metrics.FDE: 0.0,
-                              self.metrics.avgCenter: 0.0,
-                              self.metrics.finalCenter: 0.0,
-                              self.metrics.AIoU: 0.0,
-                              self.metrics.HIoU: 0.0,
-                              self.metrics.FIoU: 0.0})
-        else:
-            self.metrics.set({self.metrics.ADE: 1.0,
-                              self.metrics.FDE: 0.0})
+        # init the structure
+        super().__init__(self.args)
 
         self.noTraining = True
 
