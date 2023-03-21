@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-30 09:52:17
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 11:18:17
+@LastEditTime: 2023-03-21 11:07:01
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -96,13 +96,14 @@ class _Boundingbox(_BaseAnnType):
 
         else:
             raise NotImplementedError(T)
+        
 
-
-class _3DBoundingboxWithRotate(_BaseAnnType):
+class _3DBoundingbox(_BaseAnnType):
     def __init__(self) -> None:
-        self.typeName = T_3D_BOUNDINGBOX_ROTATE
-        self.dim = 10
-        self.targets = [_Coordinate, _SeriesOfSingleCoordinate]
+        self.typeName = T_3D_BOUNDINGBOX
+        self.dim = 6
+        self.targets = [_Coordinate,
+                        _SeriesOfSingleCoordinate]
 
     def _transfer(self, T: type[_BaseAnnType], traj: np.ndarray):
 
@@ -116,6 +117,35 @@ class _3DBoundingboxWithRotate(_BaseAnnType):
         elif T == _SeriesOfSingleCoordinate:
             # return shape = (2, ..., steps, 3)
             return [p1, p2]
+
+        else:
+            raise NotImplementedError
+
+
+class _3DBoundingboxWithRotate(_BaseAnnType):
+    def __init__(self) -> None:
+        self.typeName = T_3D_BOUNDINGBOX_ROTATE
+        self.dim = 10
+        self.targets = [_Coordinate,
+                        _SeriesOfSingleCoordinate,
+                        _3DBoundingbox]
+
+    def _transfer(self, T: type[_BaseAnnType], traj: np.ndarray):
+
+        p1 = traj[..., 0:3]
+        p2 = traj[..., 3:6]
+
+        if T == _Coordinate:
+            # return shape = (..., steps, 2)
+            return 0.5 * (p1 + p2)[..., 0:2]
+
+        elif T == _SeriesOfSingleCoordinate:
+            # return shape = (2, ..., steps, 3)
+            return [p1, p2]
+        
+        elif T == _3DBoundingbox:
+            # return shape = (..., steps, 6)
+            return np.concatenate([p1, p2], axis=-1)
 
         else:
             raise NotImplementedError
@@ -229,7 +259,7 @@ def get_manager(anntype: str) -> _BaseAnnType:
     elif anntype == T_2D_BOUNDINGBOX_ROTATE:
         raise NotImplementedError(anntype)
     elif anntype == T_3D_BOUNDINGBOX:
-        raise NotImplementedError(anntype)
+        return _3DBoundingbox()
     elif anntype == T_3D_BOUNDINGBOX_ROTATE:
         return _3DBoundingboxWithRotate()
     elif anntype == _T_2D_COORDINATE_SERIES:

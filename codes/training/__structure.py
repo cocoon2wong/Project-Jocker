@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-12-06 18:45:43
+@LastEditTime: 2023-03-21 11:07:22
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -83,6 +83,15 @@ class Structure(BaseManager):
                               self.metrics.finalCenter: 0.0,
                               self.metrics.AIoU: 0.0,
                               self.metrics.FIoU: 0.0})
+            
+        elif self.args.anntype == '3Dboundingbox':
+            self.metrics.set({self.metrics.ADE: 1.0,
+                              self.metrics.FDE: 0.0,
+                              self.metrics.avgCenter: 0.0,
+                              self.metrics.finalCenter: 0.0,
+                              self.metrics.AIoU: 0.0,
+                              self.metrics.FIoU: 0.0})
+            
         else:
             self.metrics.set({self.metrics.ADE: 1.0,
                               self.metrics.FDE: 0.0})
