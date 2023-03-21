@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-23 10:23:53
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-21 10:11:17
+@LastEditTime: 2022-12-22 21:09:59
 @Description: Second stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -14,7 +14,6 @@ from codes.basemodels import layers
 from codes.basemodels.transformer import Transformer
 
 from ..__args import HandlerArgs
-from ..__layers import get_transform_layers
 from .__baseHandler import BaseHandlerModel, BaseHandlerStructure
 
 
@@ -46,7 +45,7 @@ class VBModel(BaseHandlerModel):
         input_steps = self.args.obs_frames
         output_steps = self.args.obs_frames + self.args.pred_frames
 
-        Tlayer, ITlayer = get_transform_layers(self.args.T)
+        Tlayer, ITlayer = layers.get_transform_layers(self.args.T)
         self.t_layer = Tlayer((input_steps, self.args.dim))
         self.it_layer = ITlayer((output_steps, self.args.dim))
 
@@ -120,7 +119,9 @@ class VB(BaseHandlerStructure):
     Training structure for the second stage sub-network
     """
 
-    def __init__(self, terminal_args: list[str], manager=None):
-        super().__init__(terminal_args, manager)
+    def __init__(self, terminal_args: list[str],
+                 manager=None,
+                 is_temporary=False):
 
-        self.set_model_type(new_type=VBModel)
+        super().__init__(terminal_args, manager, is_temporary)
+        self.set_model_type(VBModel)

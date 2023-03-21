@@ -381,6 +381,8 @@ class Args(ArgsManager):
                 self._set('dim', 2)
             elif self.anntype == 'boundingbox':
                 self._set('dim', 4)
+            elif self.anntype == '3Dboundingbox':
+                self._set('dim', 6)
             else:
                 raise ValueError(self.anntype)
 

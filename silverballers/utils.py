@@ -55,7 +55,6 @@ __SILVERBALLERS_DICT = dict(
     va=[agents.VA, agents.VAModel],
     agent=[agents.VA, agents.VAModel],
     vb=[handlers.VB, handlers.VBModel],
-    # burnwoodV=[handlers.BurnwoodV, handlers.VBModel],
 
     # agent47 series
     agent47B=[agents.Agent47B, agents.Agent47BModel],
@@ -64,9 +63,6 @@ __SILVERBALLERS_DICT = dict(
     agent47BCE=[agents.Agent47BCE, agents.Agent47BCEModel],
     agent47C=[agents.Agent47C, agents.Agent47CModel],
     agent47CE=[agents.Agent47CE, agents.Agent47CEModel],
-
-    # burnwood series
-    burnwoodC=[handlers.BurnwoodC, handlers.BurnwoodCModel],
 
     # Silverballers Structures (Traditional)
     V=[V, None],
