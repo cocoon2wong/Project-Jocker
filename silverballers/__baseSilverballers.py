@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-29 10:30:16
+@LastEditTime: 2023-03-21 20:58:22
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -41,6 +41,8 @@ class BaseSilverballersModel(Model):
                  *args, **kwargs):
 
         super().__init__(Args, structure, *args, **kwargs)
+
+        self.args: SilverballersArgs
 
         # processes are run in AgentModels and HandlerModels
         self.set_preprocess()
@@ -81,6 +83,14 @@ class BaseSilverballersModel(Model):
             # call the first stage model
             agent_inputs = [inputs_new[i] for i in self.agent_input_index]
             agent_proposals = self.agent.forward(agent_inputs)[0]
+
+            # down sampling from K*Kc generations (if needed)
+            if self.args.down_sampling_rate < 1.0:
+                K_current = agent_proposals.shape[1]
+                K_new = K_current * self.args.down_sampling_rate
+                
+                new_index = tf.random.shuffle(tf.range(K_current))[:int(K_new)]
+                agent_proposals = tf.gather(agent_proposals, new_index, axis=1)
 
             # call the second stage model
             handler_inputs = [inputs_new[i] for i in self.handler_input_index]
@@ -160,24 +170,12 @@ class BaseSilverballers(Structure):
 
         self.args = SilverballersArgs(terminal_args + extra_args)
 
-        # init the structure
-        super().__init__(self.args)
-
         if self.args.auto_dimension:
             self.args._set('anntype', self.get_member(
                 DatasetManager).info.anntype)
 
-        if self.args.anntype == 'boundingbox':
-            self.metrics.set({self.metrics.ADE: 1.0,
-                              self.metrics.FDE: 0.0,
-                              self.metrics.avgCenter: 0.0,
-                              self.metrics.finalCenter: 0.0,
-                              self.metrics.AIoU: 0.0,
-                              self.metrics.HIoU: 0.0,
-                              self.metrics.FIoU: 0.0})
-        else:
-            self.metrics.set({self.metrics.ADE: 1.0,
-                              self.metrics.FDE: 0.0})
+        # init the structure
+        super().__init__(self.args)
 
         self.noTraining = True
 
