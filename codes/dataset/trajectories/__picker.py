@@ -204,8 +204,8 @@ class AnnotationManager(BaseManager):
         self.d_type = dataset_type
         self.p_type = self.args.anntype
 
-        if self.args.auto_dimension:
-            self.p_type = dataset_type
+        if self.args.force_anntype != 'null':
+            self.p_type = self.args.force_anntype
 
         self.dataset_picker = Picker(datasetType=dataset_type,
                                      predictionType=self.p_type)

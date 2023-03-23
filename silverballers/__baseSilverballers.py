@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
-@LastEditors: Conghao Wong
-@LastEditTime: 2023-03-21 20:58:22
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-03-23 15:32:39
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -65,7 +65,7 @@ class BaseSilverballersModel(Model):
              training=None, mask=None,
              *args, **kwargs):
 
-        if self.args.auto_dimension and \
+        if self.args.force_anntype == 'boundingbox' and \
            self.agent.args.anntype == 'coordinate' and \
            self.manager.get_member(DatasetManager).info.anntype == 'boundingbox':
 
@@ -170,9 +170,8 @@ class BaseSilverballers(Structure):
 
         self.args = SilverballersArgs(terminal_args + extra_args)
 
-        if self.args.auto_dimension:
-            self.args._set('anntype', self.get_member(
-                DatasetManager).info.anntype)
+        if self.args.force_anntype != 'null':
+            self.args._set('anntype', self.args.force_anntype)
 
         # init the structure
         super().__init__(self.args)

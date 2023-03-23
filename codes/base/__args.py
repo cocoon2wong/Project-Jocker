@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
-@LastEditors: Conghao Wong
-@LastEditTime: 2022-11-14 16:35:45
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-03-23 15:34:05
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -433,11 +433,11 @@ class Args(ArgsManager):
         return self._arg('update_saved_args', 0, argtype=TEMPORARY)
 
     @property
-    def auto_dimension(self) -> int:
+    def force_anntype(self) -> str:
         """
-        Choose whether to handle the dimension adaptively.
+        Assign the prediction type.
         It is now only used for silverballers models that are trained
         with annotation type `coordinate` but want to test on datasets
         with annotation type `boundingbox`.
         """
-        return self._arg('auto_dimension', 0, argtype=TEMPORARY)
+        return self._arg('force_anntype', 'null', argtype=TEMPORARY)
