@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
-@LastEditors: Conghao Wong
-@LastEditTime: 2023-03-21 11:07:22
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-03-27 21:24:56
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -83,7 +83,7 @@ class Structure(BaseManager):
                               self.metrics.finalCenter: 0.0,
                               self.metrics.AIoU: 0.0,
                               self.metrics.FIoU: 0.0})
-            
+
         elif self.args.anntype == '3Dboundingbox':
             self.metrics.set({self.metrics.ADE: 1.0,
                               self.metrics.FDE: 0.0,
@@ -91,7 +91,7 @@ class Structure(BaseManager):
                               self.metrics.finalCenter: 0.0,
                               self.metrics.AIoU: 0.0,
                               self.metrics.FIoU: 0.0})
-            
+
         else:
             self.metrics.set({self.metrics.ADE: 1.0,
                               self.metrics.FDE: 0.0})
@@ -563,6 +563,10 @@ class Structure(BaseManager):
                 _indexes = self.args.draw_index.split('_')
                 agent_indexes = [int(i) for i in _indexes]
 
+            ex_types: list[str] = []
+            if self.args.draw_exclude_type != 'null':
+                ex_types = self.args.draw_exclude_type.split("_")
+
             for index in self.timebar(agent_indexes, 'Saving...'):
                 # write traj
                 agent = agents.agents[index]
@@ -575,6 +579,14 @@ class Structure(BaseManager):
                 else:
                     save_image = True
                     frames = [agent.frames[self.args.obs_frames-1]]
+
+                skip = False
+                for extype in ex_types:
+                    if extype in agent.type:
+                        skip = True
+                        break
+                if skip:
+                    continue
 
                 tv.draw(agent=agent,
                         frames=frames,

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Beihao Xia
-@LastEditTime: 2023-03-23 15:34:05
+@LastEditTime: 2023-03-27 21:25:07
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -277,6 +277,17 @@ class Args(ArgsManager):
         `force_split` will be set to `draw_results` if `draw_results != 'null'`.
         """
         return self._arg('draw_results', 'null', argtype=TEMPORARY, short_name='dr')
+
+    @property
+    def draw_exclude_type(self) -> str:
+        """
+        Draw visualized results of agents except user-assigned types.
+        If the assigned types are `"Biker_Cart"` and the `draw_results`
+        or `draw_videos` is not `"null"`, it will draw results of all
+        types of agents except "Biker" and "Cart".
+        It supports partial match and it is case-sensitive.
+        """
+        return self._arg('draw_exclude_type', 'null', argtype=TEMPORARY, short_name='det')
 
     @property
     def draw_videos(self) -> str:
