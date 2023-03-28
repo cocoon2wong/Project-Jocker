@@ -1,12 +1,15 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-20 15:28:14
-@LastEditors: Conghao Wong
-@LastEditTime: 2022-11-14 10:49:09
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-03-28 15:32:48
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
+
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
 import sys
 

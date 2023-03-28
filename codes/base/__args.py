@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
-@LastEditors: Conghao Wong
-@LastEditTime: 2022-11-14 16:35:45
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-03-28 15:50:09
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -246,7 +246,7 @@ class Args(ArgsManager):
         """
         Epoch interval to run validation during training.
         """
-        return self._arg('test_step', 3, argtype=STATIC)
+        return self._arg('test_step', 1, argtype=STATIC)
 
     """
     Trajectory Prediction Args
@@ -277,6 +277,17 @@ class Args(ArgsManager):
         `force_split` will be set to `draw_results` if `draw_results != 'null'`.
         """
         return self._arg('draw_results', 'null', argtype=TEMPORARY, short_name='dr')
+
+    @property
+    def draw_exclude_type(self) -> str:
+        """
+        Draw visualized results of agents except user-assigned types.
+        If the assigned types are `"Biker_Cart"` and the `draw_results`
+        or `draw_videos` is not `"null"`, it will draw results of all
+        types of agents except "Biker" and "Cart".
+        It supports partial match and it is case-sensitive.
+        """
+        return self._arg('draw_exclude_type', 'null', argtype=TEMPORARY, short_name='det')
 
     @property
     def draw_videos(self) -> str:
@@ -433,11 +444,11 @@ class Args(ArgsManager):
         return self._arg('update_saved_args', 0, argtype=TEMPORARY)
 
     @property
-    def auto_dimension(self) -> int:
+    def force_anntype(self) -> str:
         """
-        Choose whether to handle the dimension adaptively.
+        Assign the prediction type.
         It is now only used for silverballers models that are trained
         with annotation type `coordinate` but want to test on datasets
         with annotation type `boundingbox`.
         """
-        return self._arg('auto_dimension', 0, argtype=TEMPORARY)
+        return self._arg('force_anntype', 'null', argtype=TEMPORARY)
