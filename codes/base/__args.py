@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Beihao Xia
-@LastEditTime: 2023-03-27 21:25:07
+@LastEditTime: 2023-03-28 15:50:09
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -246,7 +246,7 @@ class Args(ArgsManager):
         """
         Epoch interval to run validation during training.
         """
-        return self._arg('test_step', 3, argtype=STATIC)
+        return self._arg('test_step', 1, argtype=STATIC)
 
     """
     Trajectory Prediction Args
