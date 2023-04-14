@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-07-05 16:00:26
-@LastEditors: Beihao Xia
-@LastEditTime: 2022-10-27 17:01:31
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-04-14 09:28:05
 @Description: First stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,7 +12,6 @@ import tensorflow as tf
 from codes.basemodels import layers, transformer
 
 from ..__args import AgentArgs
-from ..__layers import get_transform_layers
 from .__baseAgent import BaseAgentModel, BaseAgentStructure
 
 
@@ -42,7 +41,7 @@ class VAModel(BaseAgentModel):
                          structure, *args, **kwargs)
 
         # Layers
-        self.Tlayer, self.ITlayer = get_transform_layers(self.args.T)
+        self.Tlayer, self.ITlayer = layers.get_transform_layers(self.args.T)
 
         # Transform layers
         self.t1 = self.Tlayer((self.args.obs_frames, self.args.dim))

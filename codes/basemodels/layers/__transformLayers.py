@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 15:47:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-23 19:39:02
+@LastEditTime: 2023-04-14 09:32:47
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -118,7 +118,7 @@ class _BaseTransformLayer(tf.keras.layers.Layer):
         return outputs
 
     def kernel_function(self, inputs: tf.Tensor,
-                        *args, **kwargs):
+                        *args, **kwargs) -> tf.Tensor:
         """
         Calculate any kind of transform on a batch of trajectories.
 
@@ -170,6 +170,31 @@ class FFTLayer(_BaseTransformLayer):
         return tf.concat([tf.math.real(ffts), tf.math.imag(ffts)], axis=-1)
 
 
+class FFT2DLayer(_BaseTransformLayer):
+    def __init__(self, Oshape: tuple[int, int], *args, **kwargs):
+        super().__init__(Oshape, *args, **kwargs)
+
+        self.mode = 0
+
+    def set_Tshape(self) -> Union[list[int], tuple[int, int]]:
+        return [self.steps, 2*self.channels]
+
+    def kernel_function(self, inputs: tf.Tensor, *args, **kwargs) -> tf.Tensor:
+        """
+        Run 2D FFT on a batch of trajectories.
+
+        :param inputs: A batch of input trajectories, \
+            shape = `(batch, steps, channels)`.
+        :return fft: 2D fft results, including real and imag parts, \
+            shape = `(batch, steps, 2*channels)`.
+        """
+
+        seq = tf.cast(inputs, tf.complex64)
+        fft = tf.signal.fft2d(seq)
+
+        return tf.concat([tf.math.real(fft), tf.math.imag(fft)], axis=-1)
+
+
 class IFFTLayer(_BaseTransformLayer):
     def __init__(self, Oshape: tuple[int, int], *args, **kwargs):
         super().__init__(Oshape, *args, **kwargs)
@@ -201,6 +226,26 @@ class IFFTLayer(_BaseTransformLayer):
             )
 
         return tf.concat(ffts, axis=-1)
+
+
+class IFFT2Dlayer(_BaseTransformLayer):
+    def __init__(self, Oshape: tuple[int, int], *args, **kwargs):
+        super().__init__(Oshape, *args, **kwargs)
+
+        self.mode = 0
+
+    def set_Tshape(self) -> Union[list[int], tuple[int, int]]:
+        return [self.steps, 2*self.channels]
+
+    def kernel_function(self, inputs: tf.Tensor, *args, **kwargs) -> tf.Tensor:
+
+        real = inputs[..., :self.channels]
+        imag = inputs[..., self.channels:]
+
+        seq = tf.complex(real, imag)
+        fft = tf.signal.ifft2d(seq)
+
+        return tf.math.real(fft)
 
 
 class Haar1D(_BaseTransformLayer):
@@ -291,6 +336,7 @@ def get_transform_layers(Tname: str) -> \
     :param Tname: name of the transform, canbe
         - `'none'`
         - `'fft'`
+        - `'fft2d'`
         - `'haar'`
         - `'db2'`
     """
@@ -302,6 +348,10 @@ def get_transform_layers(Tname: str) -> \
     elif Tname == 'fft':
         Tlayer = FFTLayer
         ITlayer = IFFTLayer
+
+    elif Tname == 'fft2d':
+        Tlayer = FFT2DLayer
+        ITlayer = IFFT2Dlayer
 
     elif Tname == 'haar':
         Tlayer = Haar1D

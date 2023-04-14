@@ -1,8 +1,8 @@
 """
 @Author: Beihao Xia
 @Date: 2022-11-02 16:14:01
-@LastEditors: Beihao Xia
-@LastEditTime: 2022-11-22 20:20:50
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-04-14 09:28:33
 @Description: file content
 @Github: https://github.com/conghaowoooong
 @Copyright 2022 Beihao Xia, All Rights Reserved.
@@ -13,7 +13,7 @@ import tensorflow as tf
 from codes.basemodels import layers, transformer
 
 from ..__args import AgentArgs
-from ..__layers import OuterLayer, get_transform_layers
+from ..__layers import OuterLayer
 from .__baseAgent import BaseAgentModel, BaseAgentStructure
 
 
@@ -33,7 +33,7 @@ class Agent47BEModel(BaseAgentModel):
                          structure, *args, **kwargs)
 
         # Layers
-        self.Tlayer, self.ITlayer = get_transform_layers(self.args.T)
+        self.Tlayer, self.ITlayer = layers.get_transform_layers(self.args.T)
 
         # Transform layers
         self.t1 = self.Tlayer((self.args.obs_frames, self.args.dim))

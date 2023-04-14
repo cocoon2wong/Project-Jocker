@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:41:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-03-21 20:59:05
+@LastEditTime: 2023-04-14 09:24:05
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -63,6 +63,7 @@ class _BaseSilverballersArgs(Args):
         It could be:
         - `none`: no transformations
         - `fft`: fast Fourier transform
+        - `fft2d`: 2D fast Fourier transform
         - `haar`: haar wavelet transform
         - `db2`: DB2 wavelet transform
         """

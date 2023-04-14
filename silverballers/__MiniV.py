@@ -1,8 +1,8 @@
 """
 @Author: Beihao Xia
 @Date: 2023-03-20 16:15:25
-@LastEditors: Beihao Xia
-@LastEditTime: 2023-03-20 18:55:50
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-04-14 09:27:33
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Beihao Xia, All Rights Reserved.
@@ -15,7 +15,6 @@ from codes.constant import INPUT_TYPES
 from codes.training import Structure
 
 from .__args import AgentArgs
-from .__layers import get_transform_layers
 
 
 class MinimalVModel(Model):
@@ -48,7 +47,7 @@ class MinimalVModel(Model):
         self.d_id = id_depth
 
         # Layers
-        self.Tlayer, self.ITlayer = get_transform_layers(self.args.T)
+        self.Tlayer, self.ITlayer = layers.get_transform_layers(self.args.T)
 
         # Transform layers
         self.t1 = self.Tlayer(Oshape=(self.args.obs_frames, self.args.dim))
