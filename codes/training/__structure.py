@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
-@LastEditors: Beihao Xia
-@LastEditTime: 2023-03-27 21:24:56
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-04-25 20:09:11
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -17,7 +17,7 @@ import tensorflow as tf
 from ..args import Args
 from ..base import BaseManager
 from ..basemodels import Model
-from ..constant import INPUT_TYPES
+from ..constant import INPUT_TYPES, ANN_TYPES
 from ..dataset import AgentManager, AnnotationManager, DatasetManager
 from ..utils import WEIGHTS_FORMAT, dir_check
 from ..vis import Visualization
@@ -76,22 +76,13 @@ class Structure(BaseManager):
         self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
         self.loss.set({self.loss.ADE: 1.0})
 
-        if self.args.anntype == 'boundingbox':
+        if self.args.anntype in [ANN_TYPES.BB_2D,
+                                 ANN_TYPES.BB_3D]:
+
             self.metrics.set({self.metrics.ADE: 1.0,
                               self.metrics.FDE: 0.0,
-                              self.metrics.avgCenter: 0.0,
-                              self.metrics.finalCenter: 0.0,
                               self.metrics.AIoU: 0.0,
                               self.metrics.FIoU: 0.0})
-
-        elif self.args.anntype == '3Dboundingbox':
-            self.metrics.set({self.metrics.ADE: 1.0,
-                              self.metrics.FDE: 0.0,
-                              self.metrics.avgCenter: 0.0,
-                              self.metrics.finalCenter: 0.0,
-                              self.metrics.AIoU: 0.0,
-                              self.metrics.FIoU: 0.0})
-
         else:
             self.metrics.set({self.metrics.ADE: 1.0,
                               self.metrics.FDE: 0.0})

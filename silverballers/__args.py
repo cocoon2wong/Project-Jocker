@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:41:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-14 09:24:05
+@LastEditTime: 2023-04-25 20:09:34
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -90,6 +90,21 @@ class AgentArgs(_BaseSilverballersArgs):
         Depth of the random noise vector.
         """
         return self._arg('depth', 16, argtype=STATIC)
+
+    @property
+    def deterministic(self) -> int:
+        """
+        Controls if predict trajectories in the deterministic way.
+        """
+        return self._arg('deterministic', 0, argtype=STATIC)
+
+    @property
+    def loss(self) -> str:
+        """
+        Loss used to train agent models.
+        Canbe `'avgkey'` or `'keyl2'`.
+        """
+        return self._arg('loss', 'keyl2', argtype=TEMPORARY)
 
 
 class HandlerArgs(_BaseSilverballersArgs):

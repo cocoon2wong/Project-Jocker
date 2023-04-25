@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 12:04:10
+@LastEditTime: 2023-04-25 20:06:56
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -82,8 +82,20 @@ class BaseAgentStructure(Structure):
 
         self.args: AgentArgs
 
+        if self.args.deterministic:
+            self.args._set('Kc', 1)
+            self.args._set('K_train', 1)
+            self.args._set('K', 1)
+
         self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
-        self.loss.set({self.loss.keyl2: 1.0})
+
+        if self.args.loss == 'keyl2':
+            self.loss.set({self.loss.keyl2: 1.0})
+        elif self.args.loss == 'avgkey':
+            self.loss.set({self.loss.avgKey: 1.0})
+        else:
+            raise ValueError(self.args.loss)
+
         self.metrics.set({self.metrics.avgKey: 1.0,
                           self.metrics.FDE: 0.0})
 

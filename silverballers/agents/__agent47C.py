@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:38
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 12:05:11
+@LastEditTime: 2023-04-25 20:07:59
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -111,13 +111,17 @@ class Agent47CModel(BaseAgentModel):
         t_outputs = self.t1.call(trajs)  # (batch, Tsteps, Tchannels)
 
         for _ in range(rep_time):
-            # assign random ids and embedding -> (batch, Tsteps, d)
-            ids = tf.random.normal([bs, self.Tsteps_en, self.d_id])
-            id_features = self.ie.call(ids)
+            if not self.args.deterministic:
+                # assign random ids and embedding -> (batch, Tsteps, d)
+                ids = tf.random.normal([bs, self.Tsteps_en, self.d_id])
+                id_features = self.ie.call(ids)
 
-            # transformer inputs
-            # shapes are (batch, Tsteps, d)
-            t_inputs = self.concat([spec_features, id_features])
+                # transformer inputs
+                # shapes are (batch, Tsteps, d)
+                t_inputs = self.concat([spec_features, id_features])
+
+            else:
+                t_inputs = spec_features
 
             # transformer -> (batch, Tsteps, d)
             behavior_features, _ = self.T.call(inputs=t_inputs,
