@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 20:10:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-15 09:54:08
+@LastEditTime: 2023-04-25 12:29:16
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -23,6 +23,7 @@ TIME = time.strftime('%Y%m%d-%H%M%S', time.localtime(time.time()))
 # Paths settings
 ROOT_TEMP_DIR = './temp_files'
 DATASET_CONFIG_DIR = './dataset_configs'
+ANNOTATION_CONFIGS_FILE = './codes/annSettings.plist'
 
 # Dataset configs
 INIT_POSITION = 10000

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-23 18:01:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 10:36:08
+@LastEditTime: 2023-04-25 14:41:33
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -14,6 +14,7 @@ class ANN_TYPES():
     Type names of heterogeneous trajectories.
     """
     CO_2D = 'coordinate'
+    CO_3D = '3Dcoordinate'
     BB_2D = 'boundingbox'
     BB_2D_R = 'boundingbox-rotate'
     BB_3D = '3Dboundingbox'

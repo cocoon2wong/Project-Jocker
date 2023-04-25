@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 10:40:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 11:15:00
+@LastEditTime: 2023-04-25 14:39:20
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -31,6 +31,9 @@ class Scale(BaseProcessLayer):
         point as the refpoint when running preprocess, and take the
         first predicted point as the refpoint when running postprocess.
         """
+
+        if self.anninfo.base_dim != 2:
+            raise NotImplementedError(f'Rotate is not supported on {anntype}.')
 
         if ref == 'autoref':
             self.auto_ref = True

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 11:15:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 11:14:36
+@LastEditTime: 2023-04-25 14:43:19
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -22,6 +22,9 @@ class Rotate(BaseProcessLayer):
 
     def __init__(self, anntype: str, ref,
                  *args, **kwargs):
+
+        if self.anninfo.base_dim != 2:
+            raise NotImplementedError(f'Rotate is not supported on {anntype}.')
 
         super().__init__(anntype, ref, *args, **kwargs)
 

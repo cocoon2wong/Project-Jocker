@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 10:38:49
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 10:58:41
+@LastEditTime: 2023-04-25 14:43:01
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -14,6 +14,7 @@ import numpy as np
 import tensorflow as tf
 
 from ...constant import ANN_TYPES
+from ...dataset import Annotation
 
 
 class BaseProcessLayer(tf.keras.layers.Layer):
@@ -25,6 +26,7 @@ class BaseProcessLayer(tf.keras.layers.Layer):
 
         self.ref = ref
         self.anntype = anntype
+        self.anninfo = Annotation(anntype)
         self.paras = None
 
         self.order = self.set_order(anntype)
