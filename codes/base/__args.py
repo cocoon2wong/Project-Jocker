@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 10:57:57
+@LastEditTime: 2023-04-25 12:22:51
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,7 +11,6 @@
 import os
 import re
 
-from ..constant import ANN_TYPES
 from ..utils import DATASET_CONFIG_DIR, TIME, dir_check
 from .__argsManager import DYNAMIC, STATIC, TEMPORARY, ArgsManager
 
@@ -378,30 +377,6 @@ class Args(ArgsManager):
         if set this argument to `1`.
         """
         return self._arg('use_extra_maps', 0, argtype=DYNAMIC)
-
-    @property
-    def dim(self) -> int:
-        """
-        Dimension of the `trajectory`.
-        For example,
-        - coordinate (x, y) -> `dim = 2`;
-        - boundingbox (xl, yl, xr, yr) -> `dim = 4`.
-        """
-
-        def preprocess(self: Args):
-            if self.anntype == ANN_TYPES.CO_2D:
-                self._set('dim', 2)
-            elif self.anntype == ANN_TYPES.BB_2D:
-                self._set('dim', 4)
-            elif self.anntype == ANN_TYPES.BB_3D:
-                self._set('dim', 6)
-            elif self.anntype == ANN_TYPES.SKE_3D_17:
-                self._set('dim', 17 * 3)
-            else:
-                raise ValueError(self.anntype)
-
-        return self._arg('dim', -1, argtype=STATIC,
-                         preprocess=preprocess)
 
     @property
     def anntype(self) -> str:

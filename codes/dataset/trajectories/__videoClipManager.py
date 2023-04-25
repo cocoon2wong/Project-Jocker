@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 09:30:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-15 09:49:31
+@LastEditTime: 2023-04-25 12:08:40
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -15,6 +15,7 @@ import numpy as np
 from ...base import BaseManager, SecondaryBar
 from ...utils import INIT_POSITION, ROOT_TEMP_DIR, dir_check
 from .__agent import Agent
+from .__picker import AnnotationManager
 from .__trajectory import Trajectory
 from .__videoClip import VideoClip
 
@@ -24,7 +25,7 @@ class VideoClipManager(BaseManager):
     VideoClipManager
     ----------------
     Manage all training data from one video clip.
-
+    The `VideoClipManager` objects are managed by the `DatasetManager` object.
 
     Public Methods
     --------------
@@ -175,13 +176,14 @@ class VideoClipManager(BaseManager):
 
         trajs = []
         for agent_index in range(self.agent_count):
+            dim = self.manager.manager.get_member(AnnotationManager).dim
             trajs.append(Trajectory(agent_id=self.agent_names[agent_index][0],
                                     agent_type=self.agent_names[agent_index][1],
                                     trajectory=self.matrix[:, agent_index, :],
                                     neighbors=self.nei_indexes,
                                     frames=self.frame_ids,
                                     init_position=INIT_POSITION,
-                                    dimension=self.args.dim))
+                                    dimension=dim))
 
         self.trajectories = trajs
         return self

@@ -166,7 +166,8 @@ class BaseSilverballers(Structure):
         extra_args += ['--split', str(min_args_a.split),
                        '--anntype', str(min_args_a.anntype),
                        '--obs_frames', str(min_args_a.obs_frames),
-                       '--pred_frames', str(min_args_a.pred_frames)]
+                       '--pred_frames', str(min_args_a.pred_frames),
+                       '--interval', str(min_args_a.interval)]
 
         self.args = SilverballersArgs(terminal_args + extra_args)
 

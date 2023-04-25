@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-05 16:00:26
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-14 09:28:05
+@LastEditTime: 2023-04-25 12:05:30
 @Description: First stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -44,8 +44,8 @@ class VAModel(BaseAgentModel):
         self.Tlayer, self.ITlayer = layers.get_transform_layers(self.args.T)
 
         # Transform layers
-        self.t1 = self.Tlayer((self.args.obs_frames, self.args.dim))
-        self.it1 = self.ITlayer((self.n_key, self.args.dim))
+        self.t1 = self.Tlayer((self.args.obs_frames, self.dim))
+        self.it1 = self.ITlayer((self.n_key, self.dim))
 
         # Trajectory encoding
         self.te = layers.TrajEncoding(self.d//2,

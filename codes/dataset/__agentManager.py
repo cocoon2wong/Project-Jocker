@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-23 20:36:01
+@LastEditTime: 2023-04-25 11:47:31
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -250,8 +250,8 @@ class AgentManager(BaseManager):
         elif t == INPUT_TYPES.GROUNDTRUTH_SPECTRUM:
             if t not in self.t_layers.keys():
                 t_type, _ = get_transform_layers(self.args.T)
-                self.t_layers[t] = t_type(
-                    (self.args.pred_frames, self.args.dim))
+                self.t_layers[t] = t_type((self.args.pred_frames,
+                                           self.picker.dim))
 
             t_layer = self.t_layers[t]
             return t_layer(_get_gt_traj(self.agents, text='groundtruth spectrums'))
@@ -260,7 +260,7 @@ class AgentManager(BaseManager):
             if t not in self.t_layers.keys():
                 t_type, _ = get_transform_layers(self.args.T)
                 steps = self.args.obs_frames + self.args.pred_frames
-                self.t_layers[t] = t_type((steps, self.args.dim))
+                self.t_layers[t] = t_type((steps, self.picker.dim))
 
             trajs = []
             for agent in tqdm(self.agents, 'Prepare trajectory spectrums (all)...'):

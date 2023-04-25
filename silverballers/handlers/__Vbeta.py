@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-23 10:23:53
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-12-22 21:09:59
+@LastEditTime: 2023-04-25 12:06:25
 @Description: Second stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -46,8 +46,8 @@ class VBModel(BaseHandlerModel):
         output_steps = self.args.obs_frames + self.args.pred_frames
 
         Tlayer, ITlayer = layers.get_transform_layers(self.args.T)
-        self.t_layer = Tlayer((input_steps, self.args.dim))
-        self.it_layer = ITlayer((output_steps, self.args.dim))
+        self.t_layer = Tlayer((input_steps, self.dim))
+        self.it_layer = ITlayer((output_steps, self.dim))
 
         # Shapes
         input_Tsteps, Tchannels = self.t_layer.Tshape

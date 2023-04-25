@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-15 16:56:02
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-14 09:28:22
+@LastEditTime: 2023-04-25 12:03:56
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -37,8 +37,8 @@ class Agent47BModel(BaseAgentModel):
         self.Tlayer, self.ITlayer = layers.get_transform_layers(self.args.T)
 
         # Transform layers
-        self.t1 = self.Tlayer(Oshape=(self.args.obs_frames, self.args.dim))
-        self.it1 = self.ITlayer(Oshape=(self.n_key, self.args.dim))
+        self.t1 = self.Tlayer(Oshape=(self.args.obs_frames, self.dim))
+        self.it1 = self.ITlayer(Oshape=(self.n_key, self.dim))
 
         # Trajectory encoding (with FFTs)
         self.te = layers.TrajEncoding(self.d//2, tf.nn.relu,
@@ -47,7 +47,7 @@ class Agent47BModel(BaseAgentModel):
 
         # steps and shapes after applying transforms
         self.Tsteps_en = self.te.Tlayer.Tshape[0] if self.te.Tlayer else self.args.obs_frames
-        self.Tchannels_en = self.te.Tlayer.Tshape[1] if self.te.Tlayer else self.args.dim
+        self.Tchannels_en = self.te.Tlayer.Tshape[1] if self.te.Tlayer else self.dim
         self.Tsteps_de, self.Tchannels_de = self.it1.Tshape
 
         # Bilinear structure (outer product + pooling + fc)

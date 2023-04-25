@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-12-06 10:01:45
+@LastEditTime: 2023-04-25 12:06:07
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -57,6 +57,14 @@ class BaseHandlerModel(Model):
                 preprocess[operation] = 'auto'
 
         self.set_preprocess(**preprocess)
+
+    @property
+    def dim(self) -> int:
+        """
+        Dimension of the predicted trajectory.
+        For example, `dim = 4` for 2D bounding boxes.
+        """
+        return self.structure.annmanager.dim
 
     def call(self, inputs: list[tf.Tensor],
              keypoints: tf.Tensor,

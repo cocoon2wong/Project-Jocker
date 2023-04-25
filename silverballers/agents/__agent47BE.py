@@ -2,7 +2,7 @@
 @Author: Beihao Xia
 @Date: 2022-11-02 16:14:01
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-14 09:28:33
+@LastEditTime: 2023-04-25 12:05:01
 @Description: file content
 @Github: https://github.com/conghaowoooong
 @Copyright 2022 Beihao Xia, All Rights Reserved.
@@ -36,8 +36,8 @@ class Agent47BEModel(BaseAgentModel):
         self.Tlayer, self.ITlayer = layers.get_transform_layers(self.args.T)
 
         # Transform layers
-        self.t1 = self.Tlayer((self.args.obs_frames, self.args.dim))
-        self.it1 = self.ITlayer((self.args.pred_frames, self.args.dim))
+        self.t1 = self.Tlayer((self.args.obs_frames, self.dim))
+        self.it1 = self.ITlayer((self.args.pred_frames, self.dim))
 
         # Trajectory encoding (with FFTs)
         self.te = layers.TrajEncoding(self.d//2, tf.nn.relu,

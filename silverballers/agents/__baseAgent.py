@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-30 09:19:35
+@LastEditTime: 2023-04-25 12:04:10
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -47,6 +47,14 @@ class BaseAgentModel(Model):
                 preprocess[operation] = 'auto'
 
         self.set_preprocess(**preprocess)
+
+    @property
+    def dim(self) -> int:
+        """
+        Dimension of the predicted trajectory.
+        For example, `dim = 4` for 2D bounding boxes.
+        """
+        return self.structure.annmanager.dim
 
     def print_info(self, **kwargs):
         info = {'Transform type': self.args.T,
