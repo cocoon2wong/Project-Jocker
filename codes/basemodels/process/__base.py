@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 10:38:49
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-03-21 11:37:50
+@LastEditTime: 2023-04-25 10:58:41
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,7 +10,10 @@
 
 from typing import Union
 
+import numpy as np
 import tensorflow as tf
+
+from ...constant import ANN_TYPES
 
 
 class BaseProcessLayer(tf.keras.layers.Layer):
@@ -62,12 +65,14 @@ class BaseProcessLayer(tf.keras.layers.Layer):
         if anntype is None:
             return None
 
-        if anntype == 'coordinate':
+        if anntype == ANN_TYPES.CO_2D:
             order = [[0, 1]]
-        elif anntype == 'boundingbox':
+        elif anntype == ANN_TYPES.BB_2D:
             order = [[0, 1], [2, 3]]
-        elif anntype == '3Dboundingbox':
+        elif anntype == ANN_TYPES.BB_3D:
             order = [[0, 1, 2], [3, 4, 5]]
+        elif anntype == ANN_TYPES.SKE_3D_17:
+            order = np.arange(17*3).reshape([17, 3])
         else:
             raise NotImplementedError(anntype)
 

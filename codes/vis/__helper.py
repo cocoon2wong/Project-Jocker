@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-29 09:53:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 11:28:51
+@LastEditTime: 2023-04-25 11:02:28
 @Description: png content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,6 +12,7 @@ import cv2
 import numpy as np
 import tensorflow as tf
 
+from ..constant import ANN_TYPES
 from ..utils import DISTRIBUTION_COLORBAR, DRAW_LINES
 
 CONV_LAYER = tf.keras.layers.Conv2D(
@@ -170,9 +171,9 @@ class BoundingboxHelper(BaseVisHelper):
 
 
 def get_helper(anntype: str) -> BaseVisHelper:
-    if anntype == 'coordinate':
+    if anntype == ANN_TYPES.CO_2D:
         h = CoordinateHelper
-    elif anntype == 'boundingbox':
+    elif anntype == ANN_TYPES.BB_2D:
         h = BoundingboxHelper
     else:
         raise NotImplementedError(anntype)

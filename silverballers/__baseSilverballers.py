@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
-@LastEditors: Beihao Xia
-@LastEditTime: 2023-03-23 15:32:39
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-04-25 11:02:42
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,7 +10,7 @@
 
 import tensorflow as tf
 
-from codes import INPUT_TYPES
+from codes import ANN_TYPES, INPUT_TYPES
 from codes.base import BaseObject
 from codes.managers import AnnotationManager, DatasetManager, Model, Structure
 
@@ -65,9 +65,9 @@ class BaseSilverballersModel(Model):
              training=None, mask=None,
              *args, **kwargs):
 
-        if self.args.force_anntype == 'boundingbox' and \
-           self.agent.args.anntype == 'coordinate' and \
-           self.manager.get_member(DatasetManager).info.anntype == 'boundingbox':
+        if self.args.force_anntype == ANN_TYPES.BB_2D and \
+           self.agent.args.anntype == ANN_TYPES.CO_2D and \
+           self.manager.get_member(DatasetManager).info.anntype == ANN_TYPES.BB_2D:
 
             # Flatten into a series of 2D points
             all_trajs = self.manager.get_member(AnnotationManager) \

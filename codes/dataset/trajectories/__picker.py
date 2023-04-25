@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-30 09:52:17
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-03-21 11:07:01
+@LastEditTime: 2023-04-25 11:01:34
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -14,14 +14,7 @@ import numpy as np
 import tensorflow as tf
 
 from ...base import BaseManager
-
-T_2D_COORDINATE = 'coordinate'
-T_2D_BOUNDINGBOX = 'boundingbox'
-T_2D_BOUNDINGBOX_ROTATE = 'boundingbox-rotate'
-T_3D_BOUNDINGBOX = '3Dboundingbox'
-T_3D_BOUNDINGBOX_ROTATE = '3Dboundingbox-rotate'
-
-_T_2D_COORDINATE_SERIES = 'coordinate-series'
+from ...constant import ANN_TYPES
 
 
 class _BaseAnnType():
@@ -55,14 +48,14 @@ class _BaseAnnType():
 
 class _SeriesOfSingleCoordinate(_BaseAnnType):
     def __init__(self) -> None:
-        self.typeName = _T_2D_COORDINATE_SERIES
+        self.typeName = ANN_TYPES._CO_SERIES_2D
         self.dim = None
         self.targets = []
 
 
 class _Coordinate(_BaseAnnType):
     def __init__(self) -> None:
-        self.typeName = T_2D_COORDINATE
+        self.typeName = ANN_TYPES.CO_2D
         self.dim = 2
         self.targets = [_SeriesOfSingleCoordinate]
 
@@ -77,7 +70,7 @@ class _Coordinate(_BaseAnnType):
 
 class _Boundingbox(_BaseAnnType):
     def __init__(self) -> None:
-        self.typeName = T_2D_BOUNDINGBOX
+        self.typeName = ANN_TYPES.BB_2D
         self.dim = 4
         self.targets = [_Coordinate, _SeriesOfSingleCoordinate]
 
@@ -96,11 +89,11 @@ class _Boundingbox(_BaseAnnType):
 
         else:
             raise NotImplementedError(T)
-        
+
 
 class _3DBoundingbox(_BaseAnnType):
     def __init__(self) -> None:
-        self.typeName = T_3D_BOUNDINGBOX
+        self.typeName = ANN_TYPES.BB_3D
         self.dim = 6
         self.targets = [_Coordinate,
                         _SeriesOfSingleCoordinate]
@@ -124,7 +117,7 @@ class _3DBoundingbox(_BaseAnnType):
 
 class _3DBoundingboxWithRotate(_BaseAnnType):
     def __init__(self) -> None:
-        self.typeName = T_3D_BOUNDINGBOX_ROTATE
+        self.typeName = ANN_TYPES.BB_3D_R
         self.dim = 10
         self.targets = [_Coordinate,
                         _SeriesOfSingleCoordinate,
@@ -142,10 +135,33 @@ class _3DBoundingboxWithRotate(_BaseAnnType):
         elif T == _SeriesOfSingleCoordinate:
             # return shape = (2, ..., steps, 3)
             return [p1, p2]
-        
+
         elif T == _3DBoundingbox:
             # return shape = (..., steps, 6)
             return np.concatenate([p1, p2], axis=-1)
+
+        else:
+            raise NotImplementedError
+
+
+class _3DSkeleton17(_BaseAnnType):
+    def __init__(self) -> None:
+        self.typeName = ANN_TYPES.SKE_3D_17
+        self.dim = 17 * 3
+        self.targets = [_Coordinate,
+                        _SeriesOfSingleCoordinate]
+
+    def _transfer(self, T: type[_BaseAnnType], traj: np.ndarray):
+        source_shape = list(traj.shape)
+        points = np.reshape(traj, source_shape[:-1] + [17, 3])
+
+        if T == _Coordinate:
+            # return shape = (..., steps, 2)
+            return np.mean(points, axis=-2)[..., 0:2]
+
+        elif T == _SeriesOfSingleCoordinate:
+            # return shape = (17, ..., steps, 3)
+            return np.array([points[..., i, :] for i in range(17)])
 
         else:
             raise NotImplementedError
@@ -167,6 +183,7 @@ class Picker():
         - `'boundingbox-rotate'`
         - `'3Dboundingbox'`
         - `'3Dboundingbox-rotate'`
+        - `'3Dskeleton-17'`
 
         :param datasetType: The type of the dataset annotation files.
         :param predictionType: The type of the model predictions.
@@ -211,10 +228,10 @@ class AnnotationManager(BaseManager):
                                      predictionType=self.p_type)
 
         self.center_picker = Picker(datasetType=self.p_type,
-                                    predictionType=T_2D_COORDINATE)
+                                    predictionType=ANN_TYPES.CO_2D)
 
         self.single_picker = Picker(datasetType=self.p_type,
-                                    predictionType=_T_2D_COORDINATE_SERIES)
+                                    predictionType=ANN_TYPES._CO_SERIES_2D)
 
     def get(self, inputs: Union[tf.Tensor, np.ndarray]):
         """
@@ -252,18 +269,24 @@ class AnnotationManager(BaseManager):
 
 
 def get_manager(anntype: str) -> _BaseAnnType:
-    if anntype == T_2D_COORDINATE:
+
+    if anntype == ANN_TYPES.CO_2D:
         return _Coordinate()
-    elif anntype == T_2D_BOUNDINGBOX:
+    elif anntype == ANN_TYPES.BB_2D:
         return _Boundingbox()
-    elif anntype == T_2D_BOUNDINGBOX_ROTATE:
+    elif anntype == ANN_TYPES.BB_2D_R:
         raise NotImplementedError(anntype)
-    elif anntype == T_3D_BOUNDINGBOX:
+
+    elif anntype == ANN_TYPES.BB_3D:
         return _3DBoundingbox()
-    elif anntype == T_3D_BOUNDINGBOX_ROTATE:
+    elif anntype == ANN_TYPES.BB_3D_R:
         return _3DBoundingboxWithRotate()
-    elif anntype == _T_2D_COORDINATE_SERIES:
+    elif anntype == ANN_TYPES.SKE_3D_17:
+        return _3DSkeleton17()
+
+    elif anntype == ANN_TYPES._CO_SERIES_2D:
         return _SeriesOfSingleCoordinate()
+
     else:
         raise NotImplementedError(anntype)
 

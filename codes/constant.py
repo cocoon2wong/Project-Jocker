@@ -2,11 +2,25 @@
 @Author: Conghao Wong
 @Date: 2022-11-23 18:01:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-29 09:55:12
+@LastEditTime: 2023-04-25 10:36:08
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
+
+
+class ANN_TYPES():
+    """
+    Type names of heterogeneous trajectories.
+    """
+    CO_2D = 'coordinate'
+    BB_2D = 'boundingbox'
+    BB_2D_R = 'boundingbox-rotate'
+    BB_3D = '3Dboundingbox'
+    BB_3D_R = '3Dboundingbox-rotate'
+    SKE_3D_17 = '3Dskeleton-17'
+
+    _CO_SERIES_2D = 'coordinate-series'
 
 
 class INPUT_TYPES():
