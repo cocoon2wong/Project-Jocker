@@ -23,10 +23,10 @@ class Rotate(BaseProcessLayer):
     def __init__(self, anntype: str, ref,
                  *args, **kwargs):
 
+        super().__init__(anntype, ref, *args, **kwargs)
+
         if self.anninfo.base_dim != 2:
             raise NotImplementedError(f'Rotate is not supported on {anntype}.')
-
-        super().__init__(anntype, ref, *args, **kwargs)
 
     def update_paras(self, trajs: tf.Tensor) -> None:
         steps = trajs.shape[-2]

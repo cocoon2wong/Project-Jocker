@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 10:40:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 14:39:20
+@LastEditTime: 2023-04-25 14:47:56
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -32,9 +32,6 @@ class Scale(BaseProcessLayer):
         first predicted point as the refpoint when running postprocess.
         """
 
-        if self.anninfo.base_dim != 2:
-            raise NotImplementedError(f'Rotate is not supported on {anntype}.')
-
         if ref == 'autoref':
             self.auto_ref = True
         else:
@@ -42,6 +39,9 @@ class Scale(BaseProcessLayer):
             ref = int(ref)
 
         super().__init__(anntype, ref, *args, **kwargs)
+
+        if self.anninfo.base_dim != 2:
+            raise NotImplementedError(f'Rotate is not supported on {anntype}.')
 
     def update_paras(self, trajs: tf.Tensor) -> None:
         steps = trajs.shape[-2]
