@@ -112,7 +112,7 @@ class Visualization(BaseManager):
         order = self.info.order
         real = scale * real_pos
         real_2d = self.manager.get_member(AnnotationManager) \
-            .get_coordinate_series(real)
+            .target.get_coordinate_series(real)
 
         pixel = []
         for p in real_2d:

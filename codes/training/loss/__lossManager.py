@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 11:13:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-30 09:18:37
+@LastEditTime: 2023-04-25 18:12:21
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -38,7 +38,7 @@ class LossManager(BaseManager):
         self.loss_weights = []
 
     @property
-    def picker(self) -> AnnotationManager:
+    def pickers(self) -> AnnotationManager:
         return self.manager.get_member(AnnotationManager)
 
     @property
@@ -177,8 +177,8 @@ class LossManager(BaseManager):
             pred = pred[:, tf.newaxis, :, :]
 
         ade = []
-        for p, gt in zip(self.picker.get_coordinate_series(pred),
-                         self.picker.get_coordinate_series(labels[0])):
+        picker = self.pickers.target.get_coordinate_series
+        for p, gt in zip(picker(pred), picker(labels[0])):
             ade.append(ADE_2D(p, gt, coe))
 
         return tf.reduce_mean(ade)
@@ -190,8 +190,9 @@ class LossManager(BaseManager):
         """
         Average displacement error on the center of each prediction.
         """
-        pred_center = self.picker.get_center(outputs[0])
-        gt_center = self.picker.get_center(labels[0])
+        picker = self.pickers.target.get_center
+        pred_center = picker(outputs[0])
+        gt_center = picker(labels[0])
         return ADE_2D(pred_center, gt_center, coe)
 
     def finalCenter(self, outputs: list[tf.Tensor],
@@ -201,8 +202,9 @@ class LossManager(BaseManager):
         """
         Final displacement error on the center of each prediction.
         """
-        pred_center = self.picker.get_center(outputs[0])
-        gt_center = self.picker.get_center(labels[0])
+        picker = self.pickers.target.get_center
+        pred_center = picker(outputs[0])
+        gt_center = picker(labels[0])
         return ADE_2D(pred_center[..., -1:, :], gt_center[..., -1:, :], coe)
 
     def FDE(self, outputs: list[tf.Tensor],

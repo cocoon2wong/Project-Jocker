@@ -2,19 +2,21 @@
 @Author: Conghao Wong
 @Date: 2022-08-30 09:52:17
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 14:44:00
+@LastEditTime: 2023-04-25 20:08:28
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-from typing import Union
+from typing import TypeVar, Union
 
 import numpy as np
 import tensorflow as tf
 
 from ...base import BaseManager
 from ...utils import ANNOTATION_CONFIGS_FILE, load_from_plist
+
+T = TypeVar('T')
 
 
 class Annotation():
@@ -73,6 +75,44 @@ class Annotation():
         """
         return self.__name
 
+    def get_center(self, inputs: T) -> T:
+        """
+        Get the center points of the input trajectories.
+
+        :param inputs: Input trajectories. Accept `np.ndarray` or `tf.Tensor`.
+        """
+
+        coordinates = self.get_coordinate_series(inputs)
+        if isNumpy(inputs):
+            center = np.mean(coordinates, axis=0)
+        elif isTensor(inputs):
+            center = tf.reduce_mean(tf.stack(coordinates), axis=0)
+        else:
+            raise TypeError(f'Wrong trajectory type `{type(inputs)}`.')
+
+        return center
+
+    def get_coordinate_series(self, inputs: T) -> T:
+        """
+        Reshape the **predicted trajectories** into a series of single
+        coordinates. For example, when inputs have the annotation type
+        `2Dboundingbox`, then this function will reshape it into two
+        slices of single 2D coordinates with shapes `(..., steps, 2)`,
+        and then return a list containing them.
+
+        :param inputs: Input trajectories. Accept `np.ndarray` or `tf.Tensor`.
+        """
+        if -1 in [self.base_dim, self.base_len]:
+            raise ValueError(f'Can not get a series of coordinates from \
+                             trajectories with type `{self.name}`.')
+
+        results = []
+        for p_index in range(self.base_len//self.base_dim):
+            results.append(inputs[..., p_index*self.base_dim:
+                                  (p_index+1)*self.base_dim])
+
+        return results
+
 
 class AnnotationManager(BaseManager):
     """
@@ -91,21 +131,21 @@ class AnnotationManager(BaseManager):
 
         self.annotations: dict[str, Annotation] = {}
 
-        self.Tdata = dataset_type
-        self.Tpred = self.args.anntype
+        self.Tsource = dataset_type
+        self.Ttarget = self.args.anntype
 
         if self.args.force_anntype != 'null':
-            self.Tpred = self.args.force_anntype
+            self.Ttarget = self.args.force_anntype
 
-        self.data_ann = self.get_annotation(self.Tdata)
-        self.pred_ann = self.get_annotation(self.Tpred)
+        self.source = self.get_annotation(self.Tsource)
+        self.target = self.get_annotation(self.Ttarget)
 
     @property
     def dim(self) -> int:
         """
         Dimension of the target prediction trajectory.
         """
-        return self.pred_ann.dim
+        return self.target.dim
 
     def add_annotation(self, name: str) -> None:
         self.annotations[name] = Annotation(name)
@@ -119,89 +159,37 @@ class AnnotationManager(BaseManager):
         """
         Get data with target annotation forms from original dataset files.
         """
-        if self.Tdata == self.Tpred:
+        if self.Tsource == self.Ttarget:
             return inputs
 
         flag = True
 
-        if ((self.data_ann.base_dim != self.pred_ann.base_dim) or
-                (self.data_ann.base_len < self.pred_ann.base_len)):
+        if ((self.source.base_dim != self.target.base_dim) or
+                (self.source.base_len < self.target.base_len)):
             flag = False
 
-        if ((self.data_ann.base_len % self.pred_ann.base_len != 0) or
-                (self.pred_ann.dim - self.pred_ann.base_len > 0)):
+        if ((self.source.base_len % self.target.base_len != 0) or
+                (self.target.dim - self.target.base_len > 0)):
             flag = False
 
         if not flag:
             self.log(f'Can not tranfer annotations with different \
-                     base-dimensions `{self.data_ann.name}` and \
-                     {self.pred_ann.name}!',
+                     base-dimensions `{self.source.name}` and \
+                     {self.target.name}!',
                      level='error', raiseError=ValueError)
 
         # align coordinates
-        outputs = inputs[..., :self.pred_ann.base_len]
+        outputs = inputs[..., :self.target.base_len]
 
-        if ((self.data_ann.base_len % self.pred_ann.base_len == 0) and
-                (self.data_ann.base_len != self.pred_ann.base_len)):
-            outputs = self.get_center(outputs, config='data')
+        if ((self.source.base_len % self.target.base_len == 0) and
+                (self.source.base_len != self.target.base_len)):
+            outputs = self.source.get_center(outputs)
 
         return outputs
 
-    def get_center(self, inputs: Union[tf.Tensor, np.ndarray],
-                   config='pred') \
-            -> Union[list[tf.Tensor], list[np.ndarray]]:
-        """
-        Get the center points of the input trajectories.
-
-        :param inputs: Input trajectories.
-        :param config: Dimension configs, canbe `'data'` or `'pred'`.
-        """
-
-        coordinates = self.get_coordinate_series(inputs, config)
-        if isNumpy(inputs):
-            center = np.mean(coordinates, axis=0)
-        elif isTensor(inputs):
-            center = tf.reduce_mean(tf.stack(coordinates), axis=0)
-        else:
-            raise TypeError(f'Wrong trajectory type `{type(inputs)}`.')
-
-        return center
-
-    def get_coordinate_series(self, inputs: Union[tf.Tensor, np.ndarray],
-                              config='pred') \
-            -> Union[list[tf.Tensor], list[np.ndarray]]:
-        """
-        Reshape the **predicted trajectories** into a series of single
-        coordinates. For example, when inputs have the annotation type
-        `2Dboundingbox`, then this function will reshape it into two
-        slices of single 2D coordinates with shapes `(..., steps, 2)`,
-        and then return a list containing them.
-        """
-        if config == 'pred':
-            base_dim = self.pred_ann.base_dim
-            base_len = self.pred_ann.base_len
-            Tname = self.pred_ann.name
-        elif config == 'data':
-            base_dim = self.data_ann.base_dim
-            base_len = self.data_ann.base_len
-            Tname = self.data_ann.name
-        else:
-            raise ValueError(config)
-
-        if -1 in [base_dim, base_len]:
-            self.log('Can not get a series of coordinates from trajectories ' +
-                     f'with type `{Tname}`.',
-                     level='error', raiseError=ValueError)
-
-        results = []
-        for p_index in range(base_len//base_dim):
-            results.append(inputs[..., p_index*base_dim:(p_index+1)*base_dim])
-
-        return results
-
     def print_info(self, **kwargs):
-        info = {'Dataset annotation type': self.Tdata,
-                'Model prediction type': self.Tpred}
+        info = {'Dataset annotation type': self.Tsource,
+                'Model prediction type': self.Ttarget}
 
         kwargs.update(**info)
         return super().print_info(**kwargs)

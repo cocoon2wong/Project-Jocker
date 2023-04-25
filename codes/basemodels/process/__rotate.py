@@ -25,7 +25,7 @@ class Rotate(BaseProcessLayer):
 
         super().__init__(anntype, ref, *args, **kwargs)
 
-        if self.anninfo.base_dim != 2:
+        if self.picker.base_dim != 2:
             raise NotImplementedError(f'Rotate is not supported on {anntype}.')
 
     def update_paras(self, trajs: tf.Tensor) -> None:

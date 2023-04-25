@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 15:06:16
+@LastEditTime: 2023-04-25 18:09:46
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -71,7 +71,7 @@ class BaseSilverballersModel(Model):
 
             # Flatten into a series of 2D points
             all_trajs = self.manager.get_member(AnnotationManager) \
-                .get_coordinate_series(inputs[0])
+                .target.get_coordinate_series(inputs[0])
 
         else:
             all_trajs = [inputs[0]]
