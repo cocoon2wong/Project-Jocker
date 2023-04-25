@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 11:02:42
+@LastEditTime: 2023-04-25 15:06:16
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -176,6 +176,9 @@ class BaseSilverballers(Structure):
 
         # init the structure
         super().__init__(self.args)
+
+        if (k := '--force_anntype') in terminal_args:
+            terminal_args.remove(k)
 
         self.noTraining = True
 
