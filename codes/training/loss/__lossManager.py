@@ -2,13 +2,13 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 11:13:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 18:12:21
+@LastEditTime: 2023-05-04 15:13:32
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-from typing import Any
+from typing import Any, Union
 
 import tensorflow as tf
 
@@ -34,8 +34,9 @@ class LossManager(BaseManager):
         self.AIoU = AIoU
         self.FIoU = FIoU
 
-        self.loss_list = []
-        self.loss_weights = []
+        self.loss_list: list[Any] = []
+        self.loss_weights: list[float] = []
+        self.loss_paras: list[dict] = []
 
     @property
     def pickers(self) -> AnnotationManager:
@@ -60,16 +61,42 @@ class LossManager(BaseManager):
         """
         return len(self.p_index)
 
-    def set(self, loss_dict: dict[Any, float]):
+    def set(self, loss_dict: Union[dict[Any, float],
+                                   list[tuple[Any, tuple[float, dict]]]]):
         """
         Set loss functions and their weights.
 
         :param loss_dict: A dict of loss functions, where all dict keys
             are the callable loss function, and the dict values are the
             weights of the corresponding loss function.
+            Accept other parameters of the loss function from a `dict`.
+            For example,  `self.metrics.set([[self.metrics.FDE, [1.0, 
+            {'index': 1, 'name': 'FDE@200ms'}]]])`.
+            NOTE: The callable loss function must have the `**kwargs` in
+            their definitions.
         """
-        self.loss_list = [k for k in loss_dict.keys()]
-        self.loss_weights = [v for v in loss_dict.values()]
+        self.loss_list = []
+        self.loss_weights = []
+        self.loss_paras = []
+
+        if type(loss_dict) is dict:
+            items = loss_dict.items()
+        elif type(loss_dict) in [list, tuple]:
+            items = loss_dict
+        else:
+            raise TypeError(loss_dict)
+
+        for k, vs in items:
+            if type(vs) in [list, tuple]:
+                v = vs[0]
+                p = vs[1]
+            else:
+                v = vs
+                p = {}
+
+            self.loss_list.append(k)
+            self.loss_weights.append(v)
+            self.loss_paras.append(p)
 
     def call(self, outputs: list[tf.Tensor],
              labels: list[tf.Tensor],
@@ -90,11 +117,18 @@ class LossManager(BaseManager):
         """
 
         loss_dict = {}
-        for loss_func in self.loss_list:
+        for loss_func, paras in zip(self.loss_list, self.loss_paras):
             name = loss_func.__name__
+            if len(paras):
+                if 'name' in paras.keys():
+                    name = paras['name']
+                else:
+                    name += f'@{paras}'
+
             value = loss_func(outputs, labels,
                               coe=coefficient,
-                              training=training)
+                              training=training,
+                              **paras)
 
             loss_dict[f'{name}({self.name})'] = value
 
@@ -209,6 +243,7 @@ class LossManager(BaseManager):
 
     def FDE(self, outputs: list[tf.Tensor],
             labels: list[tf.Tensor],
+            index: int = -1,
             coe: float = 1.0,
             *args, **kwargs):
         """
@@ -219,14 +254,15 @@ class LossManager(BaseManager):
             `outputs[0].shape` is `(batch, K, pred, 2)`
             or `(batch, pred, 2)`.
         :param labels: Shape of `labels[0]` is `(batch, pred, 2)`.
+        :param index: Index of the time step to calculate the FDE.
         """
         pred = outputs[0]
 
         if pred.ndim == 3:
             pred = pred[:, tf.newaxis, :, :]
 
-        pred_final = pred[..., -1:, :]
-        labels_final = labels[0][..., -1:, :]
+        pred_final = pred[..., index, tf.newaxis, :]
+        labels_final = labels[0][..., index, tf.newaxis, :]
 
         return self.ADE([pred_final], [labels_final], coe)
 
