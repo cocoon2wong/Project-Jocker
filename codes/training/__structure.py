@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 20:09:11
+@LastEditTime: 2023-05-04 15:00:53
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -83,6 +83,16 @@ class Structure(BaseManager):
                               self.metrics.FDE: 0.0,
                               self.metrics.AIoU: 0.0,
                               self.metrics.FIoU: 0.0})
+
+        elif self.args.anntype in [ANN_TYPES.SKE_3D_17]:
+            # These configs are only used on `h36m` dataset
+            self.metrics.set([
+                [self.metrics.FDE, [0.0, {'index': 1, 'name': 'FDE@200ms'}]],
+                [self.metrics.FDE, [0.0, {'index': 3, 'name': 'FDE@400ms'}]],
+                [self.metrics.FDE, [0.0, {'index': 7, 'name': 'FDE@800ms'}]],
+                [self.metrics.FDE, [1.0, {'index': 9, 'name': 'FDE@1000ms'}]],
+            ])
+
         else:
             self.metrics.set({self.metrics.ADE: 1.0,
                               self.metrics.FDE: 0.0})
