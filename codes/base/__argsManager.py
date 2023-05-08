@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-11 12:41:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-29 11:30:36
+@LastEditTime: 2023-05-08 10:48:45
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -87,6 +87,12 @@ class ArgsManager(BaseObject):
         if self.restore_args != 'null':
             self._load_from_json(self.restore_args, 'default')
 
+    def _check_terminal_args(self):
+        for key in self._args_runnning.keys():
+            if not key in self._arg_list:
+                self.log(f'Arg key `{key}` is not in the arg dictionary.' +
+                         ' Check your spelling.', level='warning')
+
     def _visit_args(self):
         """
         Vist all args.
@@ -147,7 +153,7 @@ class ArgsManager(BaseObject):
 
                 elif argv[index].startswith('-'):
                     name = argv[index][1:]
-                    name = self._arg_short_name[name]
+                    name = self._arg_short_name[name]  # <- may raise KeyError
                     value = argv[index+1]
 
                 else:
@@ -214,7 +220,7 @@ class ArgsManager(BaseObject):
         if name in self._args_default_manually.keys():
             if not overwrite:
                 write = False
-        
+
         if write:
             self._args_default_manually[name] = value
 

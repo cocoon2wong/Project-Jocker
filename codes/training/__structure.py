@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-08 09:51:14
+@LastEditTime: 2023-05-08 10:39:26
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -59,6 +59,10 @@ class Structure(BaseManager):
 
         super().__init__(init_args, manager, name)
 
+        # check args (such as wrong spellings)
+        if not self.manager:
+            self.args._check_terminal_args()
+
         # init managers
         self.dsmanager = DatasetManager(self)
         self.annmanager = AnnotationManager(self, self.dsmanager.info.anntype)
@@ -87,11 +91,12 @@ class Structure(BaseManager):
         elif self.args.anntype in [ANN_TYPES.SKE_3D_17]:
             # These configs are only used on `h36m` dataset
             i = int(1000 * self.args.interval)  # Sample interval
+            fde = self.metrics.FDE
             self.metrics.set([
-                [self.metrics.FDE, [0.0, {'index': 1, 'name': f'FDE@{2*i}ms'}]],
-                [self.metrics.FDE, [0.0, {'index': 3, 'name': f'FDE@{4*i}ms'}]],
-                [self.metrics.FDE, [0.0, {'index': 7, 'name': f'FDE@{8*i}ms'}]],
-                [self.metrics.FDE, [1.0, {'index': 9, 'name': f'FDE@{10*i}ms'}]],
+                [fde, [0.0, {'index': 1, 'name': f'FDE@{2*i}ms'}]],
+                [fde, [0.0, {'index': 3, 'name': f'FDE@{4*i}ms'}]],
+                [fde, [0.0, {'index': 7, 'name': f'FDE@{8*i}ms'}]],
+                [fde, [1.0, {'index': 9, 'name': f'FDE@{10*i}ms'}]],
             ])
 
         else:
