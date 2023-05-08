@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-04 15:00:53
+@LastEditTime: 2023-05-08 09:51:14
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -86,11 +86,12 @@ class Structure(BaseManager):
 
         elif self.args.anntype in [ANN_TYPES.SKE_3D_17]:
             # These configs are only used on `h36m` dataset
+            i = int(1000 * self.args.interval)  # Sample interval
             self.metrics.set([
-                [self.metrics.FDE, [0.0, {'index': 1, 'name': 'FDE@200ms'}]],
-                [self.metrics.FDE, [0.0, {'index': 3, 'name': 'FDE@400ms'}]],
-                [self.metrics.FDE, [0.0, {'index': 7, 'name': 'FDE@800ms'}]],
-                [self.metrics.FDE, [1.0, {'index': 9, 'name': 'FDE@1000ms'}]],
+                [self.metrics.FDE, [0.0, {'index': 1, 'name': f'FDE@{2*i}ms'}]],
+                [self.metrics.FDE, [0.0, {'index': 3, 'name': f'FDE@{4*i}ms'}]],
+                [self.metrics.FDE, [0.0, {'index': 7, 'name': f'FDE@{8*i}ms'}]],
+                [self.metrics.FDE, [1.0, {'index': 9, 'name': f'FDE@{10*i}ms'}]],
             ])
 
         else:
