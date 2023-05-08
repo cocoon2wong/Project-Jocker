@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-11 10:05:11
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-12-01 11:52:01
+@LastEditTime: 2023-05-08 10:49:04
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -91,11 +91,14 @@ class BaseObject():
         Log information to files and console.
 
         :param s: The text to log.
-        :param level: Log level, can be `'info'` or `'error'` or `'debug'`.
+        :param level: Log level, can be one of `['info', 'warning', 'error', 'debug']`.
         :param raiseError: Some exception to raise after logging.
         """
         if level == 'info':
             self.logger.info(s)
+
+        elif level == 'warning':
+            self.logger.warning(s)
 
         elif level == 'error':
             self.logger.error(s)
@@ -126,10 +129,10 @@ class BaseObject():
             for key, value in item.items():
                 if issubclass(type(value), tf.Tensor):
                     item[key] = value.numpy()
-        
+
         elif issubclass(type(item), tf.Tensor):
             item = item.numpy()
-            
+
         if pos == 'end':
             if type(item) is str:
                 self.bar.set_postfix_str(item)
