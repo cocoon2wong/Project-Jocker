@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 12:22:51
+@LastEditTime: 2023-05-09 09:14:41
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -349,7 +349,7 @@ class Args(ArgsManager):
         """
         Learning rate.
         """
-        return self._arg('lr', 0.001, argtype=STATIC)
+        return self._arg('lr', 0.001, argtype=STATIC, short_name='lr')
 
     @property
     def K(self) -> int:
