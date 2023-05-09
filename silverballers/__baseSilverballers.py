@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 18:09:46
+@LastEditTime: 2023-05-09 21:03:56
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,7 +10,7 @@
 
 import tensorflow as tf
 
-from codes import ANN_TYPES, INPUT_TYPES
+from codes.constant import ANN_TYPES, INPUT_TYPES
 from codes.base import BaseObject
 from codes.managers import AnnotationManager, DatasetManager, Model, Structure
 

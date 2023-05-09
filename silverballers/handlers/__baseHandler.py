@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 12:06:07
+@LastEditTime: 2023-05-09 20:58:41
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,7 +11,7 @@
 import numpy as np
 import tensorflow as tf
 
-from codes import INPUT_TYPES
+from codes.constant import INPUT_TYPES
 from codes.managers import Model, SecondaryBar, Structure
 
 from ..__args import HandlerArgs

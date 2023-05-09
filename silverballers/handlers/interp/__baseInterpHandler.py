@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-29 09:26:00
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-29 10:25:49
+@LastEditTime: 2023-05-09 20:58:45
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,7 +10,7 @@
 
 import tensorflow as tf
 
-from codes import INPUT_TYPES
+from codes.constant import INPUT_TYPES
 
 from ...__args import HandlerArgs
 from ..__baseHandler import BaseHandlerModel

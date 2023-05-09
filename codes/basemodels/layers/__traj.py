@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-12-21 15:25:47
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-22 09:16:39
+@LastEditTime: 2023-05-09 21:01:10
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,7 +11,7 @@
 import tensorflow as tf
 
 from ...utils import POOLING_BEFORE_SAVING
-from .__transformLayers import _BaseTransformLayer
+from .transfroms import _BaseTransformLayer
 
 
 class TrajEncoding(tf.keras.layers.Layer):
