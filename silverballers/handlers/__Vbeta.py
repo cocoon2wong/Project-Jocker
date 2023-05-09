@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-23 10:23:53
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 12:06:25
+@LastEditTime: 2023-05-09 20:36:39
 @Description: Second stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -54,7 +54,7 @@ class VBModel(BaseHandlerModel):
         output_Tsteps, _ = self.it_layer.Tshape
 
         # Linear layer
-        self.linear_int = layers.LinearInterpolation()
+        self.linear_int = layers.interpolation.LinearPositionInterpolation()
 
         # Encoding layers
         # NOTE: All the following layers are calculated

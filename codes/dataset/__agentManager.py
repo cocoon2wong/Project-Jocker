@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 11:47:31
+@LastEditTime: 2023-05-09 20:38:51
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -15,7 +15,8 @@ import tensorflow as tf
 from tqdm import tqdm
 
 from ..base import BaseManager
-from ..basemodels.layers import _BaseTransformLayer, get_transform_layers
+from ..basemodels.layers.transfroms import (_BaseTransformLayer,
+                                            get_transform_layers)
 from ..constant import INPUT_TYPES
 from ..utils import POOLING_BEFORE_SAVING
 from .maps import SocialMapManager, TrajMapManager

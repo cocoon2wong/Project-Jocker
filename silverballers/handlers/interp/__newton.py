@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-29 09:49:26
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-29 09:50:36
+@LastEditTime: 2023-05-09 20:34:36
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,7 +10,7 @@
 
 import tensorflow as tf
 
-from codes.basemodels import interpolation
+from codes.basemodels.layers import interpolation
 
 from ...__args import HandlerArgs
 from .__baseInterpHandler import _BaseInterpHandlerModel
