@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-08 10:39:26
+@LastEditTime: 2023-05-08 10:59:20
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -549,6 +549,11 @@ class Structure(BaseManager):
         if (((self.args.draw_results != 'null') or
              (self.args.draw_videos != 'null'))
                 and len(clips) == 1):
+
+            if self.args.anntype not in ['coordinate', 'boundingbox']:
+                self.log('Currently visualizing with annotation type ' +
+                         f'`{self.args.anntype}` is not supported!',
+                         level='error', raiseError=NotImplementedError)
 
             # draw results on video frames
             clip = clips[0]
