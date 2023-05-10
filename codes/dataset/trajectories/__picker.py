@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-30 09:52:17
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 20:08:28
+@LastEditTime: 2023-05-10 19:10:43
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -173,9 +173,9 @@ class AnnotationManager(BaseManager):
             flag = False
 
         if not flag:
-            self.log(f'Can not tranfer annotations with different \
-                     base-dimensions `{self.source.name}` and \
-                     {self.target.name}!',
+            self.log(f'Can not tranfer annotations with different ' +
+                     f'base-dimensions `{self.source.name}` and ' +
+                     f'{self.target.name}!',
                      level='error', raiseError=ValueError)
 
         # align coordinates

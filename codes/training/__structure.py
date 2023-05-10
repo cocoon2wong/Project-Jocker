@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-08 10:59:20
+@LastEditTime: 2023-05-09 19:59:06
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -92,12 +92,20 @@ class Structure(BaseManager):
             # These configs are only used on `h36m` dataset
             i = int(1000 * self.args.interval)  # Sample interval
             fde = self.metrics.FDE
-            self.metrics.set([
-                [fde, [0.0, {'index': 1, 'name': f'FDE@{2*i}ms'}]],
-                [fde, [0.0, {'index': 3, 'name': f'FDE@{4*i}ms'}]],
-                [fde, [0.0, {'index': 7, 'name': f'FDE@{8*i}ms'}]],
-                [fde, [1.0, {'index': 9, 'name': f'FDE@{10*i}ms'}]],
-            ])
+            
+            if self.args.pred_frames == 10:
+                self.metrics.set([
+                    [fde, [0.0, {'index': 1, 'name': f'FDE@{2*i}ms'}]],
+                    [fde, [0.0, {'index': 3, 'name': f'FDE@{4*i}ms'}]],
+                    [fde, [0.0, {'index': 7, 'name': f'FDE@{8*i}ms'}]],
+                    [fde, [1.0, {'index': 9, 'name': f'FDE@{10*i}ms'}]],
+                ])
+                
+            elif self.args.pred_frames == 25:
+                self.metrics.set([
+                    [fde, [0.0, {'index': 13, 'name': f'FDE@{14*i}ms'}]],
+                    [fde, [1.0, {'index': 24, 'name': f'FDE@{25*i}ms'}]],
+                ])
 
         else:
             self.metrics.set({self.metrics.ADE: 1.0,

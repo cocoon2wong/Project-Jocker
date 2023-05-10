@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:41:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 20:09:34
+@LastEditTime: 2023-05-09 17:34:19
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -144,3 +144,12 @@ class SilverballersArgs(_BaseSilverballersArgs):
         Path to load the second-stage handler model.
         """
         return self._arg('loadb', 'null', argtype=TEMPORARY, short_name='lb')
+    
+    @property
+    def pred_interval(self) -> int:
+        """
+        Prediction interval in frames for recurrent prediction.
+        It only works when `args.pred_frames` is larger than the
+        `pred_frames` recorded in the agent model.
+        """
+        return self._arg('pred_interval', -1, argtype=TEMPORARY, short_name='pi')

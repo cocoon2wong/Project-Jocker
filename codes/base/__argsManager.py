@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-11 12:41:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-08 10:48:45
+@LastEditTime: 2023-05-10 18:55:24
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -229,6 +229,16 @@ class ArgsManager(BaseObject):
              argtype: str,
              short_name: str = None,
              preprocess=None):
+        """
+        Get arg from all arg dictionaries according to the priority.
+
+        :param name: Name of the arg, should be the same as the property's name.
+        :param default: Default value of the arg.
+        :param argtype: Arg type, canbe `STATIC`, `DYNAMIC`, or `TEMPORARY`.
+        :param short_name: Short name of the arg.
+        :param preprocess: The preprocess method to initialize the arg (without
+            return values).
+        """
 
         if not self._init_done:
             self._register(name, default, argtype, short_name)

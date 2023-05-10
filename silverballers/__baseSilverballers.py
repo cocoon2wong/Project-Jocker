@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-09 21:03:56
+@LastEditTime: 2023-05-10 20:11:32
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,8 +10,8 @@
 
 import tensorflow as tf
 
-from codes.constant import ANN_TYPES, INPUT_TYPES
 from codes.base import BaseObject
+from codes.constant import ANN_TYPES, INPUT_TYPES
 from codes.managers import AnnotationManager, DatasetManager, Model, Structure
 
 from .__args import AgentArgs, SilverballersArgs
@@ -65,6 +65,7 @@ class BaseSilverballersModel(Model):
              training=None, mask=None,
              *args, **kwargs):
 
+        # Predict with `co2bb` (Coordinates to 2D bounding boxes)
         if self.args.force_anntype == ANN_TYPES.BB_2D and \
            self.agent.args.anntype == ANN_TYPES.CO_2D and \
            self.manager.get_member(DatasetManager).info.anntype == ANN_TYPES.BB_2D:
@@ -73,11 +74,13 @@ class BaseSilverballersModel(Model):
             all_trajs = self.manager.get_member(AnnotationManager) \
                 .target.get_coordinate_series(inputs[0])
 
+        # Predict multiple times along with the time axis
         else:
             all_trajs = [inputs[0]]
 
-        all_predictions = []
-        for traj in all_trajs:
+        results = []
+        while len(all_trajs):
+            traj = all_trajs.pop(0)
             inputs_new = (traj,) + inputs[1:]
 
             # call the first stage model
@@ -88,7 +91,7 @@ class BaseSilverballersModel(Model):
             if self.args.down_sampling_rate < 1.0:
                 K_current = agent_proposals.shape[1]
                 K_new = K_current * self.args.down_sampling_rate
-                
+
                 new_index = tf.random.shuffle(tf.range(K_current))[:int(K_new)]
                 agent_proposals = tf.gather(agent_proposals, new_index, axis=1)
 
@@ -96,9 +99,35 @@ class BaseSilverballersModel(Model):
             handler_inputs = [inputs_new[i] for i in self.handler_input_index]
             handler_inputs.append(agent_proposals)
             final_results = self.handler.forward(handler_inputs)[0]
-            all_predictions.append(final_results)
 
-        return (tf.concat(all_predictions, axis=-1),)
+            # process results
+            if self.args.pred_frames > self.agent.args.pred_frames:
+                i = self.args.pred_interval
+
+                # reshape into (batch, pred, dim)
+                final_results = final_results[:, 0, :, :]
+
+                if not len(results):
+                    results.append(final_results)
+                else:
+                    results[0] = tf.concat([results[0],
+                                            final_results[:, -i:, :]], axis=-2)
+
+                # check current predictions
+                if results[0].shape[-2] >= self.args.pred_frames:
+                    results[0] = results[0][:, :self.args.pred_frames, :]
+                    break
+
+                # get next observations
+                whole_traj = tf.concat([traj, final_results], axis=-2)
+
+                new_obs_traj = whole_traj[:, i:i+self.args.obs_frames, :]
+                all_trajs.append(new_obs_traj)
+
+            else:
+                results.append(final_results)
+
+        return (tf.concat(results, axis=-1),)
 
     def print_info(self, **kwargs):
         info = {'Index of keypoints': self.agent.p_index,
@@ -163,10 +192,24 @@ class BaseSilverballers(Structure):
         if min_args.batch_size > min_args_a.batch_size:
             extra_args += ['--batch_size', str(min_args_a.batch_size)]
 
+        # Check if predict trajectories recurrently
+        if 'pred_frames' not in min_args._args_runnning.keys():
+            extra_args += ['--pred_frames', str(min_args_a.pred_frames)]
+        else:
+            if not min_args_a.deterministic:
+                self.log('Predict trajectories currently is currently not ' +
+                         'supported with generative models.',
+                         level='error', raiseError=NotImplementedError)
+
+            if min_args.pred_interval == -1:
+                self.log('Please set the prediction interval when you want ' +
+                         'to make recurrent predictions. Current prediction' +
+                         f' interval is `{min_args.pred_interval}`.',
+                         level='error', raiseError=ValueError)
+
         extra_args += ['--split', str(min_args_a.split),
                        '--anntype', str(min_args_a.anntype),
                        '--obs_frames', str(min_args_a.obs_frames),
-                       '--pred_frames', str(min_args_a.pred_frames),
                        '--interval', str(min_args_a.interval)]
 
         self.args = SilverballersArgs(terminal_args + extra_args)
