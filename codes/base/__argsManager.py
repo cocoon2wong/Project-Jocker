@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-11-11 12:41:16
-@LastEditors: Conghao Wong
-@LastEditTime: 2023-05-10 18:55:24
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-05-11 09:46:40
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -91,7 +91,8 @@ class ArgsManager(BaseObject):
         for key in self._args_runnning.keys():
             if not key in self._arg_list:
                 self.log(f'Arg key `{key}` is not in the arg dictionary.' +
-                         ' Check your spelling.', level='warning')
+                         ' Check your spelling.',
+                         level='error', raiseError=KeyError)
 
     def _visit_args(self):
         """
