@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-17 14:57:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-11 10:09:19
+@LastEditTime: 2023-05-22 20:39:27
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -119,15 +119,21 @@ class BaseManager(BaseObject):
         """
         return self.members_dict[mtype]
 
-    def print_info_all(self, include_self=True):
+    def print_info_all(self, include_self=True, debug=False):
         """
         Print information about the object itself and all its members.
         It is used to debug only.
         """
-        if include_self:
-            self.print_info(title='DEBUG', object=self, members=self.members)
+        if debug:
+            if include_self:
+                self.print_info(title='DEBUG', object=self,
+                                members=self.members)
 
-        for s in self.members:
-            s.print_info(title='DEBUG', object=s,
-                         manager=self, members=s.members)
-            s.print_info_all(include_self=False)
+            for s in self.members:
+                s.print_info(title='DEBUG', object=s,
+                             manager=self, members=s.members)
+                s.print_info_all(include_self=False, debug=True)
+        else:
+            for s in self.members:
+                s.print_info()
+                s.print_info_all(include_self=False)
