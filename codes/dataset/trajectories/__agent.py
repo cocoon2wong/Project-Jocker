@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-23 20:11:18
+@LastEditTime: 2023-05-22 19:46:19
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -73,8 +73,8 @@ class Agent():
         self._id = None
         self._type = None
 
-        self._frames = []
-        self._frames_future = []
+        self._frames: np.ndarray = None
+        self._frames_future: np.ndarray = None
 
         self.linear_predict = False
         self.obs_length = 0
@@ -130,15 +130,15 @@ class Agent():
         return self._traj_pred
 
     @property
-    def frames(self) -> list:
+    def frames(self) -> np.ndarray:
         """
         a list of frame indexes during observation and prediction time.
         shape = (obs + pred)
         """
-        return self._frames + self._frames_future
+        return np.concatenate([self._frames, self._frames_future])
 
     @property
-    def frames_future(self) -> list:
+    def frames_future(self) -> np.ndarray:
         """
         a list of frame indexes during prediction time.
         shape = (pred)
@@ -197,7 +197,7 @@ class Agent():
                   type: str,
                   target_traj: np.ndarray,
                   neighbors_traj: np.ndarray,
-                  frames: list[int],
+                  frames: np.ndarray,
                   start_frame, obs_frame, end_frame,
                   frame_step=1,
                   add_noise=False,
@@ -223,9 +223,11 @@ class Agent():
 
         self._id = id
         self._type = type
-        self._frames = frames[:self.obs_length]
         self._traj = target_traj[:self.obs_length]
         self._traj_future = target_traj[self.obs_length:]
+
+        frames = np.array(frames)
+        self._frames = frames[:self.obs_length]
         self._frames_future = frames[self.obs_length:]
 
         # Neighbor info
