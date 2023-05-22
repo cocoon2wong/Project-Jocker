@@ -2,13 +2,13 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-09 20:38:51
+@LastEditTime: 2023-05-22 20:27:24
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-from typing import Union
+import random
 
 import numpy as np
 import tensorflow as tf
@@ -19,7 +19,9 @@ from ..basemodels.layers.transfroms import (_BaseTransformLayer,
                                             get_transform_layers)
 from ..constant import INPUT_TYPES
 from ..utils import POOLING_BEFORE_SAVING
-from .maps import SocialMapManager, TrajMapManager
+from .__splitManager import SplitManager
+from .inputs import AgentFilesManager, BaseInputManager, TrajectoryManager
+from .inputs.maps import SocialMapManager, TrajMapManager
 from .trajectories import Agent, AnnotationManager
 
 
@@ -27,11 +29,12 @@ class AgentManager(BaseManager):
     """
     AgentManager
     ---
-    Structure to manage several `Agent` objects.
-    The `AgentManager` object is managed by the `DatasetsManager` object.
+    Structure to manage several training and test `Agent` objects.
+    The `AgentManager` object is managed by the `Structure` object.
 
     Member Managers
     ---
+    - Dataset split's manager: type is `SplitManager`;
     - Trajectory map manager (optional, dynamic): type is `TrajMapManager`;
     - Social map manager (optional, dynamic): type is `SocialMapManager`.
 
@@ -79,18 +82,28 @@ class AgentManager(BaseManager):
     def __init__(self, manager: BaseManager, name='Agent Manager'):
         super().__init__(manager=manager, name=name)
 
-        self._agents: list[Agent] = []
-        self.model_inputs = None
-        self.model_labels = None
-
-        # Context map managers
-        self.t_manager: TrajMapManager = None
-        self.s_manager: SocialMapManager = None
+        # Dataset split and basic inputs
+        self.split_manager = SplitManager(manager=self,
+                                          dataset=self.args.dataset,
+                                          split=self.args.split)
+        self.traj_manager = TrajectoryManager(self)
+        self.file_manager = AgentFilesManager(self)
 
         # file root paths
         self.base_path: str = None
         self.npz_path: str = None
         self.maps_dir: str = None
+
+        # Settings and variations
+        self._agents: list[Agent] = []
+        self.model_inputs: list[str] = None
+        self.model_labels: list[str] = None
+        self.processed_clips: dict[str, list[str]] = {'train': [], 'test': []}
+
+        # Managers for extra model inputs
+        self.ext_mgrs: list[BaseInputManager] = []
+        self.ext_types: list[str] = []
+        self.ext_inputs: dict[str, dict[str, list]] = {}
 
         # Transform layer
         self.t_layers: dict[str, _BaseTransformLayer] = {}
@@ -105,9 +118,7 @@ class AgentManager(BaseManager):
 
     @property
     def picker(self) -> AnnotationManager:
-        ds_manager = self.manager
-        train_manager = ds_manager.manager
-        return train_manager.get_member(AnnotationManager)
+        return self.manager.get_member(AnnotationManager)
 
     def set_path(self, npz_path: str):
         self.npz_path = npz_path
@@ -119,37 +130,34 @@ class AgentManager(BaseManager):
             a.agent_manager = self
         return agents
 
-    def append(self, target):
-        self._agents += self.update_agents(target.agents)
+    def append(self, target: list[Agent]):
+        self._agents += self.update_agents(target)
 
     def set_types(self, inputs_type: list[str], labels_type: list[str]):
         """
         Set the type of model inputs and outputs.
         Accept all types in `INPUT_TYPES`.
         """
+        if INPUT_TYPES.MAP in inputs_type:
+            p = POOLING_BEFORE_SAVING
+            self.ext_types.append(INPUT_TYPES.MAP)
+            self.ext_mgrs.append(TrajMapManager(self, p))
+            self.ext_mgrs.append(SocialMapManager(self, p))
+
         self.model_inputs = inputs_type
         self.model_labels = labels_type
 
-    def get_inputs(self) -> list[tf.Tensor]:
+    def gather_inputs(self) -> list[tf.Tensor]:
         """
         Get all model inputs from agents.
         """
-        return [self._get(T) for T in self.model_inputs]
+        return [self._gather(T) for T in self.model_inputs]
 
-    def get_labels(self) -> list[tf.Tensor]:
+    def gather_labels(self) -> list[tf.Tensor]:
         """
         Get all model labels from agents.
         """
-        return [self._get(T) for T in self.model_labels]
-
-    def get_inputs_and_labels(self) -> list[tf.Tensor]:
-        """
-        Get model inputs and labels (only trajectories) from all agents.
-        """
-        inputs = self.get_inputs()
-        labels = self.get_labels()
-
-        return tuple(inputs + labels)
+        return [self._gather(T) for T in self.model_labels]
 
     def make_dataset(self, shuffle=False) -> tf.data.Dataset:
         """
@@ -157,7 +165,7 @@ class AgentManager(BaseManager):
         object. Note that the dataset contains both model inputs
         and labels.
         """
-        data = self.get_inputs_and_labels()
+        data = tuple(self.gather_inputs() + self.gather_labels())
         dataset = tf.data.Dataset.from_tensor_slices(data)
 
         if shuffle:
@@ -168,66 +176,58 @@ class AgentManager(BaseManager):
 
         return dataset
 
-    def save(self, save_dir: str):
+    def make(self, clips: list[str], mode: str) -> tf.data.Dataset:
         """
-        Save data of all agents.
+        Load train samples and make the `tf.data.Dataset` object to train.
 
-        :param save_dir: The directory to save agent data.
+        :param clips: Clips to load.
+        :param mode: The load mode, can be `'test'` or `'train'`.
+        :return dataset: The loaded `tf.data.Dataset` object.
         """
-        save_dict = {}
-        for index, agent in enumerate(self.agents):
-            save_dict[str(index)] = agent.zip_data()
+        if type(clips) is str:
+            clips = [clips]
 
-        np.savez(save_dir, **save_dict)
+        # shuffle agents and video clips when training
+        if mode == 'train':
+            shuffle = True
+            random.shuffle(clips)
+        else:
+            shuffle = False
 
-    def load(self, path: Union[str, list[Agent]]):
-        """
-        Load agents' data from the saved file.
+        # load agent data in each video clip
+        for clip_name in self.timebar(clips):
+            # get clip info
+            clip = self.split_manager.clips_dict[clip_name]
 
-        :param path: The file path of the saved data.
-        """
-        if not type(path) in [str, list]:
-            raise ValueError(path)
+            # update time bar
+            s = f'Prepare data of {mode} agents in `{clip.clip_name}`...'
+            self.update_timebar(s, pos='start')
 
-        if type(path) == list:
-            self.agents = path
-            return
+            # Get new agents
+            agents = self.file_manager.run(clip)
+            self.append(agents)
 
-        saved: dict = np.load(path, allow_pickle=True)
-        if not len(saved):
-            self.log(f'Please delete file `{path}` and re-run the program.',
-                     level='error', raiseError=FileNotFoundError)
+            # Load extra model inputs
+            self.ext_inputs[clip_name] = {}
+            for mgr in self.ext_mgrs:
+                key = mgr.INPUT_TYPE
+                value = mgr.run(clip, agents=agents,
+                                trajs=self._gather_obs_trajs(agents))
 
-        if (v := saved['0'].tolist()['__version__']) < (v1 := Agent.__version__):
-            self.log((f'Saved agent managers\' version is {v}, ' +
-                      f'which is lower than current {v1}. Please delete' +
-                      ' them and re-run this program, or there could' +
-                      ' happen something wrong.'),
-                     level='error')
+                if not key in self.ext_inputs[clip_name].keys():
+                    self.ext_inputs[clip_name][key] = value
+                else:
+                    self.ext_inputs[clip_name][key] += value
 
-        self.agents = [Agent().load_data(v.tolist()) for v in saved.values()]
+        self.processed_clips[mode] += clips
+        return self.make_dataset(shuffle=shuffle)
 
-    def init_map_managers(self, map_type: str, base_path: str):
-        agents = self.agents
-        self.t_manager = TrajMapManager(self, agents,
-                                        self._get_obs_trajs(),
-                                        map_type, base_path)
-        self.s_manager = SocialMapManager(self, agents,
-                                          self.t_manager,
-                                          map_type, base_path)
+    def _gather_obs_trajs(self, agents: list[Agent] = None) -> np.ndarray:
+        if not agents:
+            agents = self.agents
+        return np.array([a.traj for a in agents])
 
-    def load_maps(self):
-        for agent, t_map, s_map in zip(
-                self.agents,
-                self.t_manager.load(POOLING_BEFORE_SAVING),
-                self.s_manager.load(POOLING_BEFORE_SAVING)):
-
-            agent.set_map(0.5*t_map + 0.5*s_map)
-
-    def _get_obs_trajs(self) -> np.ndarray:
-        return np.array([a.traj for a in self.agents])
-
-    def _get(self, type_name: str) -> tf.Tensor:
+    def _gather(self, type_name: str) -> tf.Tensor:
         """
         Get model inputs or labels from a list of `Agent`-like objects.
 
@@ -236,11 +236,17 @@ class AgentManager(BaseManager):
         :return inputs: A tensor of stacked inputs.
         """
         t = type_name
+        if t in self.ext_types:
+            res = None
+            for _, _res in self.ext_inputs.items():
+                if not res:
+                    res = _res[t]
+                else:
+                    res = tf.concat([res, _res[t]], axis=0)
+            return tf.cast(res, tf.float32)
+
         if t == INPUT_TYPES.OBSERVED_TRAJ:
             return _get_obs_traj(self.agents)
-
-        elif t == INPUT_TYPES.MAP:
-            return _get_context_map(self.agents)
 
         elif t == INPUT_TYPES.DESTINATION_TRAJ:
             return _get_dest_traj(self.agents)
@@ -275,7 +281,12 @@ class AgentManager(BaseManager):
             raise ValueError(type_name)
 
     def print_info(self, **kwargs):
-        pass
+        t_info = {}
+        for mode in ['train', 'test']:
+            if len(t := self.processed_clips[mode]):
+                t_info.update({'T' + f'{mode} agents come from'[1:]: t})
+
+        return super().print_info(**t_info, **kwargs)
 
 
 def _get_obs_traj(input_agents: list[Agent]) -> tf.Tensor:

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 10:38:49
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 20:02:52
+@LastEditTime: 2023-05-22 20:21:50
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -14,7 +14,7 @@ import numpy as np
 import tensorflow as tf
 
 from ...constant import ANN_TYPES
-from ...dataset import Annotation
+from ...dataset.trajectories import Annotation
 
 
 class BaseProcessLayer(tf.keras.layers.Layer):

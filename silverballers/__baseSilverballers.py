@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-10 20:11:32
+@LastEditTime: 2023-05-22 20:42:50
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,7 +12,7 @@ import tensorflow as tf
 
 from codes.base import BaseObject
 from codes.constant import ANN_TYPES, INPUT_TYPES
-from codes.managers import AnnotationManager, DatasetManager, Model, Structure
+from codes.managers import AnnotationManager, Model, Structure
 
 from .__args import AgentArgs, SilverballersArgs
 from .agents import BaseAgentModel, BaseAgentStructure
@@ -43,6 +43,7 @@ class BaseSilverballersModel(Model):
         super().__init__(Args, structure, *args, **kwargs)
 
         self.args: SilverballersArgs
+        self.manager: Structure
 
         # processes are run in AgentModels and HandlerModels
         self.set_preprocess()
@@ -68,7 +69,7 @@ class BaseSilverballersModel(Model):
         # Predict with `co2bb` (Coordinates to 2D bounding boxes)
         if self.args.force_anntype == ANN_TYPES.BB_2D and \
            self.agent.args.anntype == ANN_TYPES.CO_2D and \
-           self.manager.get_member(DatasetManager).info.anntype == ANN_TYPES.BB_2D:
+           self.manager.split_manager.anntype == ANN_TYPES.BB_2D:
 
             # Flatten into a series of 2D points
             all_trajs = self.manager.get_member(AnnotationManager) \

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-10 09:38:32
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 11:17:39
+@LastEditTime: 2023-05-22 18:35:13
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,12 +10,15 @@
 
 import cv2
 import numpy as np
+import tensorflow as tf
 
 MASK = cv2.imread('./figures/mask_circle.png')[:, :, 0]/50
 MASKS = {}
 
 DECAY_P = np.array([[0.0, 0.7, 1.0], [1.0, 1.0, 0.5]])
 DECAYS = {}
+
+POOLING_LAYER = tf.keras.layers.MaxPool2D([5, 5], data_format='channels_last')
 
 
 def add(target_map: np.ndarray,
@@ -106,3 +109,13 @@ def cut(target_map: np.ndarray,
                                c[1] - half_size: c[1] + half_size])
 
     return np.array(cuts)
+
+
+def pooling2D(maps: np.ndarray):
+    """
+    Apply MaxPooling on a batch of maps.
+
+    :param maps: Maps, shape = (batch, a, b).
+    """
+    maps = maps[..., np.newaxis]
+    return POOLING_LAYER(maps).numpy()[..., 0]

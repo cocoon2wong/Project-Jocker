@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-09 19:59:06
+@LastEditTime: 2023-05-22 20:38:15
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -17,8 +17,9 @@ import tensorflow as tf
 from ..args import Args
 from ..base import BaseManager
 from ..basemodels import Model
-from ..constant import INPUT_TYPES, ANN_TYPES
-from ..dataset import AgentManager, AnnotationManager, DatasetManager
+from ..constant import ANN_TYPES, INPUT_TYPES
+from ..dataset import AgentManager, SplitManager
+from ..dataset.trajectories import AnnotationManager
 from ..utils import WEIGHTS_FORMAT, dir_check
 from ..vis import Visualization
 from .loss import LossManager
@@ -33,7 +34,7 @@ class Structure(BaseManager):
     Member Managers
     ---------------
     - Model, `type = Model`;
-    - Dataset Manager, `type = DatasetManager`;
+    - Agent Manager, `type = AgentManager`;
     - Annotation Manager, `type = AnnotationManager`;
     - Loss Manager, `type = LossManager`;
     - Metrics Manager, `type = LossManager`.
@@ -64,8 +65,8 @@ class Structure(BaseManager):
             self.args._check_terminal_args()
 
         # init managers
-        self.dsmanager = DatasetManager(self)
-        self.annmanager = AnnotationManager(self, self.dsmanager.info.anntype)
+        self._am = AgentManager(self)
+        self.annmanager = AnnotationManager(self, self.split_manager.anntype)
         self.loss = LossManager(self, name='Loss')
         self.metrics = LossManager(self, name='Metrics')
 
@@ -92,7 +93,7 @@ class Structure(BaseManager):
             # These configs are only used on `h36m` dataset
             i = int(1000 * self.args.interval)  # Sample interval
             fde = self.metrics.FDE
-            
+
             if self.args.pred_frames == 10:
                 self.metrics.set([
                     [fde, [0.0, {'index': 1, 'name': f'FDE@{2*i}ms'}]],
@@ -100,7 +101,7 @@ class Structure(BaseManager):
                     [fde, [0.0, {'index': 7, 'name': f'FDE@{8*i}ms'}]],
                     [fde, [1.0, {'index': 9, 'name': f'FDE@{10*i}ms'}]],
                 ])
-                
+
             elif self.args.pred_frames == 25:
                 self.metrics.set([
                     [fde, [0.0, {'index': 13, 'name': f'FDE@{14*i}ms'}]],
@@ -110,6 +111,17 @@ class Structure(BaseManager):
         else:
             self.metrics.set({self.metrics.ADE: 1.0,
                               self.metrics.FDE: 0.0})
+
+    @property
+    def agent_manager(self) -> AgentManager:
+        return self._am
+
+    @property
+    def split_manager(self) -> SplitManager:
+        """
+        The Split Manager is managed by the `AgentManager`.
+        """
+        return self.agent_manager.split_manager
 
     def set_labels(self, *args):
         """
@@ -197,7 +209,7 @@ class Structure(BaseManager):
         metrics, metrics_dict = \
             self.metrics.call(outputs, labels,
                               training=None,
-                              coefficient=self.dsmanager.info.scale)
+                              coefficient=self.split_manager.scale)
 
         return outputs, metrics, metrics_dict
 
@@ -207,8 +219,8 @@ class Structure(BaseManager):
         """
         # init model and dataset manager
         self.model = self.create_model()
-        self.dsmanager.set_types(inputs_type=self.model.input_types,
-                                 labels_type=self.label_types)
+        self.agent_manager.set_types(inputs_type=self.model.input_types,
+                                     labels_type=self.label_types)
 
         # start training or testing
         if self.noTraining:
@@ -230,10 +242,10 @@ class Structure(BaseManager):
         """
         self.log(f'Start training with args = {self.args._args_runnning}')
 
-        clips_train = self.dsmanager.info.train_sets
-        clips_val = self.dsmanager.info.test_sets
-        ds_train = self.dsmanager.load_dataset(clips_train, 'train')
-        ds_val = self.dsmanager.load_dataset(clips_val, 'test')
+        clips_train = self.split_manager.train_sets
+        clips_val = self.split_manager.test_sets
+        ds_train = self.agent_manager.make(clips_train, 'train')
+        ds_val = self.agent_manager.make(clips_val, 'test')
 
         # train on all test/train clips
         _, _, best_metric, best_epoch = self.__train(ds_train, ds_val)
@@ -245,20 +257,20 @@ class Structure(BaseManager):
         Run a test on the given dataset.
         """
         self.log(f'Start test with args = {self.args._args_runnning}')
-        test_sets = self.dsmanager.info.test_sets
+        test_sets = self.split_manager.test_sets
         r = None
 
         # test on a single sub-dataset
         if self.args.test_mode == 'one':
             clip = self.args.force_clip
-            ds_test = self.dsmanager.load_dataset(clip, 'test')
+            ds_test = self.agent_manager.make(clip, 'test')
             r = self.__test(ds_test)
 
         # test on all test datasets separately
         elif self.args.test_mode == 'all':
             metrics_dict = {}
             for clip in test_sets:
-                ds_test = self.dsmanager.load_dataset(clip, 'test')
+                ds_test = self.agent_manager.make(clip, 'test')
                 _, m_dict, _ = self.__test(ds_test)
                 metrics_dict[clip] = m_dict
 
@@ -266,7 +278,7 @@ class Structure(BaseManager):
 
         # test on all test datasets together
         elif self.args.test_mode == 'mix':
-            ds_test = self.dsmanager.load_dataset(test_sets, 'test')
+            ds_test = self.agent_manager.make(test_sets, 'test')
             r = self.__test(ds_test)
 
         else:
@@ -277,7 +289,7 @@ class Structure(BaseManager):
             metric, metrics_dict, outputs = r
             self.print_test_results(metrics_dict)
             self.write_test_results(outputs=outputs,
-                                    clips=self.dsmanager.processed_clips['test'])
+                                    clips=self.agent_manager.processed_clips['test'])
 
     def __train(self, ds_train: tf.data.Dataset, ds_val: tf.data.Dataset):
         """
@@ -292,7 +304,8 @@ class Structure(BaseManager):
         :return best_epoch:
         """
         # print training infomation
-        self.dsmanager.print_info()
+        self.split_manager.print_info()
+        self.agent_manager.print_info()
         self.model.print_info()
         self.print_info()
 
@@ -406,7 +419,8 @@ class Structure(BaseManager):
         :return outputs: model outputs
         """
         # Print test information
-        self.dsmanager.print_info()
+        self.split_manager.print_info()
+        self.agent_manager.print_info()
         self.model.print_info()
         self.print_info()
 
@@ -551,9 +565,6 @@ class Structure(BaseManager):
         Save visualized prediction results.
         """
 
-        # get agents' information
-        agents = self.dsmanager.get_member(AgentManager, mindex=0)
-
         if (((self.args.draw_results != 'null') or
              (self.args.draw_videos != 'null'))
                 and len(clips) == 1):
@@ -573,7 +584,7 @@ class Structure(BaseManager):
 
             img_dir = dir_check(os.path.join(save_base_path, 'VisualTrajs'))
             save_format = os.path.join(img_dir, clip + '_{}')
-            self.log(f'Start saving images into `{img_dir}`...')
+            tv.log(f'Start saving images into `{img_dir}`...')
 
             pred_all = outputs[0].numpy()
 
@@ -589,7 +600,7 @@ class Structure(BaseManager):
 
             for index in self.timebar(agent_indexes, 'Saving...'):
                 # write traj
-                agent = agents.agents[index]
+                agent = self.agent_manager.agents[index]
                 agent._traj_pred = pred_all[index]
 
                 # choose to draw as a video or a single image

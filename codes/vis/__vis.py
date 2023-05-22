@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 11:30:10
+@LastEditTime: 2023-05-22 19:53:30
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,7 +13,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from ..base import BaseManager, SecondaryBar
-from ..dataset.trajectories import Agent, AnnotationManager, VideoClip
+from ..dataset.__splitManager import Clip
+from ..dataset.trajectories import Agent, AnnotationManager
 from ..utils import (DISTRIBUTION_IMAGE, DRAW_TEXT_IN_IMAGES,
                      DRAW_TEXT_IN_VIDEOS, GT_IMAGE, NEIGHBOR_IMAGE, OBS_IMAGE,
                      PRED_IMAGE)
@@ -33,7 +34,7 @@ class Visualization(BaseManager):
         super().__init__(manager=manager, name=name)
 
         # Get information of the video clip
-        self.info = VideoClip(name=clip, dataset=dataset).get()
+        self.info: Clip = self.manager.split_manager.clips_dict[clip]
 
         # Try to open the video
         path = self.info.video_path
@@ -77,7 +78,7 @@ class Visualization(BaseManager):
         return f
 
     def get_text(self, frame: int, agent: Agent) -> list[str]:
-        return [self.info.name,
+        return [self.info.clip_name,
                 f'frame: {str(frame).zfill(6)}',
                 f'agent: {agent.id}',
                 f'type: {agent.type}']
@@ -100,7 +101,7 @@ class Visualization(BaseManager):
         :param real_pos: Coordinates, shape = (n, 2) or (k, n, 2).
         :return pixel_pos: Coordinates in pixels.
         """
-        scale = self.info.datasetInfo.scale / self.info.datasetInfo.scale_vis
+        scale = self.info.manager.scale / self.info.manager.scale_vis
         weights = self.info.matrix
 
         if type(real_pos) == list:
@@ -126,7 +127,7 @@ class Visualization(BaseManager):
         return pixel
 
     def rescale(self, f: np.ndarray):
-        if (s := self.info.datasetInfo.scale_vis) > 1:
+        if (s := self.info.manager.scale_vis) > 1:
             x, y = f.shape[:2]
             f = cv2.resize(f, (int(y/s), int(x/s)))
         return f
