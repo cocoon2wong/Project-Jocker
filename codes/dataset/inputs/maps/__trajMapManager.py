@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-05-22 16:26:35
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-22 20:36:19
+@LastEditTime: 2023-05-23 11:20:18
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -84,7 +84,8 @@ class TrajMapManager(BaseInputManager):
             agents: list[Agent],
             *args, **kwargs) -> list:
 
-        return super().run(clip, trajs, agents)
+        return super().run(clip=clip, trajs=trajs, agents=agents,
+                           *args, **kwargs)
 
     def save(self, trajs: np.ndarray,
              agents: list[Agent],
@@ -137,8 +138,12 @@ class TrajMapManager(BaseInputManager):
                          source: np.ndarray = None):
         """
         Build and save the global trajectory map.
+
         - Saved files: `GLOBAL_FILE`, `GLOBAL_CONFIG_FILE`.
         """
+        # Get 2D center points
+        trajs = self.C(trajs)
+
         if source is None:
             if self.void_map is None:
                 self.init_global_map(trajs)
@@ -181,7 +186,7 @@ class TrajMapManager(BaseInputManager):
 
             # Cut the local trajectory map from the global map
             # Center point: the last observed point
-            center_real = agent.traj[-1:, :]
+            center_real = self.C(agent.traj[-1:, :])
             center_pixel = self.real2grid(center_real)
             local_map = cut(self.map, center_pixel, self.HALF_SIZE)[0]
             maps.append(local_map)
@@ -199,3 +204,16 @@ class TrajMapManager(BaseInputManager):
 
         grid = ((traj - self.b) * self.W).astype(np.int32)
         return grid
+
+    def C(self, trajs: np.ndarray) -> np.ndarray:
+        """
+        Get the 2D center point of the input M-dimensional trajectory.
+        """
+        if trajs.shape[-1] == 2:
+            return trajs
+
+        t = self.picker.get_center(trajs)
+        if t.shape[-1] > 2:
+            t = t[..., :2]
+
+        return t

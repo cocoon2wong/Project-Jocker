@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-05-22 16:26:26
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-22 20:35:45
+@LastEditTime: 2023-05-23 10:45:18
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -10,9 +10,7 @@
 
 import numpy as np
 
-from codes.base import BaseManager
-
-from ....base import SecondaryBar
+from ....base import BaseManager, SecondaryBar
 from ....constant import INPUT_TYPES
 from ....utils import AVOID_SIZE, INTEREST_SIZE, MAP_HALF_SIZE
 from ...__splitManager import Clip
@@ -22,7 +20,7 @@ from .__trajMapManager import TrajMapManager
 from .__utils import add, cut, pooling2D
 
 
-class SocialMapManager(BaseInputManager):
+class SocialMapManager(TrajMapManager):
     """
     Social Map Manager
     ---
@@ -44,7 +42,7 @@ class SocialMapManager(BaseInputManager):
                  pool_maps=False,
                  name='Social Map Manager'):
 
-        super().__init__(manager, name)
+        BaseInputManager.__init__(self, manager, name)
 
         self.POOL = pool_maps
 
@@ -63,10 +61,10 @@ class SocialMapManager(BaseInputManager):
             max_neighbor=15,
             *args, **kwargs) -> list:
 
-        return super().run(clip, agents,
-                           regulation=regulation,
-                           max_neighbor=max_neighbor,
-                           *args, **kwargs)
+        return BaseInputManager.run(self, clip=clip, agents=agents,
+                                    regulation=regulation,
+                                    max_neighbor=max_neighbor,
+                                    *args, **kwargs)
 
     def save(self, *args, **kwargs) -> None:
         self.build_local_maps(*args, **kwargs)
@@ -114,19 +112,20 @@ class SocialMapManager(BaseInputManager):
             if type(source) == type(None):
                 source = self.void_map
 
+            C = self.C
             source = source.copy()
 
             # Destination
             source = add(target_map=source,
-                         grid_trajs=self.real2grid(agent.pred_linear),
+                         grid_trajs=self.real2grid(C(agent.pred_linear)),
                          amplitude=[-2],
                          radius=INTEREST_SIZE)
 
             # Interplay
-            traj_neighbors = agent.pred_linear_neighbor
+            traj_neighbors = C(agent.pred_linear_neighbor)
             amp_neighbors = []
 
-            vec_target = agent.pred_linear[-1] - agent.pred_linear[0]
+            vec_target = C(agent.pred_linear[-1] - agent.pred_linear[0])
             len_target = calculate_length(vec_target)
 
             vec_neighbor = traj_neighbors[:, -1] - traj_neighbors[:, 0]
@@ -168,7 +167,7 @@ class SocialMapManager(BaseInputManager):
 
             # Get the local social map from the global map
             # center point: the last observed point
-            center_real = agent.traj[-1:, :]
+            center_real = C(agent.traj[-1:, :])
             center_pixel = self.real2grid(center_real)
             local_map = cut(source, center_pixel, self.HALF_SIZE)[0]
             maps.append(local_map)
@@ -179,13 +178,6 @@ class SocialMapManager(BaseInputManager):
         # Pool the maps
         maps_pooling = pooling2D(np.array(maps))
         np.save(self.temp_files['FILE_WITH_POOLING'], maps_pooling)
-
-    def real2grid(self, traj: np.ndarray) -> np.ndarray:
-        if not type(traj) == np.ndarray:
-            traj = np.array(traj)
-
-        grid = ((traj - self.b) * self.W).astype(np.int32)
-        return grid
 
 
 def calculate_cosine(vec1: np.ndarray,
