@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-05-19 16:05:54
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-22 20:34:22
+@LastEditTime: 2023-05-23 11:18:18
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -35,9 +35,8 @@ class AgentFilesManager(BaseInputManager):
 
         super().__init__(manager, name)
 
-    @property
-    def temp_file(self) -> str:
-        base_dir = self.working_clip.temp_dir
+    def get_temp_file_path(self, clip: Clip) -> str:
+        base_dir = clip.temp_dir
         if (self.args.obs_frames, self.args.pred_frames) == (8, 12):
             f_name = 'agent'
         else:
@@ -47,12 +46,12 @@ class AgentFilesManager(BaseInputManager):
         f_name = f_name + endstring + '.npz'
         return os.path.join(base_dir, f_name)
 
-    def run(self, clip: Clip, agents: list[Agent] = None, **kwargs) -> list[Agent]:
-        if agents:
-            kwargs['agents'] = agents
-        return super().run(clip, **kwargs)
+    def run(self, clip: Clip, agents: list[Agent] = None,
+            *args, **kwargs) -> list[Agent]:
 
-    def save(self, **kwargs) -> None:
+        return super().run(clip=clip, agents=agents, *args, **kwargs)
+
+    def save(self, *args, **kwargs) -> None:
         agents = self.manager.get_member(
             TrajectoryManager).run(self.working_clip)
 
@@ -62,7 +61,7 @@ class AgentFilesManager(BaseInputManager):
 
         np.savez(self.temp_file, **save_dict)
 
-    def load(self, **kwargs) -> list:
+    def load(self, *args, **kwargs) -> list:
         saved: dict = np.load(self.temp_file, allow_pickle=True)
 
         if not len(saved):

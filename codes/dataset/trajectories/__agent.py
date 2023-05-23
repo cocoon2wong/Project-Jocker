@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-22 19:46:19
+@LastEditTime: 2023-05-23 09:26:17
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -91,8 +91,8 @@ class Agent():
         return copy.deepcopy(self)
 
     @property
-    def picker(self) -> AnnotationManager:
-        return self.agent_manager.picker
+    def pickers(self) -> AnnotationManager:
+        return self.agent_manager.pickers
 
     @property
     def id(self) -> str:
@@ -113,14 +113,14 @@ class Agent():
         """
         historical trajectory, shape = (obs, dim)
         """
-        return self.picker.get(self._traj)
+        return self.pickers.get(self._traj)
 
     @property
     def traj_neighbor(self) -> np.ndarray:
         """
         neighbors' historical trajectories, shape = (n, obs, dim)
         """
-        return self.picker.get(self._traj_neighbor)
+        return self.pickers.get(self._traj_neighbor)
 
     @property
     def pred(self) -> np.ndarray:
@@ -151,7 +151,7 @@ class Agent():
         linear prediction.
         shape = (pred, dim)
         """
-        return self.picker.get(self._traj_linear)
+        return self.pickers.get(self._traj_linear)
 
     @property
     def pred_linear_neighbor(self) -> np.ndarray:
@@ -159,7 +159,7 @@ class Agent():
         linear prediction of neighbors' trajectories.
         shape = (n, pred, dim)
         """
-        return self.picker.get(self._traj_linear_neighbor)
+        return self.pickers.get(self._traj_linear_neighbor)
 
     @property
     def groundtruth(self) -> np.ndarray:
@@ -167,7 +167,7 @@ class Agent():
         ground truth future trajectory.
         shape = (pred, dim)
         """
-        return self.picker.get(self._traj_future)
+        return self.pickers.get(self._traj_future)
 
     @property
     def Map(self) -> np.ndarray:

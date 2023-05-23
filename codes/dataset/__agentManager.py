@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-22 20:27:24
+@LastEditTime: 2023-05-23 11:12:52
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -18,11 +18,11 @@ from ..base import BaseManager
 from ..basemodels.layers.transfroms import (_BaseTransformLayer,
                                             get_transform_layers)
 from ..constant import INPUT_TYPES
-from ..utils import POOLING_BEFORE_SAVING
+from ..utils import POOLING_BEFORE_SAVING, dir_check
 from .__splitManager import SplitManager
 from .inputs import AgentFilesManager, BaseInputManager, TrajectoryManager
 from .inputs.maps import SocialMapManager, TrajMapManager
-from .trajectories import Agent, AnnotationManager
+from .trajectories import Agent, Annotation, AnnotationManager
 
 
 class AgentManager(BaseManager):
@@ -117,7 +117,11 @@ class AgentManager(BaseManager):
         self._agents = self.update_agents(value)
 
     @property
-    def picker(self) -> AnnotationManager:
+    def picker(self) -> Annotation:
+        return self.pickers.annotations[self.args.anntype]
+
+    @property
+    def pickers(self) -> AnnotationManager:
         return self.manager.get_member(AnnotationManager)
 
     def set_path(self, npz_path: str):
@@ -211,7 +215,11 @@ class AgentManager(BaseManager):
             self.ext_inputs[clip_name] = {}
             for mgr in self.ext_mgrs:
                 key = mgr.INPUT_TYPE
-                value = mgr.run(clip, agents=agents,
+                dir_path = f'{self.file_manager.get_temp_file_path(clip)}.{key}'
+                dir_name = dir_check(dir_path).split('/')[-1]
+                value = mgr.run(clip=clip,
+                                root_dir=dir_name,
+                                agents=agents,
                                 trajs=self._gather_obs_trajs(agents))
 
                 if not key in self.ext_inputs[clip_name].keys():
@@ -239,7 +247,7 @@ class AgentManager(BaseManager):
         if t in self.ext_types:
             res = None
             for _, _res in self.ext_inputs.items():
-                if not res:
+                if res is None:
                     res = _res[t]
                 else:
                     res = tf.concat([res, _res[t]], axis=0)

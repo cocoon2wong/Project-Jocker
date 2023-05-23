@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-22 20:38:15
+@LastEditTime: 2023-05-23 11:14:43
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -19,7 +19,7 @@ from ..base import BaseManager
 from ..basemodels import Model
 from ..constant import ANN_TYPES, INPUT_TYPES
 from ..dataset import AgentManager, SplitManager
-from ..dataset.trajectories import AnnotationManager
+from ..dataset.trajectories import Annotation, AnnotationManager
 from ..utils import WEIGHTS_FORMAT, dir_check
 from ..vis import Visualization
 from .loss import LossManager
@@ -115,6 +115,10 @@ class Structure(BaseManager):
     @property
     def agent_manager(self) -> AgentManager:
         return self._am
+
+    @property
+    def picker(self) -> Annotation:
+        return self.annmanager.annotations[self.args.anntype]
 
     @property
     def split_manager(self) -> SplitManager:
