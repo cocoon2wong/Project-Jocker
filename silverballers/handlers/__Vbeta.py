@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-23 10:23:53
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-09 20:36:39
+@LastEditTime: 2023-05-23 16:25:18
 @Description: Second stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -47,7 +47,7 @@ class VBModel(BaseHandlerModel):
 
         Tlayer, ITlayer = layers.get_transform_layers(self.args.T)
         self.t_layer = Tlayer((input_steps, self.dim))
-        self.it_layer = ITlayer((output_steps, self.dim))
+        self.it_layer = ITlayer((output_steps, 2))
 
         # Shapes
         input_Tsteps, Tchannels = self.t_layer.Tshape
@@ -84,7 +84,17 @@ class VBModel(BaseHandlerModel):
              *args, **kwargs):
 
         # unpack inputs
-        trajs, maps = inputs[:2]
+        trajs_md, maps = inputs[:2]
+        keypoints_md = keypoints
+
+        # Only accept 2-dimensional trajectories
+        if training:
+            trajs = trajs_md
+            keypoints = keypoints_md
+        else:
+            picker = self.structure.get_manager(BaseHandlerStructure).picker
+            trajs = picker.get_center(trajs_md)[..., :2]
+            keypoints = picker.get_center(keypoints)[..., :2]
 
         # Embedding and encoding
         # Transformations are applied in `self.te`
@@ -110,8 +120,27 @@ class VBModel(BaseHandlerModel):
 
         # Inverse transform
         p = self.it_layer.call(p_fft)
+        y = p[:, self.args.obs_frames:, :]
 
-        return p[:, self.args.obs_frames:, :]
+        if training:
+            return y
+
+        # Calculate linear prediction (M-dimensional)
+        keypoints_md = tf.concat([trajs_md[:, -1:, :], keypoints_md], axis=1)
+        l = self.linear_int.call(keypoints_index, keypoints_md)
+
+        # Linear center points
+        l_center = picker.get_center(l)[tf.newaxis]
+        l_co = tf.cast(picker.get_coordinate_series(l), tf.float32)
+
+        # Bias to the center points
+        bias_center = l_co - l_center
+        bias_linear = (y - linear_pred)[tf.newaxis]
+        new_center = y[tf.newaxis]
+
+        y_md = new_center + bias_center + bias_linear   # (M, batch, pred, 2)
+        y_md = tf.concat(list(y_md), axis=-1)
+        return y_md
 
 
 class VB(BaseHandlerStructure):
