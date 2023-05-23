@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-17 14:57:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-22 20:39:27
+@LastEditTime: 2023-05-23 11:12:40
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -108,6 +108,13 @@ class BaseManager(BaseObject):
         :return member: Member manager with the specific type.
         """
         return self.members_dict[mtype][mindex]
+
+    def get_manager(self, mtype: type[T]) -> T:
+        """
+        Get the manager object of this manager.
+        This method is only used for type hints.
+        """
+        return self.manager
 
     def find_members_by_type(self, mtype: type[T]) -> list[T]:
         """
