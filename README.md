@@ -44,7 +44,6 @@ About the `argtype`:
   The program will parse these args from the terminal at each time.
 
 <!-- DO NOT CHANGE THIS LINE -->
-
 ### Basic args
 
 - `--K_train`: type=`int`, argtype=`static`.
@@ -104,7 +103,7 @@ About the `argtype`:
 - `--log_dir`: type=`str`, argtype=`static`.
   Folder to save training logs and model weights. Logs will save at `args.save_base_dir/current_model`. DO NOT change this arg manually. (You can still change the path by passing the `save_base_dir` arg.) 
   The default value is `Unavailable`.
-- `--lr`: type=`float`, argtype=`static`.
+- `--lr` (short for `-lr`): type=`float`, argtype=`static`.
   Learning rate. 
   The default value is `0.001`.
 - `--model_name`: type=`str`, argtype=`static`.
@@ -182,6 +181,9 @@ About the `argtype`:
 - `--loadb` (short for `-lb`): type=`str`, argtype=`temporary`.
   Path to load the second-stage handler model. 
   The default value is `null`.
+- `--pred_interval` (short for `-pi`): type=`int`, argtype=`temporary`.
+  Prediction interval in frames for recurrent prediction. It only works when `args.pred_frames` is larger than the `pred_frames` recorded in the agent model. 
+  The default value is `-1`.
 - `--preprocess`: type=`str`, argtype=`static`.
   Controls whether to run any pre-process before the model inference. It accepts a 3-bit-like string value (like `'111'`): - The first bit: `MOVE` trajectories to (0, 0); - The second bit: re-`SCALE` trajectories; - The third bit: `ROTATE` trajectories. 
   The default value is `111`.
