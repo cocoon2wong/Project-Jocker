@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-17 15:02:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-17 15:05:15
+@LastEditTime: 2023-05-24 19:22:38
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -21,7 +21,8 @@ class __SecondaryBar(BaseManager):
                  manager: BaseManager,
                  desc: str = 'Calculating:',
                  pos: str = 'end',
-                 name='Secondary InformationBar Manager'):
+                 name='Secondary InformationBar Manager',
+                 update_main_bar=False):
 
         if name == 'Secondary InformationBar Manager':
             name += f' ({desc[:20]})'
@@ -38,17 +39,26 @@ class __SecondaryBar(BaseManager):
         self.max = len(item)
         self.count = 0
 
+        self.update_main_bar = update_main_bar
+
     def __iter__(self):
         self.count = 0
         return self
 
     def __next__(self):
         if self.count >= self.max:
+            if self.update_main_bar:
+                self.manager.bar.update(-1.0)
+
             raise StopIteration
 
         # get value
         value = self.item[self.count]
         self.count += 1
+
+        # update main timebar
+        if self.update_main_bar:
+            self.manager.bar.update(1.0/self.max - 1e-5)
 
         # update timebar
         percent = (self.count * 100) // self.max
@@ -66,7 +76,8 @@ def SecondaryBar(item: T,
                  manager: BaseManager,
                  desc: str = 'Calculating:',
                  pos: str = 'end',
-                 name='Secondary InformationBar Manager') -> T:
+                 name='Secondary InformationBar Manager',
+                 update_main_bar=False) -> T:
     """
     Init
 
@@ -75,4 +86,4 @@ def SecondaryBar(item: T,
     :param desc: text to show on the main timebar
     :param pos: text position, can be `'start'` or `'end'`
     """
-    return __SecondaryBar(item, manager, desc, pos, name)
+    return __SecondaryBar(item, manager, desc, pos, name, update_main_bar)

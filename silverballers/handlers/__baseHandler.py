@@ -90,7 +90,8 @@ class BaseHandlerModel(Model):
             p_all = []
             for k in SecondaryBar(range(keypoints.shape[1]),
                                   manager=self.structure.manager,
-                                  desc='Running Stage-2 Sub-Network...'):
+                                  desc='Running Stage-2 Sub-Network...',
+                                  update_main_bar=True):
 
                 # Run stage-2 network on a batch of inputs
                 pred = self.call(inputs=inputs,

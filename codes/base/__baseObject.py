@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-11 10:05:11
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-08 10:49:04
+@LastEditTime: 2023-05-24 19:19:26
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -115,7 +115,11 @@ class BaseObject():
         return s
 
     def timebar(self, inputs: T, text='') -> T:
-        self.bar = tqdm(inputs, desc=text)
+        bf = ('{desc}: {percentage:3.0f}%|' +
+              '{bar}' +
+              '| {n:.2f}/{total:.2f} [{elapsed}<{remaining}, ' +
+              '{rate_fmt}{postfix}]')
+        self.bar = tqdm(inputs, desc=text, bar_format=bf)
         return self.bar
 
     def update_timebar(self, item: Union[str, dict], pos='end'):
