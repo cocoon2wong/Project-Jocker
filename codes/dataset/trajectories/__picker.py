@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-30 09:52:17
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-10 19:10:43
+@LastEditTime: 2023-05-25 19:12:34
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -179,7 +179,7 @@ class AnnotationManager(BaseManager):
                      level='error', raiseError=ValueError)
 
         # align coordinates
-        outputs = inputs[..., :self.target.base_len]
+        outputs = inputs[..., :self.source.base_len]
 
         if ((self.source.base_len % self.target.base_len == 0) and
                 (self.source.base_len != self.target.base_len)):
