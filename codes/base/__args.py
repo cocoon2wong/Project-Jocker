@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-09 09:14:41
+@LastEditTime: 2023-05-26 15:47:21
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -430,3 +430,11 @@ class Args(ArgsManager):
         with annotation type `boundingbox`.
         """
         return self._arg('force_anntype', 'null', argtype=TEMPORARY)
+
+    @property
+    def draw_extra_outputs(self) -> int:
+        """
+        Choose whether to draw (put text) extra model outputs
+        on the visualized images.
+        """
+        return self._arg('draw_extra_outputs', 0, argtype=TEMPORARY)

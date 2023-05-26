@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-22 19:53:30
+@LastEditTime: 2023-05-26 15:48:02
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -137,7 +137,9 @@ class Visualization(BaseManager):
              save_name: str,
              draw_dis=False,
              interp=True,
-             save_as_images=False):
+             save_as_images=False,
+             traj_wise_outputs: dict = {},
+             agent_wise_outputs: dict = {}):
         """
         Draw trajectories on the video.
 
@@ -150,6 +152,8 @@ class Visualization(BaseManager):
         :param interp: Choose whether to draw the full video or only
             draw on the sampled time steps.
         :param save_as_images: Choose if to save as an image or a video clip.
+        :param traj_wise_outputs: Extra trajectory-wise model outputs.
+        :param agent_wise_outputs: Extra agent-wise model outputs.
         """
         f = None
         state = None
@@ -200,8 +204,25 @@ class Visualization(BaseManager):
 
         if save_as_images:
             frame = frames[0]
+
+            # Draw trajectories
             f = vis_func(f, obs, gt, pred, nei, draw_dis=draw_dis)
+
+            # Put text (top-left)
             f = text_func(f, self.get_text(frame, agent))
+
+            if self.args.draw_extra_outputs:
+                # Put text (trajectory-wise)
+                for index in range(len(pred)):
+                    pos = pred[index, -1]
+                    text = [f'{v[index]:.2f}' for (
+                        k, v) in traj_wise_outputs.items()]
+                    f = text_func(f, texts=text, x=pos[1], y=pos[0],
+                                  font=cv2.FONT_HERSHEY_SIMPLEX,
+                                  size=0.5, width=2, line_height=30,
+                                  shadow_bias=1)
+
+                # TODO: draw agent-wise outputs on images
 
             if DRAW_TEXT_IN_IMAGES:
                 cv2.imwrite(save_name + f'_{frame}.jpg', f)
@@ -294,24 +315,33 @@ class Visualization(BaseManager):
         f = ADD(source, f, [f.shape[1]//2, f.shape[0]//2])
         return f
 
-    def text(self, f: np.ndarray, texts: list[str]) -> np.ndarray:
+    def text(self, f: np.ndarray,
+             texts: list[str],
+             x: int = 10,
+             y: int = 40,
+             font: int = cv2.FONT_HERSHEY_COMPLEX,
+             size: float = 0.9,
+             width: int = 2,
+             line_height: int = 30,
+             shadow_bias: int = 3) -> np.ndarray:
         """
         Put text on one image
         """
         for index, text in enumerate(texts):
             f = cv2.putText(f, text,
-                            org=(10 + 3, 40 + index * 30 + 3),
-                            fontFace=cv2.FONT_HERSHEY_COMPLEX,
-                            fontScale=0.9,
+                            org=(x + shadow_bias, y + index *
+                                 line_height + shadow_bias),
+                            fontFace=font,
+                            fontScale=size,
                             color=(0, 0, 0),
-                            thickness=2)
+                            thickness=width)
 
             f = cv2.putText(f, text,
-                            org=(10, 40 + index * 30),
-                            fontFace=cv2.FONT_HERSHEY_COMPLEX,
-                            fontScale=0.9,
+                            org=(x, y + index * line_height),
+                            fontFace=font,
+                            fontScale=size,
                             color=(255, 255, 255),
-                            thickness=2)
+                            thickness=width)
 
         return f
 
@@ -339,7 +369,7 @@ class Visualization(BaseManager):
 
         plt.axis('equal')
 
-    def _put_text_plt(self, f: np.ndarray, texts: list[str]):
+    def _put_text_plt(self, f: np.ndarray, texts: list[str], *args, **kwargs):
         plt.title(', '.join(texts))
 
 

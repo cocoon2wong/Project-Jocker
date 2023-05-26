@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-12-01 12:12:00
+@LastEditTime: 2023-05-25 17:52:07
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -87,6 +87,10 @@ class Model(tf.keras.Model, BaseManager):
 
         # Inference times
         self.inference_times: list[float] = []
+
+        # Extra model outputs and their indexes
+        self.ext_traj_wise_outputs: dict[int, str] = {}
+        self.ext_agent_wise_outputs: dict[int, str] = {}
 
     @property
     def structure(self) -> BaseManager:

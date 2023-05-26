@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-23 11:14:43
+@LastEditTime: 2023-05-26 15:45:18
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -591,6 +591,13 @@ class Structure(BaseManager):
             tv.log(f'Start saving images into `{img_dir}`...')
 
             pred_all = outputs[0].numpy()
+            traj_wise_outputs = dict([
+                (key, outputs[i].numpy())
+                for i, key in self.model.ext_traj_wise_outputs.items()])
+
+            agent_wise_outputs = dict([
+                (key, outputs[i].numpy())
+                for i, key in self.model.ext_agent_wise_outputs.items()])
 
             if self.args.draw_index == 'all':
                 agent_indexes = list(range(len(pred_all)))
@@ -606,6 +613,12 @@ class Structure(BaseManager):
                 # write traj
                 agent = self.agent_manager.agents[index]
                 agent._traj_pred = pred_all[index]
+
+                # extra outputs
+                to = dict([(k, v[index])
+                          for (k, v) in traj_wise_outputs.items()])
+                ao = dict([(k, v[index])
+                          for (k, v) in agent_wise_outputs.items()])
 
                 # choose to draw as a video or a single image
                 if self.args.draw_videos != 'null':
@@ -627,7 +640,9 @@ class Structure(BaseManager):
                         frames=frames,
                         save_name=save_format.format(index),
                         draw_dis=self.args.draw_distribution,
-                        save_as_images=save_image)
+                        save_as_images=save_image,
+                        traj_wise_outputs=to,
+                        agent_wise_outputs=ao)
 
             self.log(f'Prediction result images are saved at {img_dir}')
 
