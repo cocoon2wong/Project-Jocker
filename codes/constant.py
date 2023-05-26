@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-23 18:01:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 14:41:33
+@LastEditTime: 2023-05-25 14:54:55
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -30,6 +30,7 @@ class INPUT_TYPES():
     """
     OBSERVED_TRAJ = 'TRAJ'
     MAP = 'MAP'
+    MAP_PARAS = 'MAP_PARAS'
     DESTINATION_TRAJ = 'DEST'
     GROUNDTRUTH_TRAJ = 'GT'
     GROUNDTRUTH_SPECTRUM = 'GT_SPECTRUM'
