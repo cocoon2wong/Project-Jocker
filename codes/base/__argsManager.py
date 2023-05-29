@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-11-11 12:41:16
-@LastEditors: Beihao Xia
-@LastEditTime: 2023-05-11 09:46:40
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-05-29 14:36:03
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -150,19 +150,21 @@ class ArgsManager(BaseObject):
             try:
                 if argv[index].startswith('--'):
                     name = argv[index][2:]
-                    value = argv[index+1]
 
                 elif argv[index].startswith('-'):
                     name = argv[index][1:]
                     name = self._arg_short_name[name]  # <- may raise KeyError
-                    value = argv[index+1]
 
                 else:
                     index += 1
                     continue
 
-                dic[name] = value
-                index += 2
+                if (value := argv[index+1]).startswith('-'):
+                    dic[name] = True
+                    index += 1
+                else:
+                    dic[name] = value
+                    index += 2
 
             except IndexError:
                 break
