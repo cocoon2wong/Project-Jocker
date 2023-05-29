@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 20:10:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 12:29:16
+@LastEditTime: 2023-05-29 16:37:34
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -29,6 +29,9 @@ ANNOTATION_CONFIGS_FILE = './codes/annSettings.plist'
 INIT_POSITION = 10000
 
 # Context map configs
+SEG_IMG = 'segmentation_image'
+RGB_IMG = 'rgb_image'
+
 # WINDOW_EXPAND_PIXEL = 0.3
 # WINDOW_SIZE_PIXEL = 200.0
 WINDOW_EXPAND_PIXEL = 10.0

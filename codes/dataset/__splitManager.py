@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-19 11:19:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-22 20:25:56
+@LastEditTime: 2023-05-29 17:11:07
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -77,6 +77,11 @@ class Clip(BaseManager):
         self.__matrix = dic['matrix']
         self.__dataset = dic['dataset']
 
+        if (k := 'other_files') in dic.keys():
+            self.__other_files = dic[k]
+        else:
+            self.__other_files = {}
+
         # init temp path
         self.root_dir = os.path.dirname(self.annpath)
         self.temp_dir = os.path.join(ROOT_TEMP_DIR, self.dataset, self.clip_name)
@@ -101,6 +106,13 @@ class Clip(BaseManager):
         Path of the annotation file. 
         """
         return self.__annpath
+    
+    @property
+    def other_files(self) -> dict[str, str]:
+        """
+        Paths of all other dataset files.
+        """
+        return self.__other_files
 
     @property
     def order(self) -> list[int]:

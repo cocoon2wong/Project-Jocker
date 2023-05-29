@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-26 15:47:21
+@LastEditTime: 2023-05-29 16:32:30
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -368,15 +368,12 @@ class Args(ArgsManager):
         return self._arg('K_train', 10, argtype=STATIC)
 
     @property
-    def use_extra_maps(self) -> int:
+    def use_seg_maps(self) -> int:
         """
-        Controls if uses the calculated trajectory maps or the given
-        trajectory maps. The training manager will load maps from 
-        `./dataset_npz/.../agent1_maps/trajMap.png` if set it to `0`,
-        and load from `./dataset_npz/.../agent1_maps/trajMap_load.png` 
-        if set this argument to `1`.
+        Controls if uses the segmentation maps instead of the
+        calculated trajectory maps.
         """
-        return self._arg('use_extra_maps', 0, argtype=DYNAMIC)
+        return self._arg('use_seg_maps', 0, argtype=DYNAMIC)
 
     @property
     def anntype(self) -> str:
