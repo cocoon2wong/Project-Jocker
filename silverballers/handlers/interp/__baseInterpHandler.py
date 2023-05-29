@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-29 09:26:00
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-09 20:58:45
+@LastEditTime: 2023-05-25 19:43:53
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -37,6 +37,9 @@ class _BaseInterpHandlerModel(BaseHandlerModel):
 
         self.accept_batchK_inputs = True
         self.interp_layer = None
+
+        self.ext_traj_wise_outputs = {}
+        self.ext_agent_wise_outputs = {}
 
     def call(self, inputs: list[tf.Tensor],
              keypoints: tf.Tensor,

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-09 20:58:41
+@LastEditTime: 2023-05-29 10:38:10
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,10 +11,12 @@
 import numpy as np
 import tensorflow as tf
 
-from codes.constant import INPUT_TYPES
+from codes.constant import ANN_TYPES, INPUT_TYPES
+from codes.dataset.trajectories import Annotation
 from codes.managers import Model, SecondaryBar, Structure
+from codes.utils import POOLING_BEFORE_SAVING
 
-from ..__args import HandlerArgs
+from ..__args import HandlerArgs, SilverballersArgs
 
 
 class BaseHandlerModel(Model):
@@ -37,6 +39,7 @@ class BaseHandlerModel(Model):
         # GT in the inputs is only used when training
         self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
                         INPUT_TYPES.MAP,
+                        INPUT_TYPES.MAP_PARAS,
                         INPUT_TYPES.GROUNDTRUTH_TRAJ)
 
         # Parameters
@@ -45,6 +48,8 @@ class BaseHandlerModel(Model):
         self.points = points
         self.key_points = key_points
         self.accept_batchK_inputs = False
+
+        self.ext_traj_wise_outputs[1] = 'Interaction Scores'
 
         if self.asHandler or key_points != 'null':
             pi = [int(i) for i in key_points.split('_')]
@@ -58,6 +63,10 @@ class BaseHandlerModel(Model):
 
         self.set_preprocess(**preprocess)
 
+        if POOLING_BEFORE_SAVING:
+            self._upsampling = tf.keras.layers.UpSampling2D(
+                size=[5, 5], data_format='channels_last')
+
     @property
     def dim(self) -> int:
         """
@@ -65,6 +74,29 @@ class BaseHandlerModel(Model):
         For example, `dim = 4` for 2D bounding boxes.
         """
         return self.structure.annmanager.dim
+
+    @property
+    def map_picker(self) -> Annotation:
+        """
+        Picker object to fix all map-related fuctions' input
+        dimensions to `2` (2D center coordinate point).
+        If there is no need to fix these inputs, it will return
+        `None`.
+        """
+        # Play as a single model
+        if not self.asHandler:
+            if self.args.anntype != ANN_TYPES.CO_2D:
+                return self.structure.picker
+
+        # Play as the second-stage model
+        else:
+            if self.structure.manager.model.CO2BB:
+                return None
+
+            if self.structure.manager.args.anntype != ANN_TYPES.CO_2D:
+                return self.structure.get_manager(Structure).picker
+
+        return None
 
     def call(self, inputs: list[tf.Tensor],
              keypoints: tf.Tensor,
@@ -150,7 +182,98 @@ class BaseHandlerModel(Model):
                                            training=None)
 
         outputs_p = self.process(outputs, preprocess=False, training=training)
-        return outputs_p
+
+        # Calculate scores
+        if ((INPUT_TYPES.MAP in self.input_types) and
+                (INPUT_TYPES.MAP_PARAS in self.input_types)):
+
+            pred = outputs_p[0]
+            centers = inputs[0][..., -1, :]
+
+            if p := self.map_picker:
+                pred = p.get_center(pred)[..., :2]
+                centers = p.get_center(centers)[..., :2]
+
+            scores = self.score(trajs=pred,
+                                maps=inputs[1],
+                                map_paras=inputs[2],
+                                centers=centers)
+
+            pred_o = outputs_p[0]
+
+            # Pick trajectories
+            if self.asHandler:
+                run_args: SilverballersArgs = self.structure.manager.args
+                if (p := run_args.pick_trajectories) < 1.0 and scores.ndim >= 2:
+                    bs = tf.shape(scores)[0]
+                    _index = tf.argsort(scores, axis=-1, direction='ASCENDING')
+                    _index = _index[..., :int(p * scores.shape[-1])]
+
+                    # gather trajectories
+                    _index = _index[..., tf.newaxis]
+                    count = tf.range(bs)
+
+                    while count.ndim < _index.ndim:
+                        count = count[:, tf.newaxis]
+
+                    count = count * tf.ones_like(_index)
+                    new_index = tf.concat([count, _index], axis=-1)
+                    pred_o = tf.gather_nd(pred_o, new_index)
+
+            return (pred_o, scores) + outputs_p[1:]
+
+        else:
+            return outputs_p
+
+    def score(self, trajs: tf.Tensor,
+              maps: tf.Tensor,
+              map_paras: tf.Tensor,
+              centers: tf.Tensor):
+        """
+        Calculate the score of the predicted trajectory in the
+        social and scene interaction case.
+
+        :param trajs: Predicted trajectory, shape = `(batch, pred, 2)`.
+        :param maps: Trajectory map, shape = `(batch, a, a)`.
+        :param map_paras: Parameters of trajectory maps, shape = `(batch, 4)`.
+        :param centers: Centers of the trajectory map in the real scale. \
+            It is usually the last observed point of the 2D trajectory. \
+            Shape = `(batch, 1, 2)`. 
+        """
+        if POOLING_BEFORE_SAVING:
+            maps = self._upsampling(maps[..., tf.newaxis])[..., 0]
+
+        W = map_paras[:, :2]
+        b = map_paras[:, 2:]
+
+        while W.ndim != trajs.ndim:
+            W = W[:, tf.newaxis, :]
+            b = b[:, tf.newaxis, :]
+
+        while centers.ndim != trajs.ndim:
+            centers = centers[:, tf.newaxis, :]
+
+        trajs_global_grid = (trajs - b) * W
+        centers_global_grid = (centers - b) * W
+        bias_grid = trajs_global_grid - centers_global_grid
+        bias_grid = tf.cast(bias_grid, tf.int32)
+
+        s = tf.shape(maps)
+        map_center = tf.cast([s[-2]//2, s[-1]//2], tf.int32)
+        trajs_grid = map_center[tf.newaxis] + bias_grid
+        trajs_grid = tf.minimum(tf.maximum(trajs_grid, 0), s[-2])
+
+        count = tf.range(s[0])
+        while count.ndim != trajs_grid.ndim:
+            count = count[:, tf.newaxis]
+
+        agent_count = count * tf.ones_like(trajs_grid[..., :1])
+        index = tf.concat([agent_count, trajs_grid], axis=-1)
+
+        all_scores = tf.gather_nd(maps, index)
+        avg_scores = tf.reduce_sum(all_scores, axis=-1)
+
+        return avg_scores
 
     def print_info(self, **kwargs):
         info = {'Transform type': self.args.T,

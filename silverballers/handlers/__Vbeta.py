@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-23 10:23:53
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-23 16:25:18
+@LastEditTime: 2023-05-26 09:43:22
 @Description: Second stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -88,13 +88,12 @@ class VBModel(BaseHandlerModel):
         keypoints_md = keypoints
 
         # Only accept 2-dimensional trajectories
-        if training:
+        if picker := self.map_picker:
+            trajs = picker.get_center(trajs_md)[..., :2]
+            keypoints = picker.get_center(keypoints_md)[..., :2]
+        else:
             trajs = trajs_md
             keypoints = keypoints_md
-        else:
-            picker = self.structure.get_manager(BaseHandlerStructure).picker
-            trajs = picker.get_center(trajs_md)[..., :2]
-            keypoints = picker.get_center(keypoints)[..., :2]
 
         # Embedding and encoding
         # Transformations are applied in `self.te`
@@ -122,7 +121,7 @@ class VBModel(BaseHandlerModel):
         p = self.it_layer.call(p_fft)
         y = p[:, self.args.obs_frames:, :]
 
-        if training:
+        if not picker:
             return y
 
         # Calculate linear prediction (M-dimensional)

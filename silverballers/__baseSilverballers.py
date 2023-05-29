@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-22 20:42:50
+@LastEditTime: 2023-05-29 10:35:34
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,6 +13,7 @@ import tensorflow as tf
 from codes.base import BaseObject
 from codes.constant import ANN_TYPES, INPUT_TYPES
 from codes.managers import AnnotationManager, Model, Structure
+from codes.training import stack_results
 
 from .__args import AgentArgs, SilverballersArgs
 from .agents import BaseAgentModel, BaseAgentStructure
@@ -44,6 +45,7 @@ class BaseSilverballersModel(Model):
 
         self.args: SilverballersArgs
         self.manager: Structure
+        self.CO2BB: bool = None
 
         # processes are run in AgentModels and HandlerModels
         self.set_preprocess()
@@ -59,6 +61,10 @@ class BaseSilverballersModel(Model):
         self.agent_input_index = self.get_input_index(a_type)
         self.handler_input_index = self.get_input_index(h_type)
 
+        # Extra model outputs
+        self.ext_traj_wise_outputs = self.handler.ext_traj_wise_outputs
+        self.ext_agent_wise_outputs = self.handler.ext_agent_wise_outputs
+
     def get_input_index(self, input_type: list[str]):
         return [self.input_types.index(t) for t in input_type]
 
@@ -66,26 +72,28 @@ class BaseSilverballersModel(Model):
              training=None, mask=None,
              *args, **kwargs):
 
+        traj_index = self.agent_input_index[0]
+        self.CO2BB = False
+
         # Predict with `co2bb` (Coordinates to 2D bounding boxes)
         if self.args.force_anntype == ANN_TYPES.BB_2D and \
            self.agent.args.anntype == ANN_TYPES.CO_2D and \
            self.manager.split_manager.anntype == ANN_TYPES.BB_2D:
 
             # Flatten into a series of 2D points
+            self.CO2BB = True
             all_trajs = self.manager.get_member(AnnotationManager) \
-                .target.get_coordinate_series(inputs[0])
+                .target.get_coordinate_series(inputs[traj_index])
 
-        # Predict multiple times along with the time axis
         else:
-            all_trajs = [inputs[0]]
+            all_trajs = [inputs[traj_index]]
 
         results = []
-        while len(all_trajs):
-            traj = all_trajs.pop(0)
-            inputs_new = (traj,) + inputs[1:]
-
+        other_results = []
+        for traj in all_trajs:
             # call the first stage model
-            agent_inputs = [inputs_new[i] for i in self.agent_input_index]
+            agent_inputs = [traj] + [inputs[i]
+                                     for i in self.agent_input_index[1:]]
             agent_proposals = self.agent.forward(agent_inputs)[0]
 
             # down sampling from K*Kc generations (if needed)
@@ -97,38 +105,24 @@ class BaseSilverballersModel(Model):
                 agent_proposals = tf.gather(agent_proposals, new_index, axis=1)
 
             # call the second stage model
-            handler_inputs = [inputs_new[i] for i in self.handler_input_index]
+            handler_inputs = [traj] + [inputs[i]
+                                       for i in self.handler_input_index[1:]]
             handler_inputs.append(agent_proposals)
-            final_results = self.handler.forward(handler_inputs)[0]
+            outputs = self.handler.forward(handler_inputs)
 
-            # process results
-            if self.args.pred_frames > self.agent.args.pred_frames:
-                i = self.args.pred_interval
+            # save results
+            results.append(outputs[0])
+            other_results = stack_results(list(outputs[1:]))
 
-                # reshape into (batch, pred, dim)
-                final_results = final_results[:, 0, :, :]
-
-                if not len(results):
-                    results.append(final_results)
-                else:
-                    results[0] = tf.concat([results[0],
-                                            final_results[:, -i:, :]], axis=-2)
-
-                # check current predictions
-                if results[0].shape[-2] >= self.args.pred_frames:
-                    results[0] = results[0][:, :self.args.pred_frames, :]
-                    break
-
-                # get next observations
-                whole_traj = tf.concat([traj, final_results], axis=-2)
-
-                new_obs_traj = whole_traj[:, i:i+self.args.obs_frames, :]
-                all_trajs.append(new_obs_traj)
-
+        if self.CO2BB:
+            trajs = tf.concat(results, axis=-1)
+            if len(other_results):
+                return [trajs, other_results[0]]
             else:
-                results.append(final_results)
+                return [trajs]
 
-        return (tf.concat(results, axis=-1),)
+        else:
+            return results + other_results
 
     def print_info(self, **kwargs):
         info = {'Index of keypoints': self.agent.p_index,

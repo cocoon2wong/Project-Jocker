@@ -67,6 +67,9 @@ About the `argtype`:
 - `--draw_exclude_type` (short for `-det`): type=`str`, argtype=`temporary`.
   Draw visualized results of agents except user-assigned types. If the assigned types are `"Biker_Cart"` and the `draw_results` or `draw_videos` is not `"null"`, it will draw results of all types of agents except "Biker" and "Cart". It supports partial match and it is case-sensitive. 
   The default value is `null`.
+- `--draw_extra_outputs`: type=`int`, argtype=`temporary`.
+  Choose whether to draw (put text) extra model outputs on the visualized images. 
+  The default value is `0`.
 - `--draw_index`: type=`str`, argtype=`temporary`.
   Indexes of test agents to visualize. Numbers are split with `_`. For example, `'123_456_789'`. 
   The default value is `all`.
@@ -181,9 +184,9 @@ About the `argtype`:
 - `--loadb` (short for `-lb`): type=`str`, argtype=`temporary`.
   Path to load the second-stage handler model. 
   The default value is `null`.
-- `--pred_interval` (short for `-pi`): type=`int`, argtype=`temporary`.
-  Prediction interval in frames for recurrent prediction. It only works when `args.pred_frames` is larger than the `pred_frames` recorded in the agent model. 
-  The default value is `-1`.
+- `--pick_trajectories` (short for `-p`): type=`float`, argtype=`temporary`.
+  Calculates the sum of the context map values of the predicted trajectories and picks the top n (percentage) best predictions. This parameter is only valid when the model's input contains `MAPS` and `MAP_PARAS`. 
+  The default value is `1.0`.
 - `--preprocess`: type=`str`, argtype=`static`.
   Controls whether to run any pre-process before the model inference. It accepts a 3-bit-like string value (like `'111'`): - The first bit: `MOVE` trajectories to (0, 0); - The second bit: re-`SCALE` trajectories; - The third bit: `ROTATE` trajectories. 
   The default value is `111`.

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:41:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-09 17:34:19
+@LastEditTime: 2023-05-29 10:32:59
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -144,12 +144,12 @@ class SilverballersArgs(_BaseSilverballersArgs):
         Path to load the second-stage handler model.
         """
         return self._arg('loadb', 'null', argtype=TEMPORARY, short_name='lb')
-    
+
     @property
-    def pred_interval(self) -> int:
+    def pick_trajectories(self) -> float:
         """
-        Prediction interval in frames for recurrent prediction.
-        It only works when `args.pred_frames` is larger than the
-        `pred_frames` recorded in the agent model.
+        Calculates the sum of the context map values of the predicted trajectories
+        and picks the top n (percentage) best predictions. This parameter is only
+        valid when the model's input contains `MAPS` and `MAP_PARAS`.
         """
-        return self._arg('pred_interval', -1, argtype=TEMPORARY, short_name='pi')
+        return self._arg('pick_trajectories', 1.0, argtype=TEMPORARY, short_name='p')
