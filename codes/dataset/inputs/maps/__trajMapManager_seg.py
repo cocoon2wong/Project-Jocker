@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2023-05-22 16:26:35
-@LastEditors: Conghao Wong
-@LastEditTime: 2023-05-29 19:51:07
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-05-29 20:27:55
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -84,7 +84,7 @@ class TrajMapManager_seg(TrajMapManager):
         # save global trajectory map
         cv2.imwrite(self.temp_files['GLOBAL_FILE'], source)
 
-        return source
+        return source/255
 
     def pixel2real(self, pixel: np.ndarray):
         weights = self.working_clip.matrix
