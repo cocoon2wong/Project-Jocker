@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
-@LastEditors: Conghao Wong
-@LastEditTime: 2023-05-29 10:38:10
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-05-29 10:52:21
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -261,7 +261,7 @@ class BaseHandlerModel(Model):
         s = tf.shape(maps)
         map_center = tf.cast([s[-2]//2, s[-1]//2], tf.int32)
         trajs_grid = map_center[tf.newaxis] + bias_grid
-        trajs_grid = tf.minimum(tf.maximum(trajs_grid, 0), s[-2])
+        trajs_grid = tf.minimum(tf.maximum(trajs_grid, 0), s[-2]-1)
 
         count = tf.range(s[0])
         while count.ndim != trajs_grid.ndim:
