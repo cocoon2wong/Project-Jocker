@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-05-22 16:26:26
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-23 10:45:18
+@LastEditTime: 2023-05-29 19:49:39
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -12,10 +12,11 @@ import numpy as np
 
 from ....base import BaseManager, SecondaryBar
 from ....constant import INPUT_TYPES
-from ....utils import AVOID_SIZE, INTEREST_SIZE, MAP_HALF_SIZE
+from ....utils import AVOID_SIZE, INTEREST_SIZE
 from ...__splitManager import Clip
 from ...trajectories import Agent
 from ..__baseInputManager import BaseInputManager
+from .__mapParasManager import MapParasManager
 from .__trajMapManager import TrajMapManager
 from .__utils import add, cut, pooling2D
 
@@ -32,8 +33,7 @@ class SocialMapManager(TrajMapManager):
     social interactions.
     """
 
-    TEMP_FILES = {'FILE': 'socialMap.npy',
-                  'FILE_WITH_POOLING': 'socialMap_pooling.npy'}
+    TEMP_FILES = {'FILE': 'socialMap.npy'}
 
     MAP_NAME = 'Social Map'
     INPUT_TYPE = INPUT_TYPES.MAP
@@ -42,18 +42,10 @@ class SocialMapManager(TrajMapManager):
                  pool_maps=False,
                  name='Social Map Manager'):
 
-        BaseInputManager.__init__(self, manager, name)
+        super().__init__(manager, pool_maps, name)
 
-        self.POOL = pool_maps
-
-        # Parameters
-        self.map_type: str = None
-
-        # Configs
-        self.HALF_SIZE = MAP_HALF_SIZE
-        self.void_map: np.ndarray = None
-        self.W: np.ndarray = None
-        self.b: np.ndarray = None
+        if pool_maps:
+            self.TEMP_FILES['FILE_WITH_POOLING'] = 'socialMap_pooling.npy'
 
     def run(self, clip: Clip,
             agents: list[Agent],
@@ -66,23 +58,11 @@ class SocialMapManager(TrajMapManager):
                                     max_neighbor=max_neighbor,
                                     *args, **kwargs)
 
-    def save(self, *args, **kwargs) -> None:
-        self.build_local_maps(*args, **kwargs)
-
-    def load(self, *args, **kwargs) -> list[np.ndarray]:
-        # Load maps from the saved file
-        if not self.POOL:
-            f = self.temp_files['FILE']
-        else:
-            f = self.temp_files['FILE_WITH_POOLING']
-
-        return 0.5 * np.load(f, allow_pickle=True)
-
-    def build_local_maps(self, agents: list[Agent],
-                         source: np.ndarray = None,
-                         regulation=True,
-                         max_neighbor=15,
-                         *args, **kwargs):
+    def save(self, agents: list[Agent],
+             source: np.ndarray = None,
+             regulation=True,
+             max_neighbor=15,
+             *args, **kwargs):
         """
         Build and save local social maps for all agents.
 
@@ -96,36 +76,33 @@ class SocialMapManager(TrajMapManager):
             the social map. Set it to a smaller value to speed up the building
             on datasets that contain more agents.
         """
-
-        # Init the map manager
-        trajmap_manager = self.manager.get_member(TrajMapManager)
-        self.void_map = trajmap_manager.void_map
-        self.W = trajmap_manager.W
-        self.b = trajmap_manager.b
-
         maps = []
         for agent in SecondaryBar(agents,
                                   manager=self.manager,
                                   desc=f'Building {self.MAP_NAME}...'):
 
             # build the global social map
-            if type(source) == type(None):
-                source = self.void_map
+            if source is None:
+                source = self.map_mgr.void_map
 
-            C = self.C
             source = source.copy()
+
+            # Get center points
+            traj = self.C(agent.traj)
+            pred_linear = self.C(agent.pred_linear)
+            pred_linear_neighbor = self.C(agent.pred_linear_neighbor)
 
             # Destination
             source = add(target_map=source,
-                         grid_trajs=self.real2grid(C(agent.pred_linear)),
+                         grid_trajs=self.real2grid(pred_linear),
                          amplitude=[-2],
                          radius=INTEREST_SIZE)
 
             # Interplay
-            traj_neighbors = C(agent.pred_linear_neighbor)
+            traj_neighbors = pred_linear_neighbor
             amp_neighbors = []
 
-            vec_target = C(agent.pred_linear[-1] - agent.pred_linear[0])
+            vec_target = pred_linear[-1] - pred_linear[0]
             len_target = calculate_length(vec_target)
 
             vec_neighbor = traj_neighbors[:, -1] - traj_neighbors[:, 0]
@@ -167,7 +144,7 @@ class SocialMapManager(TrajMapManager):
 
             # Get the local social map from the global map
             # center point: the last observed point
-            center_real = C(agent.traj[-1:, :])
+            center_real = traj[-1:, :]
             center_pixel = self.real2grid(center_real)
             local_map = cut(source, center_pixel, self.HALF_SIZE)[0]
             maps.append(local_map)

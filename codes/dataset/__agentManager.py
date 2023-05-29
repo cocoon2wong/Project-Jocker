@@ -145,12 +145,13 @@ class AgentManager(BaseManager):
         if (t := INPUT_TYPES.MAP) in inputs_type:
             p = POOLING_BEFORE_SAVING
             self.ext_types.append(t)
+            self.ext_mgrs.append(maps.MapParasManager(self))
             self.ext_mgrs.append(maps.TrajMapManager(self, p))
+            self.ext_mgrs.append(maps.TrajMapManager_seg(self, p))
             self.ext_mgrs.append(maps.SocialMapManager(self, p))
 
         if (t := INPUT_TYPES.MAP_PARAS) in inputs_type:
             self.ext_types.append(t)
-            self.ext_mgrs.append(maps.MapParasManager(self))
 
         self.model_inputs = inputs_type
         self.model_labels = labels_type

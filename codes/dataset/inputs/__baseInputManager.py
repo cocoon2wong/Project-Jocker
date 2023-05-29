@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-05-19 09:51:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-23 10:44:04
+@LastEditTime: 2023-05-29 19:32:57
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -132,14 +132,14 @@ class BaseInputManager(BaseManager):
 
     def save(self, *args, **kwargs) -> Any:
         """
-        Load original dataset files.
+        Process original dataset files and them save the processed
+        temp files.
         """
         raise NotImplementedError
     
     def load(self, *args, **kwargs) -> list:
         """
-        Process and sample the processed data to a list of values
-        to train or test.
+        Load the processed data to a list of values to train or test.
         """
         raise NotImplementedError
     
