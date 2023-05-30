@@ -2,7 +2,7 @@
 @Author: Beihao Xia
 @Date: 2023-03-20 16:15:25
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 12:00:22
+@LastEditTime: 2023-05-30 10:16:16
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Beihao Xia, All Rights Reserved.
@@ -55,7 +55,8 @@ class MinimalVModel(Model):
         self.it1 = self.ITlayer(Oshape=(self.args.pred_frames, self.dim))
 
         if type(self.t1) == layers.NoneTransformLayer:
-            self.te = layers.TrajEncoding(self.d//2, tf.nn.relu, transform_layer=None)
+            self.te = layers.TrajEncoding(
+                self.d//2, tf.nn.relu, transform_layer=None)
         else:
             self.te = layers.TrajEncoding(self.d//2, tf.nn.relu, self.t1)
         self.Tsteps_en = self.t1.Tshape[0]
@@ -89,28 +90,28 @@ class MinimalVModel(Model):
         trajs = inputs[0]
         bs = trajs.shape[0]
 
-        f = self.te.call(trajs)     # (batch, obs, d/2)
+        f = self.te(trajs)     # (batch, obs, d/2)
 
         # Sample random predictions
         all_predictions = []
         rep_time = 1
-        t_outputs = self.t1.call(trajs)
+        t_outputs = self.t1(trajs)
 
         for _ in range(rep_time):
 
             ids = tf.random.normal([bs, self.Tsteps_en, self.d_id])
-            id_features = self.ie.call(ids)
+            id_features = self.ie(ids)
 
             t_inputs = self.concat([f, id_features])
-            t_features, _ = self.T.call(t_inputs, t_outputs, training)
+            t_features, _ = self.T(t_inputs, t_outputs, training)
 
             adj = tf.transpose(self.adj_fc(t_inputs), [0, 2, 1])
-            t_features = self.gcn.call(t_features, adj)
+            t_features = self.gcn(t_features, adj)
 
             y = self.decoder_fc1(t_features)
             y = self.decoder_fc2(y)
 
-            y = self.it1.call(y)
+            y = self.it1(y)
 
             all_predictions.append(y)
 

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-23 10:23:53
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-26 09:43:22
+@LastEditTime: 2023-05-30 09:59:00
 @Description: Second stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -97,8 +97,8 @@ class VBModel(BaseHandlerModel):
 
         # Embedding and encoding
         # Transformations are applied in `self.te`
-        traj_feature = self.te.call(trajs)    # (batch, input_Tsteps, d//2)
-        context_feature = self.ce.call(maps)  # (batch, input_Tsteps, d//2)
+        traj_feature = self.te(trajs)    # (batch, input_Tsteps, d//2)
+        context_feature = self.ce(maps)  # (batch, input_Tsteps, d//2)
 
         # transformer inputs shape = (batch, input_Tsteps, d)
         t_inputs = tf.concat([traj_feature, context_feature], axis=-1)
@@ -108,17 +108,17 @@ class VBModel(BaseHandlerModel):
         keypoints = tf.concat([trajs[:, -1:, :], keypoints], axis=1)
 
         # Add the last obs point to finish linear interpolation
-        linear_pred = self.linear_int.call(keypoints_index, keypoints)
+        linear_pred = self.linear_int(keypoints_index, keypoints)
         traj = tf.concat([trajs, linear_pred], axis=-2)
-        t_outputs = self.t_layer.call(traj)
+        t_outputs = self.t_layer(traj)
 
         # transformer output shape = (batch, output_Tsteps, Tchannels)
-        p_fft, _ = self.transformer.call(t_inputs,
-                                         t_outputs,
-                                         training=training)
+        p_fft, _ = self.transformer(t_inputs,
+                                    t_outputs,
+                                    training=training)
 
         # Inverse transform
-        p = self.it_layer.call(p_fft)
+        p = self.it_layer(p_fft)
         y = p[:, self.args.obs_frames:, :]
 
         if not picker:
@@ -126,7 +126,7 @@ class VBModel(BaseHandlerModel):
 
         # Calculate linear prediction (M-dimensional)
         keypoints_md = tf.concat([trajs_md[:, -1:, :], keypoints_md], axis=1)
-        l = self.linear_int.call(keypoints_index, keypoints_md)
+        l = self.linear_int(keypoints_index, keypoints_md)
 
         # Linear center points
         l_center = picker.get_center(l)[tf.newaxis]

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 10:38:49
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-22 20:21:50
+@LastEditTime: 2023-05-30 09:55:41
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -21,7 +21,7 @@ class BaseProcessLayer(tf.keras.layers.Layer):
 
     def __init__(self, anntype: str, ref,
                  *args, **kwargs):
-                 
+
         super().__init__(*args, **kwargs)
 
         self.ref = ref
@@ -47,11 +47,12 @@ class BaseProcessLayer(tf.keras.layers.Layer):
 
         trajs = inputs[0]
         if preprocess:
-            trajs_processed = self.preprocess(trajs, use_new_paras=update_paras)
-        
+            trajs_processed = self.preprocess(
+                trajs, use_new_paras=update_paras)
+
         else:
             trajs_processed = self.postprocess(trajs)
-        
+
         return update((trajs_processed,), inputs)
 
     def preprocess(self, trajs: tf.Tensor, use_new_paras=True) -> tf.Tensor:
@@ -99,12 +100,13 @@ class ProcessModel(tf.keras.Model):
 
         else:
             layers = self.players[::-1]
-        
+
         for p in layers:
-            inputs = p.call(inputs, preprocess,
-                            update_paras, training, 
-                            *args, **kwargs)
+            inputs = p(inputs, preprocess,
+                       update_paras, training,
+                       *args, **kwargs)
         return inputs
+
 
 def update(new: Union[tuple, list],
            old: Union[tuple, list]) -> tuple:
@@ -118,4 +120,3 @@ def update(new: Union[tuple, list],
         return new + old[len(new):]
     else:
         return new
-        

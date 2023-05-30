@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
-@LastEditors: Beihao Xia
-@LastEditTime: 2023-05-29 10:52:21
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-05-30 09:58:11
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -126,9 +126,9 @@ class BaseHandlerModel(Model):
                                   update_main_bar=True):
 
                 # Run stage-2 network on a batch of inputs
-                pred = self.call(inputs=inputs,
-                                 keypoints=keypoints[:, k, :, :],
-                                 keypoints_index=keypoints_index)
+                pred = self(inputs=inputs,
+                            keypoints=keypoints[:, k, :, :],
+                            keypoints_index=keypoints_index)
 
                 if type(pred) not in [list, tuple]:
                     pred = [pred]
@@ -139,9 +139,9 @@ class BaseHandlerModel(Model):
             return tf.transpose(tf.stack(p_all), [1, 0, 2, 3])
 
         else:
-            return self.call(inputs=inputs,
-                             keypoints=keypoints,
-                             keypoints_index=keypoints_index)
+            return self(inputs=inputs,
+                        keypoints=keypoints,
+                        keypoints_index=keypoints_index)
 
     def forward(self, inputs: list[tf.Tensor],
                 training=None,
@@ -169,10 +169,10 @@ class BaseHandlerModel(Model):
             points = tf.gather(gt_processed, index, axis=1)
             index = tf.cast(index, tf.float32)
 
-            outputs = self.call(inputs_p,
-                                keypoints=points,
-                                keypoints_index=index,
-                                training=True)
+            outputs = self(inputs_p,
+                           keypoints=points,
+                           keypoints_index=index,
+                           training=True)
 
         # use as the second stage model
         else:

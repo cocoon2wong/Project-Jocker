@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-15 20:13:07
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-12-06 19:47:07
+@LastEditTime: 2023-05-30 09:53:59
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -37,7 +37,7 @@ class LinearModel(Model):
 
     def call(self, inputs, training=None, *args, **kwargs):
         trajs = inputs[0]
-        return self.linear.call(trajs)
+        return self.linear(trajs)
 
 
 class Linear(Structure):

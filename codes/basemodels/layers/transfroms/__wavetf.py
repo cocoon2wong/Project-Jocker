@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-05-09 20:28:47
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-09 20:29:21
+@LastEditTime: 2023-05-30 09:53:29
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -33,7 +33,7 @@ class Haar1D(_BaseTransformLayer):
     def kernel_function(self, inputs: tf.Tensor, *args, **kwargs):
 
         # (batch, steps, channels) -> (batch, steps//2, 2*channels)
-        haar = self.haar.call(inputs)
+        haar = self.haar(inputs)
 
         return haar
 
@@ -57,7 +57,7 @@ class InverseHaar1D(_BaseTransformLayer):
                         *args, **kwargs) -> tf.Tensor:
 
         # (batch, steps//2, 2*channels) -> (batch, steps, channels)
-        r = self.haar.call(inputs)
+        r = self.haar(inputs)
 
         return r
 
@@ -75,7 +75,7 @@ class DB2_1D(_BaseTransformLayer):
         return (self.steps//2, self.channels*2)
 
     def kernel_function(self, inputs: tf.Tensor, *args, **kwargs):
-        return self.daub.call(inputs)
+        return self.daub(inputs)
 
 
 class InverseDB2_1D(_BaseTransformLayer):
@@ -91,4 +91,4 @@ class InverseDB2_1D(_BaseTransformLayer):
         return (self.steps//2, self.channels*2)
 
     def kernel_function(self, inputs: tf.Tensor, *args, **kwargs):
-        return self.daub.call(inputs)
+        return self.daub(inputs)

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-05 16:00:26
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 12:05:30
+@LastEditTime: 2023-05-30 10:18:31
 @Description: First stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -93,34 +93,34 @@ class VAModel(BaseAgentModel):
         bs = trajs.shape[0]
 
         # feature embedding and encoding -> (batch, obs, d)
-        spec_features = self.te.call(trajs)
+        spec_features = self.te(trajs)
 
         all_predictions = []
         rep_time = self.args.K_train if training else self.args.K
         for _ in range(rep_time):
             # assign random ids and embedding -> (batch, obs, d)
             ids = tf.random.normal([bs, self.Tsteps_en, self.d_id])
-            id_features = self.ie.call(ids)
+            id_features = self.ie(ids)
 
             # transformer inputs
             t_inputs = self.concat([spec_features, id_features])
-            t_outputs = self.t1.call(trajs)
+            t_outputs = self.t1(trajs)
 
             # transformer -> (batch, obs, d)
-            behavior_features, _ = self.T.call(inputs=t_inputs,
-                                               targets=t_outputs,
-                                               training=training)
+            behavior_features, _ = self.T(inputs=t_inputs,
+                                          targets=t_outputs,
+                                          training=training)
 
             # features -> (batch, Kc, d)
             adj = tf.transpose(self.adj_fc(t_inputs), [0, 2, 1])
-            m_features = self.gcn.call(behavior_features, adj)
+            m_features = self.gcn(behavior_features, adj)
 
             # predicted keypoints -> (batch, Kc, key, 2)
             y = self.decoder_fc1(m_features)
             y = self.decoder_fc2(y)
             y = self.decoder_reshape(y)
 
-            y = self.it1.call(y)
+            y = self.it1(y)
             all_predictions.append(y)
 
         return tf.concat(all_predictions, axis=1)

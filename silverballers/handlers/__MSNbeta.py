@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-10-20 20:09:14
-@LastEditors: Beihao Xia
-@LastEditTime: 2023-03-02 21:50:27
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-05-30 10:18:47
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -40,7 +40,7 @@ class MSNBetaModel(BaseHandlerModel):
         # context feature
         if not POOLING_BEFORE_SAVING:
             self.average_pooling = tf.keras.layers.AveragePooling2D([5, 5],
-                                                                input_shape=[100, 100, 1])
+                                                                    input_shape=[100, 100, 1])
 
         self.flatten = tf.keras.layers.Flatten()
         self.context_dense1 = tf.keras.layers.Dense((self.args.obs_frames+1) * 64,
@@ -94,7 +94,7 @@ class MSNBetaModel(BaseHandlerModel):
                                       self.args.pred_frames,
                                       return_zeros=False)
         # return t_outputs
-        predictions, _ = self.transformer.call(t_inputs, t_outputs)
+        predictions, _ = self.transformer(t_inputs, t_outputs)
 
         return predictions
 

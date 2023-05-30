@@ -2,7 +2,7 @@
 @Author: Beihao Xia
 @Date: 2022-11-02 16:14:01
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 12:05:01
+@LastEditTime: 2023-05-30 10:17:08
 @Description: file content
 @Github: https://github.com/conghaowoooong
 @Copyright 2022 Beihao Xia, All Rights Reserved.
@@ -102,8 +102,8 @@ class Agent47BEModel(BaseAgentModel):
 
         # feature embedding and encoding -> (batch, Tchannels, d/2)
         # uses bilinear structure to encode features
-        f1 = self.te.call(trajs)             # (batch, Tchannels, d/2)
-        f2 = self.outer.call(f1, f1)           # (batch, Tchannels, d/2, d/2)
+        f1 = self.te(trajs)             # (batch, Tchannels, d/2)
+        f2 = self.outer(f1, f1)           # (batch, Tchannels, d/2, d/2)
         f3 = self.pooling(f2)                 # (batch, Tchannels, d/4, d/4)
         f4 = tf.reshape(f3, [f3.shape[0], f3.shape[1], -1])
         spec_features = self.outer_fc(f4)    # (batch, Tchannels, d/2)
@@ -113,33 +113,33 @@ class Agent47BEModel(BaseAgentModel):
         rep_time = self.args.K_train if training else self.args.K
 
         # (batch, Tsteps, Tchannels)
-        t_outputs1 = self.t1.call(trajs)
+        t_outputs1 = self.t1(trajs)
         # (batch, Tchannels, Tsteps)
         t_outputs = tf.transpose(t_outputs1, [0, 2, 1])
 
         for _ in range(rep_time):
             # assign random ids and embedding -> (batch, Tchannels, d/2)
             ids = tf.random.normal([bs, self.Tchannels_en, self.d_id])
-            id_features = self.ie.call(ids)
+            id_features = self.ie(ids)
 
             # transformer inputs
             # shapes are (batch, Tchannels, d)
             t_inputs = self.concat([spec_features, id_features])
 
             # transformer -> (batch, Tchannels, d)
-            behavior_features, _ = self.T.call(inputs=t_inputs,
-                                               targets=t_outputs,
-                                               training=training)
+            behavior_features, _ = self.T(inputs=t_inputs,
+                                          targets=t_outputs,
+                                          training=training)
 
             # multi-style features -> (batch, Kc, 2d)
             adj = tf.transpose(self.adj_fc(t_inputs), [0, 2, 1])
-            m_features = self.gcn.call(behavior_features, adj)
+            m_features = self.gcn(behavior_features, adj)
 
             y = self.decoder_fc1(m_features)
             y = self.decoder_fc2(y)
             y = self.decoder_reshape(y)  # (batch, Kc, Tsteps, Tchannels)
 
-            y = self.it1.call(y)
+            y = self.it1(y)
             all_predictions.append(y)
 
         return tf.concat(all_predictions, axis=1)

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-29 09:49:26
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-09 20:34:36
+@LastEditTime: 2023-05-30 09:59:22
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -30,4 +30,4 @@ class NewtonHandlerModel(_BaseInterpHandlerModel):
         value = tf.concat([obs_position, value], axis=-2)
 
         # Calculate linear interpolation -> (batch, pred, 2)
-        return self.interp_layer.call(index, value, ord=len(index)-1)
+        return self.interp_layer(index, value, ord=len(index)-1)

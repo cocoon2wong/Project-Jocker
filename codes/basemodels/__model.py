@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-25 17:52:07
+@LastEditTime: 2023-05-30 09:54:43
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -224,9 +224,9 @@ class Model(tf.keras.Model, BaseManager):
         if self.processor is None:
             return inputs
 
-        inputs = self.processor.call(inputs, preprocess,
-                                     update_paras, training,
-                                     *args, **kwargs)
+        inputs = self.processor(inputs, preprocess,
+                                update_paras, training,
+                                *args, **kwargs)
         return inputs
 
     def load_weights_from_logDir(self, weights_dir: str):

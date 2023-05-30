@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-09-13 21:18:29
-@LastEditors: Beihao Xia
-@LastEditTime: 2023-03-02 20:57:07
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-05-30 09:59:47
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -110,9 +110,9 @@ class MSNAlphaModel(BaseAgentModel):
         t_outputs = positions
 
         # shape == (batch, obs, 128)
-        t_features, _ = self.T1.call(t_inputs,
-                                     t_outputs,
-                                     training=training)
+        t_features, _ = self.T1(t_inputs,
+                                t_outputs,
+                                training=training)
 
         # transfer GCN
         adj_matrix_transfer_T = self.adj_dense2(
