@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-27 20:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-09 21:01:46
+@LastEditTime: 2023-05-30 10:39:51
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,7 +11,7 @@
 from codes.args import Args
 from codes.constant import INTERPOLATION_TYPES
 
-from . import agents, handlers
+from . import agents, alpha_agents, handlers
 from .__args import SilverballersArgs
 from .__baseSilverballers import BaseSilverballers
 from .__MiniV import MinimalV, MinimalVModel
@@ -63,6 +63,9 @@ __SILVERBALLERS_DICT = dict(
     agent47BCE=[agents.Agent47BCE, agents.Agent47BCEModel],
     agent47C=[agents.Agent47C, agents.Agent47CModel],
     agent47CE=[agents.Agent47CE, agents.Agent47CEModel],
+
+    # ALPHA series
+    s300g=[alpha_agents.Sieger300Ghost, alpha_agents.Sieger300GhostModel],
 
     # Silverballers Structures (Traditional)
     V=[V, None],
