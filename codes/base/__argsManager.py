@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-11 12:41:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-29 14:36:03
+@LastEditTime: 2023-05-30 14:53:31
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -159,7 +159,8 @@ class ArgsManager(BaseObject):
                     index += 1
                     continue
 
-                if (value := argv[index+1]).startswith('-'):
+                if ((value := argv[index+1]).startswith('-')
+                        and value[1] not in '0123456789'):
                     dic[name] = True
                     index += 1
                 else:
