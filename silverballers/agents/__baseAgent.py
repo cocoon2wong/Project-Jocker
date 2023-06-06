@@ -177,4 +177,4 @@ class BaseAgentStructure(Structure):
 
         labels_key = tf.gather(labels[0], indices, axis=-2)
 
-        return self.ADE([pred], [labels_key], coe)
+        return self.loss.ADE([pred], [labels_key], coe)
