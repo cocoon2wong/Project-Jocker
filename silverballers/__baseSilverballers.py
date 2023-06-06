@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-29 10:35:34
+@LastEditTime: 2023-06-06 09:17:23
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -125,7 +125,8 @@ class BaseSilverballersModel(Model):
             return results + other_results
 
     def print_info(self, **kwargs):
-        info = {'Index of keypoints': self.agent.p_index,
+        info = {'Indices of future keypoints': self.agent.future_keypoints_indices,
+                'Indices of past keypoints': self.agent.past_keypoints_indices,
                 'Stage-1 Subnetwork': f"'{self.agent.name}' from '{self.structure.args.loada}'",
                 'Stage-2 Subnetwork': f"'{self.handler.name}' from '{self.structure.args.loadb}'"}
 

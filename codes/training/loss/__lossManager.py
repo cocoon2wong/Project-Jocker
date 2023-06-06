@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 11:13:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-22 20:22:02
+@LastEditTime: 2023-06-06 09:16:15
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -41,25 +41,6 @@ class LossManager(BaseManager):
     @property
     def pickers(self) -> AnnotationManager:
         return self.manager.get_member(AnnotationManager)
-
-    @property
-    def p_index(self) -> tf.Tensor:
-        """
-        Time step of predicted key points.
-        """
-        if 'key_points' in self.args.__dir__() and self.args.key_points != 'null':
-            p_index = [int(i) for i in self.args.key_points.split('_')]
-        else:
-            p_index = list(range(self.args.pred_frames))
-
-        return tf.cast(p_index, tf.int32)
-
-    @property
-    def p_len(self) -> int:
-        """
-        Length of predicted key points.
-        """
-        return len(self.p_index)
 
     def set(self, loss_dict: Union[dict[Any, float],
                                    list[tuple[Any, tuple[float, dict]]]]):
@@ -158,40 +139,6 @@ class LossManager(BaseManager):
         Support M-dimensional trajectories.
         """
         return ADE_2D(outputs[0], labels[0], coe=coe)
-
-    def keyl2(self, outputs: list[tf.Tensor],
-              labels: list[tf.Tensor],
-              coe: float = 1.0,
-              *args, **kwargs):
-        """
-        l2 loss on the keypoints.
-        Support M-dimensional trajectories.
-        """
-        labels_pickled = tf.gather(labels[0], self.p_index, axis=-2)
-        return ADE_2D(outputs[0], labels_pickled, coe=coe)
-
-    def avgKey(self, outputs: list[tf.Tensor],
-               labels: list[tf.Tensor],
-               coe: float = 1.0,
-               *args, **kwargs):
-        """
-        l2 (2D-point-wise) loss on the keypoints.
-
-        :param outputs: A list of tensors, where `outputs[0].shape`
-            is `(batch, K, pred, 2)` or `(batch, pred, 2)`
-            or `(batch, K, n_key, 2)` or `(batch, n_key, 2)`.
-        :param labels: Shape of `labels[0]` is `(batch, pred, 2)`.
-        """
-        pred = outputs[0]
-        if pred.ndim == 3:
-            pred = pred[:, tf.newaxis, :, :]
-
-        if pred.shape[-2] != self.p_len:
-            pred = tf.gather(pred, self.p_index, axis=-2)
-
-        labels_key = tf.gather(labels[0], self.p_index, axis=-2)
-
-        return self.ADE([pred], [labels_key], coe)
 
     def ADE(self, outputs: list[tf.Tensor],
             labels: list[tf.Tensor],
