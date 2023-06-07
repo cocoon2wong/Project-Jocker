@@ -2,7 +2,7 @@
 @Author: Beihao Xia
 @Date: 2023-03-20 16:15:25
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-30 10:16:16
+@LastEditTime: 2023-06-07 11:17:45
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Beihao Xia, All Rights Reserved.
@@ -14,7 +14,7 @@ from codes.basemodels import Model, layers, transformer
 from codes.constant import INPUT_TYPES
 from codes.training import Structure
 
-from .__args import AgentArgs
+from .agents import AgentArgs
 
 
 class MinimalVModel(Model):

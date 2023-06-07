@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-20 15:28:14
-@LastEditors: Beihao Xia
-@LastEditTime: 2023-03-28 15:32:48
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-06-07 15:34:48
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -19,8 +19,7 @@ from scripts.update_readme import print_help_info
 from scripts.utils import get_value
 
 
-if __name__ == '__main__':
-    args = sys.argv
+def main(args: list[str]):
     h_value = None
 
     if '--help' in args:
@@ -46,3 +45,8 @@ if __name__ == '__main__':
 
     # It is used to debug
     # t.print_info_all()
+
+    return t
+
+if __name__ == '__main__':
+    main(sys.argv)

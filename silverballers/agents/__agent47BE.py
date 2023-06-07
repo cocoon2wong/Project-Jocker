@@ -2,7 +2,7 @@
 @Author: Beihao Xia
 @Date: 2022-11-02 16:14:01
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-30 10:17:08
+@LastEditTime: 2023-06-07 17:11:02
 @Description: file content
 @Github: https://github.com/conghaowoooong
 @Copyright 2022 Beihao Xia, All Rights Reserved.
@@ -12,25 +12,20 @@ import tensorflow as tf
 
 from codes.basemodels import layers, transformer
 
-from ..__args import AgentArgs
 from ..__layers import OuterLayer
+from .__args import AgentArgs
 from .__baseAgent import BaseAgentModel, BaseAgentStructure
 
 
 class Agent47BEModel(BaseAgentModel):
 
     def __init__(self, Args: AgentArgs,
-                 feature_dim: int = 128,
-                 id_depth: int = 16,
-                 keypoints_number: int = 3,
-                 keypoints_index: tf.Tensor = None,
+                 as_single_model: bool = True,
                  structure=None,
                  *args, **kwargs):
 
         Args._set("key_points", "0_1_2_3_4_5_6_7_8_9_10_11")
-        super().__init__(Args, feature_dim, id_depth,
-                         keypoints_number, keypoints_index,
-                         structure, *args, **kwargs)
+        super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
         # Layers
         self.Tlayer, self.ITlayer = layers.get_transform_layers(self.args.T)

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-20 20:09:14
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-30 10:18:47
+@LastEditTime: 2023-06-07 17:05:34
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,24 +11,21 @@
 import tensorflow as tf
 
 from codes.basemodels import transformer
+from codes.managers import Structure
 from codes.utils import POOLING_BEFORE_SAVING
 
-from ..__args import HandlerArgs
+from .__args import HandlerArgs
 from .__baseHandler import BaseHandlerModel, BaseHandlerStructure
 
 
 class MSNBetaModel(BaseHandlerModel):
 
     def __init__(self, Args: HandlerArgs,
-                 feature_dim: int,
-                 points: int,
-                 asHandler=False,
-                 key_points: str = None,
-                 structure=None,
+                 as_single_model: bool = True,
+                 structure: Structure = None,
                  *args, **kwargs):
 
-        super().__init__(Args, feature_dim, points, asHandler,
-                         key_points, structure, *args, **kwargs)
+        super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
         self.set_preprocess(move=0)
 
@@ -101,8 +98,11 @@ class MSNBetaModel(BaseHandlerModel):
 
 class MSNBeta(BaseHandlerStructure):
 
-    def __init__(self, terminal_args: list[str], manager=None):
-        super().__init__(terminal_args, manager)
+    def __init__(self, terminal_args: list[str],
+                 manager=None,
+                 as_single_model: bool = True):
+
+        super().__init__(terminal_args, manager, as_single_model)
         self.set_model_type(MSNBetaModel)
 
 

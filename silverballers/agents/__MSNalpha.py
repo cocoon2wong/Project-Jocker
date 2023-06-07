@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-13 21:18:29
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-30 09:59:47
+@LastEditTime: 2023-06-07 17:11:57
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -14,7 +14,7 @@ from codes.basemodels import transformer
 from codes.constant import INPUT_TYPES
 from codes.utils import POOLING_BEFORE_SAVING
 
-from ..__args import AgentArgs
+from .__args import AgentArgs
 from .__baseAgent import BaseAgentModel, BaseAgentStructure
 
 
@@ -34,16 +34,11 @@ def GraphConv_func(features, A, output_units=64, activation=None, layer=None):
 class MSNAlphaModel(BaseAgentModel):
 
     def __init__(self, Args: AgentArgs,
-                 feature_dim: int = 128,
-                 id_depth: int = 16,
-                 keypoints_number: int = 3,
-                 keypoints_index: tf.Tensor = None,
+                 as_single_model: bool = True,
                  structure=None,
                  *args, **kwargs):
 
-        super().__init__(Args, feature_dim, id_depth,
-                         keypoints_number, keypoints_index,
-                         structure, *args, **kwargs)
+        super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
         self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ, INPUT_TYPES.MAP)
         self.set_preprocess(move=0)

@@ -2,34 +2,30 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 20:00:17
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-30 10:17:31
+@LastEditTime: 2023-06-07 17:11:38
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import tensorflow as tf
+
 from codes.basemodels import layers, transformer
 
-from ..__args import AgentArgs
 from ..__layers import OuterLayer
+from .__args import AgentArgs
 from .__baseAgent import BaseAgentModel, BaseAgentStructure
 
 
 class Agent47CEModel(BaseAgentModel):
 
     def __init__(self, Args: AgentArgs,
-                 feature_dim: int = 128,
-                 id_depth: int = 16,
-                 keypoints_number: int = 3,
-                 keypoints_index: tf.Tensor = None,
+                 as_single_model: bool = True,
                  structure=None,
                  *args, **kwargs):
 
         Args._set("key_points", "0_1_2_3_4_5_6_7_8_9_10_11")
-        super().__init__(Args, feature_dim, id_depth,
-                         keypoints_number, keypoints_index,
-                         structure, *args, **kwargs)
+        super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
         # Layers
         self.Tlayer, self.ITlayer = layers.get_transform_layers(self.args.T)

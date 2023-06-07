@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-29 09:26:00
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-25 19:43:53
+@LastEditTime: 2023-06-07 17:04:53
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,8 +11,9 @@
 import tensorflow as tf
 
 from codes.constant import INPUT_TYPES
+from codes.managers import Structure
 
-from ...__args import HandlerArgs
+from ..__args import HandlerArgs
 from ..__baseHandler import BaseHandlerModel
 
 
@@ -26,9 +27,11 @@ class _BaseInterpHandlerModel(BaseHandlerModel):
     is_interp_handler = True
 
     def __init__(self, Args: HandlerArgs,
-                 structure=None, *args, **kwargs):
+                 as_single_model: bool = True,
+                 structure: Structure = None,
+                 *args, **kwargs):
 
-        super().__init__(Args, structure=structure, *args, **kwargs)
+        super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
         self.args._set('T', 'none')
         self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,

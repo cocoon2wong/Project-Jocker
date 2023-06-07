@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-23 10:23:53
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-30 09:59:00
+@LastEditTime: 2023-06-07 17:09:21
 @Description: Second stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,8 +12,10 @@ import tensorflow as tf
 
 from codes.basemodels import layers
 from codes.basemodels.transformer import Transformer
+from codes.constant import ANN_TYPES
+from codes.managers import Structure
 
-from ..__args import HandlerArgs
+from .__args import HandlerArgs
 from .__baseHandler import BaseHandlerModel, BaseHandlerStructure
 
 
@@ -30,16 +32,11 @@ class VBModel(BaseHandlerModel):
     """
 
     def __init__(self, Args: HandlerArgs,
-                 feature_dim: int,
-                 points: int,
-                 asHandler=False,
-                 key_points: str = None,
-                 structure=None,
+                 as_single_model: bool = True,
+                 structure: Structure = None,
                  *args, **kwargs):
 
-        super().__init__(Args, feature_dim, points,
-                         asHandler, key_points,
-                         structure, *args, **kwargs)
+        super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
         # Transform layers
         input_steps = self.args.obs_frames
@@ -88,12 +85,8 @@ class VBModel(BaseHandlerModel):
         keypoints_md = keypoints
 
         # Only accept 2-dimensional trajectories
-        if picker := self.map_picker:
-            trajs = picker.get_center(trajs_md)[..., :2]
-            keypoints = picker.get_center(keypoints_md)[..., :2]
-        else:
-            trajs = trajs_md
-            keypoints = keypoints_md
+        trajs = self.picker.get_center(trajs_md)[..., :2]
+        keypoints = self.picker.get_center(keypoints_md)[..., :2]
 
         # Embedding and encoding
         # Transformations are applied in `self.te`
@@ -121,7 +114,12 @@ class VBModel(BaseHandlerModel):
         p = self.it_layer(p_fft)
         y = p[:, self.args.obs_frames:, :]
 
-        if not picker:
+        if training:
+            if self.args.anntype != ANN_TYPES.CO_2D:
+                self.log('This model only support 2D coordinate trajectories' +
+                         ' when training. Annotation type received is' +
+                         f'`{self.args.anntype}`,',
+                         level='error', raiseError=ValueError)
             return y
 
         # Calculate linear prediction (M-dimensional)
@@ -129,8 +127,8 @@ class VBModel(BaseHandlerModel):
         l = self.linear_int(keypoints_index, keypoints_md)
 
         # Linear center points
-        l_center = picker.get_center(l)[tf.newaxis]
-        l_co = tf.cast(picker.get_coordinate_series(l), tf.float32)
+        l_center = self.picker.get_center(l)[tf.newaxis]
+        l_co = tf.cast(self.picker.get_coordinate_series(l), tf.float32)
 
         # Bias to the center points
         bias_center = l_co - l_center
@@ -148,8 +146,8 @@ class VB(BaseHandlerStructure):
     """
 
     def __init__(self, terminal_args: list[str],
-                 manager=None,
-                 is_temporary=False):
+                 manager: Structure = None,
+                 as_single_model: bool = True):
 
-        super().__init__(terminal_args, manager, is_temporary)
+        super().__init__(terminal_args, manager, as_single_model)
         self.set_model_type(VBModel)

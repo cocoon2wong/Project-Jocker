@@ -2,21 +2,22 @@
 @Author: Conghao Wong
 @Date: 2021-08-05 15:26:57
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-14 11:38:58
+@LastEditTime: 2023-06-07 16:45:25
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-import re
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.abspath('.'))
 
-from silverballers.__args import SilverballersArgs, AgentArgs, HandlerArgs
 from codes.args import Args
-
+from silverballers import SilverballersArgs
+from silverballers.agents import AgentArgs
+from silverballers.handlers import HandlerArgs
 
 FLAG = '<!-- DO NOT CHANGE THIS LINE -->'
 TARGET_FILE = './README.md'
@@ -97,7 +98,6 @@ def update_readme(new_lines: list[str], md_file: str):
 def print_help_info(value: str):
 
     from codes.args import Args
-    from silverballers.__args import SilverballersArgs, AgentArgs, HandlerArgs
     from scripts.update_readme import get_doc
 
     files = [Args(is_temporary=True),

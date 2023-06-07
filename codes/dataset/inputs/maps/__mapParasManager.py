@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-05-25 14:51:07
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-29 19:37:40
+@LastEditTime: 2023-06-07 16:42:11
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -12,12 +12,14 @@ import os
 from typing import Any
 
 import numpy as np
+import tensorflow as tf
 
 from ....base import BaseManager
 from ....constant import INPUT_TYPES
 from ....dataset.__splitManager import Clip
-from ....utils import (SEG_IMG, WINDOW_EXPAND_METER, WINDOW_EXPAND_PIXEL,
-                       WINDOW_SIZE_METER, WINDOW_SIZE_PIXEL)
+from ....utils import (POOLING_BEFORE_SAVING, SEG_IMG, WINDOW_EXPAND_METER,
+                       WINDOW_EXPAND_PIXEL, WINDOW_SIZE_METER,
+                       WINDOW_SIZE_PIXEL)
 from ..__baseInputManager import BaseInputManager
 
 
@@ -45,6 +47,10 @@ class MapParasManager(BaseInputManager):
         self.__void_map: np.ndarray = None
         self.W: np.ndarray = None
         self.b: np.ndarray = None
+
+        if POOLING_BEFORE_SAVING:
+            self._upsampling = tf.keras.layers.UpSampling2D(
+                size=[5, 5], data_format='channels_last')
 
     @property
     def void_map(self) -> np.ndarray:
@@ -138,3 +144,89 @@ class MapParasManager(BaseInputManager):
         if t.shape[-1] > 2:
             t = t[..., :2]
         return t
+
+    def score(self, trajs: tf.Tensor,
+              maps: tf.Tensor,
+              map_paras: tf.Tensor,
+              centers: tf.Tensor) -> tf.Tensor:
+        """
+        Calculate the score of the predicted trajectory in the
+        social and scene interaction case.
+
+        :param trajs: Predicted trajectory, shape = `(batch, pred, 2)`.
+        :param maps: Trajectory map, shape = `(batch, a, a)`.
+        :param map_paras: Parameters of trajectory maps, shape = `(batch, 4)`.
+        :param centers: Centers of the trajectory map in the real scale. \
+            It is usually the last observed point of the 2D trajectory. \
+            Shape = `(batch, 1, 2)`. 
+        """
+        # Only support 2D coordinate trajectories
+        trajs = self.C(trajs)
+        centers = self.C(centers)
+
+        if POOLING_BEFORE_SAVING:
+            maps = self._upsampling(maps[..., tf.newaxis])[..., 0]
+
+        W = map_paras[:, :2]
+        b = map_paras[:, 2:]
+
+        while W.ndim != trajs.ndim:
+            W = W[:, tf.newaxis, :]
+            b = b[:, tf.newaxis, :]
+
+        while centers.ndim != trajs.ndim:
+            centers = centers[:, tf.newaxis, :]
+
+        trajs_global_grid = (trajs - b) * W
+        centers_global_grid = (centers - b) * W
+        bias_grid = trajs_global_grid - centers_global_grid
+        bias_grid = tf.cast(bias_grid, tf.int32)
+
+        s = tf.shape(maps)
+        map_center = tf.cast([s[-2]//2, s[-1]//2], tf.int32)
+        trajs_grid = map_center[tf.newaxis] + bias_grid
+        trajs_grid = tf.minimum(tf.maximum(trajs_grid, 0), s[-2]-1)
+
+        count = tf.range(s[0])
+        while count.ndim != trajs_grid.ndim:
+            count = count[:, tf.newaxis]
+
+        agent_count = count * tf.ones_like(trajs_grid[..., :1])
+        index = tf.concat([agent_count, trajs_grid], axis=-1)
+
+        all_scores = tf.gather_nd(maps, index)
+        avg_scores = tf.reduce_sum(all_scores, axis=-1)
+
+        return avg_scores
+
+    def pick_trajectories(self, traj: tf.Tensor,
+                          scores: tf.Tensor,
+                          percent: float):
+        """
+        Pick trajectories according to their scores.
+
+        :param traj: Trajectories, shape is `(batch, K, pred, dim)`.
+        :param scores: Scores, shape is `(batch, K)`.
+        :param percent: The percentage of trajectories to leave.
+        """
+        if scores.ndim < 2:
+            return traj
+
+        bs = tf.shape(scores)[0]
+        _index = tf.argsort(scores, axis=-1, direction='ASCENDING')
+        _index = _index[..., :int(percent * scores.shape[-1])]
+
+        # Calculate indices
+        _index = _index[..., tf.newaxis]
+        count = tf.range(bs)
+
+        while count.ndim < _index.ndim:
+            count = count[:, tf.newaxis]
+
+        count = count * tf.ones_like(_index)
+        new_index = tf.concat([count, _index], axis=-1)
+
+        # Pick trajectories
+        traj_picked = tf.gather_nd(traj, new_index)
+
+        return traj_picked

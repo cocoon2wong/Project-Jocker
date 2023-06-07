@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-17 14:57:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-23 11:12:40
+@LastEditTime: 2023-06-07 16:41:39
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -115,6 +115,15 @@ class BaseManager(BaseObject):
         This method is only used for type hints.
         """
         return self.manager
+
+    def get_top_manager(self):
+        """
+        Get the top manager object.
+        """
+        s = self
+        while s.manager:
+            s = s.manager
+        return s
 
     def find_members_by_type(self, mtype: type[T]) -> list[T]:
         """

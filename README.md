@@ -157,8 +157,8 @@ About the `argtype`:
 - `--update_saved_args`: type=`int`, argtype=`temporary`.
   Choose whether to update (overwrite) the saved arg files or not. 
   The default value is `0`.
-- `--use_extra_maps`: type=`int`, argtype=`dynamic`.
-  Controls if uses the calculated trajectory maps or the given trajectory maps. The training manager will load maps from `./dataset_npz/.../agent1_maps/trajMap.png` if set it to `0`, and load from `./dataset_npz/.../agent1_maps/trajMap_load.png` if set this argument to `1`. 
+- `--use_seg_maps`: type=`int`, argtype=`dynamic`.
+  Controls if uses the segmentation maps instead of the calculated trajectory maps. 
   The default value is `0`.
 
 ### Silverballers args
