@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-29 16:32:30
+@LastEditTime: 2023-06-08 15:08:18
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -27,6 +27,98 @@ class Args(ArgsManager):
 
         super().__init__(terminal_args, is_temporary)
 
+    def _init_all_args(self):
+        super()._init_all_args()
+
+        # Init split
+        if self.force_split != 'null':
+            if self.update_saved_args:
+                self.log('Parameters cannot be saved when forced ' +
+                         'parameters (`force_dataset`, `force_split`) ' +
+                         'are set. Please remove them and run again.',
+                         level='error', raiseError=ValueError)
+
+            self._set('split', self.force_split)
+        self._args_need_initialize.remove('split')
+
+        # Init dataset
+        if self.force_dataset != 'null':
+            if self.update_saved_args:
+                self.log('Parameters cannot be saved when forced ' +
+                         'parameters (`force_dataset`, `force_split`) ' +
+                         'are set. Please remove them and run again.',
+                         level='error', raiseError=ValueError)
+
+            self._set('dataset', self.force_dataset)
+
+        # This argument can only be set manually by codes
+        # or read from the saved JSON file
+        elif 'dataset' not in self._args_load.keys():
+
+            dirs = os.listdir(DATASET_CONFIG_DIR)
+
+            plist_files = []
+            for d in dirs:
+                try:
+                    _path = os.path.join(DATASET_CONFIG_DIR, d)
+                    for p in os.listdir(_path):
+                        if p.endswith('.plist'):
+                            plist_files.append(os.path.join(_path, p))
+                except:
+                    pass
+
+            dataset = None
+            for f in plist_files:
+                res = re.findall(
+                    f'{DATASET_CONFIG_DIR}/(.*)/({self.split}.plist)', f)
+
+                if len(res):
+                    dataset = res[0][0]
+                    break
+
+            if not dataset:
+                raise ValueError(self.split)
+
+            self._set('dataset', dataset)
+        self._args_need_initialize.remove('dataset')
+
+        # Init clip
+        if self.draw_results != 'null':
+            self._set('force_clip', self.draw_results)
+
+        if self.draw_videos != 'null':
+            self._set('force_clip', self.draw_videos)
+
+        self._args_need_initialize.remove('force_clip')
+
+        # Init test mode
+        if self.draw_results != 'null' or self.draw_videos != 'null':
+            self._set('test_mode', 'one')
+        self._args_need_initialize.remove('test_mode')
+
+        # Init logs paths
+        if self._is_temporary:
+            pass
+
+        # This argument can only be set manually by codes
+        # or read from the saved JSON file
+        elif 'log_dir' not in self._args_load.keys():
+
+            log_dir_current = (TIME +
+                               self.model_name +
+                               self.model +
+                               self.split)
+
+            default_log_dir = os.path.join(dir_check(self.save_base_dir),
+                                           log_dir_current)
+
+            self._set('log_dir', dir_check(default_log_dir))
+
+        self._args_need_initialize.remove('log_dir')
+
+        if self._verbose_mode:
+            self.log('Training args initialized.')
+
     @property
     def batch_size(self) -> int:
         """
@@ -41,49 +133,8 @@ class Args(ArgsManager):
         For example, `'ETH-UCY'` or `'SDD'`.
         NOTE: DO NOT set this argument manually.
         """
-
-        def preprocess(self: Args):
-            if self.force_dataset != 'null':
-                if self.update_saved_args:
-                    self.log('Parameters cannot be saved when forced ' +
-                             'parameters (`force_dataset`, `force_split`) ' +
-                             'are set. Please remove them and run again.',
-                             level='error', raiseError=ValueError)
-
-                self._set('dataset', self.force_dataset)
-
-            # This argument can only be set manually by codes
-            # or read from the saved JSON file
-            elif 'dataset' not in self._args_load.keys():
-
-                dirs = os.listdir(DATASET_CONFIG_DIR)
-
-                plist_files = []
-                for d in dirs:
-                    try:
-                        _path = os.path.join(DATASET_CONFIG_DIR, d)
-                        for p in os.listdir(_path):
-                            if p.endswith('.plist'):
-                                plist_files.append(os.path.join(_path, p))
-                    except:
-                        pass
-
-                dataset = None
-                for f in plist_files:
-                    res = re.findall(
-                        f'{DATASET_CONFIG_DIR}/(.*)/({self.split}.plist)', f)
-
-                    if len(res):
-                        dataset = res[0][0]
-                        break
-
-                if not dataset:
-                    raise ValueError(self.split)
-
-                self._set('dataset', dataset)
-
         return self._arg('dataset', NA, argtype=STATIC,
-                         preprocess=preprocess)
+                         need_initialize=True)
 
     @property
     def force_dataset(self) -> str:
@@ -98,20 +149,9 @@ class Args(ArgsManager):
         """
         The dataset split that used to train and evaluate.
         """
-
-        def preprocess(self: Args):
-            if self.force_split != 'null':
-                if self.update_saved_args:
-                    self.log('Parameters cannot be saved when forced ' +
-                             'parameters (`force_dataset`, `force_split`) ' +
-                             'are set. Please remove them and run again.',
-                             level='error', raiseError=ValueError)
-
-                self._set('split', self.force_split)
-
         return self._arg('split', 'zara1', argtype=STATIC,
                          short_name='s',
-                         preprocess=preprocess)
+                         need_initialize=True)
 
     @property
     def force_split(self) -> str:
@@ -134,16 +174,8 @@ class Args(ArgsManager):
         Force test video clip (ignore the train/test split).
         It only works when `test_mode` has been set to `one`. 
         """
-
-        def preprocess(self: Args):
-            if self.draw_results != 'null':
-                self._set('force_clip', self.draw_results)
-
-            if self.draw_videos != 'null':
-                self._set('force_clip', self.draw_videos)
-
         return self._arg('force_clip', 'null', argtype=TEMPORARY,
-                         preprocess=preprocess)
+                         need_initialize=True)
 
     @property
     def gpu(self) -> str:
@@ -180,27 +212,8 @@ class Args(ArgsManager):
         DO NOT change this arg manually. (You can still change
         the path by passing the `save_base_dir` arg.)
         """
-
-        def preprocess(self: Args):
-            if self._is_temporary:
-                return
-
-            # This argument can only be set manually by codes
-            # or read from the saved JSON file
-            if 'log_dir' not in self._args_load.keys():
-
-                log_dir_current = (TIME +
-                                   self.model_name +
-                                   self.model +
-                                   self.split)
-
-                default_log_dir = os.path.join(dir_check(self.save_base_dir),
-                                               log_dir_current)
-
-                self._set('log_dir', dir_check(default_log_dir))
-
         return self._arg('log_dir', NA, argtype=STATIC,
-                         preprocess=preprocess)
+                         need_initialize=True)
 
     @property
     def load(self) -> str:
@@ -336,13 +349,8 @@ class Args(ArgsManager):
         When setting it to `all`, it will test on each of the test datasets in `args.split`;
         When setting it to `mix`, it will test on all test datasets in `args.split` together.
         """
-
-        def preprocess(self: Args):
-            if self.draw_results != 'null' or self.draw_videos != 'null':
-                self._set('test_mode', 'one')
-
         return self._arg('test_mode', 'mix', argtype=TEMPORARY,
-                         preprocess=preprocess)
+                         need_initialize=True)
 
     @property
     def lr(self) -> float:

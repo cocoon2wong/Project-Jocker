@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-11 12:41:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-30 14:53:31
+@LastEditTime: 2023-06-08 14:55:32
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -38,7 +38,7 @@ class ArgsManager(BaseObject):
 
         self._is_temporary = is_temporary
         self._init_done = False
-        self._need_update = False
+        self._args_need_initialize: list[str] = []
 
         # Args that load from the saved JSON file
         self._args_load: dict[str, Any] = {}
@@ -80,12 +80,31 @@ class ArgsManager(BaseObject):
         if (l := self.load) != 'null':
             self._load_from_json(l)
 
-        # Visit all args to run initialize methods
-        self._visit_args()
-
         # Restore reference args before training and testing
         if self.restore_args != 'null':
             self._load_from_json(self.restore_args, 'default')
+
+        # Run initialize methods
+        self._init_all_args()
+        self._visit_args()
+
+    @property
+    def verbose(self) -> int:
+        """
+        Controls if print verbose logs and outputs to the terminal.
+        """
+        return self._arg('verbose', 0, argtype=TEMPORARY, short_name='v')
+
+    @property
+    def _verbose_mode(self) -> bool:
+        if self.verbose and not self._is_temporary:
+            return True
+        else:
+            return False
+
+    def _init_all_args(self):
+        if self._verbose_mode:
+            self.log('Basic funtions initialized.')
 
     def _check_terminal_args(self):
         for key in self._args_runnning.keys():
@@ -101,14 +120,6 @@ class ArgsManager(BaseObject):
         for arg in self.__dir__():
             if not arg.startswith('_'):
                 getattr(self, arg)
-
-    def _update_args(self):
-        """
-        Update args by reapplying all preprocess methods.
-        """
-        self._need_update = True
-        self._visit_args()
-        self._need_update = False
 
     def _load_from_json(self, dir_path: str, target='load'):
         """
@@ -130,8 +141,6 @@ class ArgsManager(BaseObject):
                 self._args_default_manually = json_dict
             else:
                 raise ValueError(target)
-
-            self._update_args()
 
         except:
             self.log(f'Failed to load args from `{dir_path}`.',
@@ -159,8 +168,9 @@ class ArgsManager(BaseObject):
                     index += 1
                     continue
 
-                if ((value := argv[index+1]).startswith('-')
-                        and value[1] not in '0123456789'):
+                if (index+1 == len(argv) or
+                    ((value := argv[index+1]).startswith('-')
+                        and value[1] not in '0123456789')):
                     dic[name] = True
                     index += 1
                 else:
@@ -232,7 +242,7 @@ class ArgsManager(BaseObject):
              default: Any,
              argtype: str,
              short_name: str = None,
-             preprocess=None):
+             need_initialize: bool = None):
         """
         Get arg from all arg dictionaries according to the priority.
 
@@ -243,22 +253,18 @@ class ArgsManager(BaseObject):
         :param preprocess: The preprocess method to initialize the arg (without
             return values).
         """
-
+        # Register args before using
         if not self._init_done:
             self._register(name, default, argtype, short_name)
-            return None
+            if need_initialize:
+                self._args_need_initialize.append(name)
+            return 'Not All Registered'
 
-        else:
-            # The preprocess method only runs one time
-            if preprocess is not None:
-                if self._need_update:
-                    preprocess(self)
+        # Initialize args (if needed)
+        if need_initialize and name in self._args_need_initialize:
+            return 'Not Initialized'
 
-                elif name not in self._processed_args:
-                    preprocess(self)
-                    self._processed_args.append(name)
-
-            return self._get(name)
+        return self._get(name)
 
     def _register(self, name: str,
                   default: any,

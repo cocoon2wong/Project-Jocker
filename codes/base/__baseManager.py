@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-17 14:57:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-07 16:41:39
+@LastEditTime: 2023-06-08 15:11:57
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -90,6 +90,16 @@ class BaseManager(BaseObject):
     @args.setter
     def args(self, value: T) -> T:
         self._args = value
+
+    def log(self, s: str, level: str = 'info',
+            raiseError: type[BaseException] = None,
+            verbose_mode=None):
+
+        if verbose_mode:
+            if not self.args.verbose:
+                return s
+
+        return super().log(s, level, raiseError)
 
     def destory(self):
         if self.manager:

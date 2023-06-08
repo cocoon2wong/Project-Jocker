@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-30 09:54:43
+@LastEditTime: 2023-06-08 14:39:01
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -243,7 +243,8 @@ class Model(tf.keras.Model, BaseManager):
                              if f'_epoch{epoch}{WEIGHTS_FORMAT}' in f]
 
         weights_name = weights_files[-1].split('.index')[0]
-        self.load_weights(os.path.join(weights_dir, weights_name))
+        self.load_weights(p := os.path.join(weights_dir, weights_name))
+        self.log(f'Successfully load weights from `{p}`.', verbose_mode=True)
 
     def print_info(self, **kwargs):
         try:
