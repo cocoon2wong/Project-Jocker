@@ -189,7 +189,7 @@ class BaseSubnetworkStructure(Structure):
         l2 loss on the future keypoints.
         Support M-dimensional trajectories.
         """
-        indices = self.model.future_keypoints_indices
+        indices = self.model.key_indices_future
         labels_pickled = tf.gather(labels[0], indices, axis=-2)
         return ADE_2D(outputs[0], labels_pickled, coe=coe)
 
@@ -206,7 +206,7 @@ class BaseSubnetworkStructure(Structure):
         :param labels: Shape of `labels[0]` is `(batch, pred, 2)`.
         """
         pred = outputs[0]
-        indices = self.model.future_keypoints_indices
+        indices = self.model.key_indices_future
 
         if pred.ndim == 3:
             pred = pred[:, tf.newaxis, :, :]
