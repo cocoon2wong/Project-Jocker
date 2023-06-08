@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-05-30 09:26:04
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-30 11:13:10
+@LastEditTime: 2023-06-08 09:15:12
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -12,34 +12,32 @@ import tensorflow as tf
 
 from codes.basemodels import layers, transformer
 from codes.managers import Structure
+from codes.training.loss import ADE_2D
 
-from ..__args import AgentArgs
 from ..__layers import OuterLayer
-from ..agents import BaseAgentModel, BaseAgentStructure
+from ..agents import AgentArgs, BaseAgentModel, BaseAgentStructure
 
 
 class Sieger300GhostModel(BaseAgentModel):
 
     def __init__(self, Args: AgentArgs,
-                 feature_dim: int = 128,
-                 id_depth: int = 16,
-                 keypoints_number: int = 3,
-                 keypoints_index: tf.Tensor = None,
-                 structure=None, *args, **kwargs):
+                 as_single_model: bool = True,
+                 structure: Structure = None,
+                 *args, **kwargs):
 
-        super().__init__(Args, feature_dim, id_depth,
-                         keypoints_number, keypoints_index,
-                         structure, *args, **kwargs)
+        super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
         # Layers
         # Linear prediction
         self.linear0 = layers.LinearLayerND(obs_frames=self.args.obs_frames,
                                             pred_frames=self.args.pred_frames,
                                             diff=0.95)
+        self.traj_concat0 = tf.keras.layers.Concatenate(axis=-2)
 
         # Transform
         Tlayer, ITlayer = layers.get_transform_layers(self.args.T)
-        self.t0 = Tlayer((self.args.pred_frames, self.dim))
+        self.t0 = Tlayer(
+            (self.args.obs_frames + self.args.pred_frames, self.dim))
         self.it0 = ITlayer((self.n_key, self.dim))
         self.Tsteps, self.Tchannels = self.t0.Tshape
         self.Tsteps_de, self.Tchannels_de = self.it0.Tshape
@@ -89,10 +87,11 @@ class Sieger300GhostModel(BaseAgentModel):
 
         # Linear predict
         pred_linear = self.linear0(obs)     # (batch, pred, dim)
+        traj = self.traj_concat0([obs, pred_linear])
 
         # Feature embedding and encoding
         # Use the bilinear structure to encode features
-        f = self.te0(pred_linear)           # (batch, Tsteps, d/2)
+        f = self.te0(traj)           # (batch, Tsteps, d/2)
         f = self.outer0(f, f)               # (batch, Tsteps, d/2, d/2)
         f = self.pooling0(f)                # (batch, Tsteps, d/4, d/4)
 
@@ -114,7 +113,7 @@ class Sieger300GhostModel(BaseAgentModel):
             f_tran = self.concat0([f_bi, f_z])
 
             f_behavior, _ = self.T0(inputs=f_tran,
-                                    targets=self.t0(pred_linear),
+                                    targets=self.t0(traj),
                                     training=training)
 
             # Multiple generations
@@ -130,7 +129,8 @@ class Sieger300GhostModel(BaseAgentModel):
             y = self.it0(f_p)
             p_all.append(y)
 
-        return tf.concat(p_all, axis=1)
+        Y = tf.concat(p_all, axis=1)
+        return Y[:, :, self.n_key_past:, :], obs, Y[:, :, :self.n_key_past, :]
 
 
 class Sieger300Ghost(BaseAgentStructure):
@@ -139,3 +139,25 @@ class Sieger300Ghost(BaseAgentStructure):
         super().__init__(terminal_args, manager)
 
         self.set_model_type(Sieger300GhostModel)
+
+        if self.args.loss == 'keyl2':
+            self.loss.set({self.keyl2: 1.0, self.keyl2_past: 1.0})
+        elif self.args.loss == 'avgkey':
+            self.loss.set({self.avgKey: 1.0})
+        else:
+            raise ValueError(self.args.loss)
+
+    def keyl2_past(self, outputs: list[tf.Tensor],
+                   labels: list[tf.Tensor],
+                   coe: float = 1.0,
+                   *args, **kwargs):
+
+        if self.model.n_key_past:
+            labels_pickled_past = tf.gather(
+                outputs[1],
+                self.model.key_indices_past,
+                axis=-2)
+            ade_past = ADE_2D(outputs[2], labels_pickled_past, coe=coe)
+            return ade_past
+        else:
+            return 0
