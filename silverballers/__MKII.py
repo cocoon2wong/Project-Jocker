@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-27 20:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-07 15:22:39
+@LastEditTime: 2023-06-09 11:22:40
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -54,6 +54,9 @@ __SILVERBALLERS_DICT = dict(
     va=[agents.VA, agents.VAModel],
     agent=[agents.VA, agents.VAModel],
     vb=[handlers.VB, handlers.VBModel],
+
+    # E-V^2-Net
+    eva=[agents.Agent47C, agents.Agent47CModel],
 
     # agent47 series
     agent47B=[agents.Agent47B, agents.Agent47BModel],
