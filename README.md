@@ -82,6 +82,9 @@ About the `argtype`:
 - `--epochs`: type=`int`, argtype=`static`.
   Maximum training epochs. 
   The default value is `500`.
+- `--experimental`: type=`bool`, argtype=`temporary`.
+  NOTE: It is only used for code test. 
+  The default value is `False`.
 - `--force_anntype`: type=`str`, argtype=`temporary`.
   Assign the prediction type. It is now only used for silverballers models that are trained with annotation type `coordinate` but want to test on datasets with annotation type `boundingbox`. 
   The default value is `null`.
@@ -112,6 +115,9 @@ About the `argtype`:
 - `--model_name`: type=`str`, argtype=`static`.
   Customized model name. 
   The default value is `model`.
+- `--model_type`: type=`str`, argtype=`static`.
+  Model type, canbe `'agent-based'` or `'frame-based'`. 
+  The default value is `agent-based`.
 - `--model`: type=`str`, argtype=`static`.
   The model type used to train or test. 
   The default value is `none`.
@@ -159,6 +165,9 @@ About the `argtype`:
   The default value is `0`.
 - `--use_seg_maps`: type=`int`, argtype=`dynamic`.
   Controls if uses the segmentation maps instead of the calculated trajectory maps. 
+  The default value is `0`.
+- `--verbose` (short for `-v`): type=`int`, argtype=`temporary`.
+  Controls if print verbose logs and outputs to the terminal. 
   The default value is `0`.
 
 ### Silverballers args
