@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-08 15:08:18
+@LastEditTime: 2023-06-12 19:55:10
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -118,6 +118,20 @@ class Args(ArgsManager):
 
         if self._verbose_mode:
             self.log('Training args initialized.')
+
+    @property
+    def experimental(self) -> bool:
+        """
+        NOTE: It is only used for code test.
+        """
+        return self._arg('experimental', False, argtype=TEMPORARY)
+
+    @property
+    def model_type(self) -> str:
+        """
+        Model type, canbe `'agent-based'` or `'frame-based'`.
+        """
+        return self._arg('model_type', 'agent-based', argtype=STATIC)
 
     @property
     def batch_size(self) -> int:

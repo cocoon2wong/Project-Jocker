@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
-@Date: 2023-05-19 16:05:54
+@Date: 2023-06-12 18:44:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-23 11:18:18
+@LastEditTime: 2023-06-12 20:05:34
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -12,23 +12,27 @@ import os
 
 import numpy as np
 
-from ...base import BaseManager
 from ..__splitManager import Clip
-from ..trajectories import Agent
-from .__baseInputManager import BaseInputManager
-from .__trajectoryManager import TrajectoryManager
+from .__inputManager import BaseInputManager, BaseManager
+from .__inputObject import BaseInputObject
+from .__inputObjectManager import BaseInputObjectManager
 
 
-class AgentFilesManager(BaseInputManager):
+class BaseFilesManager(BaseInputManager):
     """
-    AgentFilesManager
+    BaseFilesManager
     ---
-    A manager to save processed agent files.
+    A manager to save processed dataset files (types are `BaseInputObject`).
 
-    - Load items: A list of agents (type is `list[Agent]`) to save;
-    - Run items: Load agents and save them into `npz` files.
-        If the saved file exists, it will load these files into agents.
+    - Load items: A list of `BaseInputObject` to save;
+    - Run items: Load files and save them into `npz` files.
+        If the saved file exists, it will load these files and make
+        the corresponding `BaseInputObject` objects.
     """
+
+    FILE_PREFIX = None
+    DATA_MGR: type[BaseInputObjectManager] = None
+    DATA_TYPE: type[BaseInputObject] = None
 
     def __init__(self, manager: BaseManager,
                  name='Agent Files Manager'):
@@ -38,22 +42,24 @@ class AgentFilesManager(BaseInputManager):
     def get_temp_file_path(self, clip: Clip) -> str:
         base_dir = clip.temp_dir
         if (self.args.obs_frames, self.args.pred_frames) == (8, 12):
-            f_name = 'agent'
+            f_name = self.FILE_PREFIX
         else:
-            f_name = f'agent_{self.args.obs_frames}to{self.args.pred_frames}'
+            f_name = (f'{self.FILE_PREFIX}_' +
+                      f'{self.args.obs_frames}to{self.args.pred_frames}')
 
         endstring = '' if self.args.step == 4 else str(self.args.step)
         f_name = f_name + endstring + '.npz'
         return os.path.join(base_dir, f_name)
 
-    def run(self, clip: Clip, agents: list[Agent] = None,
-            *args, **kwargs) -> list[Agent]:
+    # For type hinting
+    def run(self, clip: Clip, agents: list[DATA_TYPE] = None,
+            *args, **kwargs) -> list[DATA_TYPE]:
 
         return super().run(clip=clip, agents=agents, *args, **kwargs)
 
     def save(self, *args, **kwargs) -> None:
         agents = self.manager.get_member(
-            TrajectoryManager).run(self.working_clip)
+            self.DATA_MGR).run(self.working_clip)
 
         save_dict = {}
         for index, agent in enumerate(agents):
@@ -68,11 +74,12 @@ class AgentFilesManager(BaseInputManager):
             self.log(f'Please delete file `{self.temp_file}` and re-run the program.',
                      level='error', raiseError=FileNotFoundError)
 
-        if (v := saved['0'].tolist()['__version__']) < (v1 := Agent.__version__):
-            self.log((f'Saved agent managers\' version is {v}, ' +
+        if (v := saved['0'].tolist()['__version__']) < (
+                v1 := self.DATA_TYPE.__version__):
+            self.log((f'Saved {self.FILE_PREFIX} managers\' version is {v}, ' +
                       f'which is lower than current {v1}. Please delete' +
                       ' them and re-run this program, or there could' +
                       ' happen something wrong.'),
                      level='error')
 
-        return [Agent().load_data(v.tolist()) for v in saved.values()]
+        return [self.DATA_TYPE().load_data(v.tolist()) for v in saved.values()]

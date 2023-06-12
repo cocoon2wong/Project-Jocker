@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
-@Date: 2023-05-19 14:38:26
+@Date: 2023-06-12 19:15:43
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-22 20:33:42
+@LastEditTime: 2023-06-12 19:52:01
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -14,20 +14,23 @@ import numpy as np
 
 from ...base import BaseManager, SecondaryBar
 from ...utils import INIT_POSITION, dir_check
-from ..__splitManager import SplitManager
-from ..trajectories import Agent, AnnotationManager, Trajectory
-from .__baseInputManager import BaseInputManager
+from ..__splitManager import Clip, SplitManager
+from .__inputManager import BaseInputManager
+from .__inputObject import BaseInputObject
 
 
-class TrajectoryManager(BaseInputManager):
+class BaseInputObjectManager(BaseInputManager):
 
     TEMP_FILE = 'data.npz'
 
-    def __init__(self, manager: BaseManager,
-                 name='Trajectory Manager'):
-
+    def __init__(self, manager: BaseManager, name: str = None):
         super().__init__(manager, name)
 
+    # For type hinting
+    def run(self, clip: Clip, root_dir: str = None, 
+            *args, **kwargs) -> list[BaseInputObject]:
+        return super().run(clip, root_dir, *args, **kwargs)
+    
     def save(self, **kwargs) -> None:
         """
         Load trajectory data from the annotation text file.
@@ -106,70 +109,6 @@ class TrajectoryManager(BaseInputManager):
                  matrix=matrix,
                  frame_ids=frame_ids,
                  person_ids=names_and_types)
-
-    def load(self, **kwargs) -> list[Agent]:
-        # load from saved files
-        dat = np.load(self.temp_file, allow_pickle=True)
-        matrix = dat['matrix']
-        neighbor_indexes = dat['neighbor_indexes']
-        frame_ids = dat['frame_ids']
-        names_and_types = dat['person_ids']
-
-        agent_count = matrix.shape[1]
-        frame_number = matrix.shape[0]
-
-        # self.manager: AgentManager
-        # self.manager.manager: Structure
-        dim = self.manager.manager.get_member(AnnotationManager).dim
-
-        trajs = [Trajectory(agent_id=names_and_types[agent_index][0],
-                            agent_type=names_and_types[agent_index][1],
-                            trajectory=matrix[:, agent_index, :],
-                            neighbors=neighbor_indexes,
-                            frames=frame_ids,
-                            init_position=INIT_POSITION,
-                            dimension=dim) for agent_index in range(agent_count)]
-
-        sample_rate, frame_rate = self.working_clip.paras
-        frame_step = int(self.args.interval / (sample_rate / frame_rate))
-        train_samples = []
-
-        for agent_index in SecondaryBar(range(agent_count),
-                                        manager=self.manager,
-                                        desc='Process dataset files...'):
-
-            trajectory = trajs[agent_index]
-            start_frame = trajectory.start_frame
-            end_frame = trajectory.end_frame
-
-            for p in range(start_frame, end_frame, self.args.step * frame_step):
-                # Normal mode
-                if self.args.pred_frames > 0:
-                    if p + (self.args.obs_frames + self.args.pred_frames) * frame_step > end_frame:
-                        break
-
-                    obs = p + self.args.obs_frames * frame_step
-                    end = p + (self.args.obs_frames +
-                               self.args.pred_frames) * frame_step
-
-                # Infinity mode, only works for destination models
-                elif self.args.pred_frames == -1:
-                    if p + (self.args.obs_frames + 1) * frame_step > end_frame:
-                        break
-
-                    obs = p + self.args.obs_frames * frame_step
-                    end = end_frame
-
-                else:
-                    self.log('`pred_frames` should be a positive integer or -1, ' +
-                             f'got `{self.args.pred_frames}`',
-                             level='error', raiseError=ValueError)
-
-                train_samples.append(trajectory.sample(start_frame=p,
-                                                       obs_frame=obs,
-                                                       end_frame=end,
-                                                       matrix=matrix,
-                                                       frame_step=frame_step,
-                                                       add_noise=False))
-
-        return train_samples
+    
+    def load(self, **kwargs) -> list[BaseInputObject]:
+        raise NotImplementedError

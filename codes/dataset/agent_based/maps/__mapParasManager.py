@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-05-25 14:51:07
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-07 16:42:11
+@LastEditTime: 2023-06-12 20:09:45
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -16,11 +16,11 @@ import tensorflow as tf
 
 from ....base import BaseManager
 from ....constant import INPUT_TYPES
-from ....dataset.__splitManager import Clip
 from ....utils import (POOLING_BEFORE_SAVING, SEG_IMG, WINDOW_EXPAND_METER,
                        WINDOW_EXPAND_PIXEL, WINDOW_SIZE_METER,
                        WINDOW_SIZE_PIXEL)
-from ..__baseInputManager import BaseInputManager
+from ...__base import BaseInputManager
+from ...__splitManager import Clip
 
 
 class MapParasManager(BaseInputManager):

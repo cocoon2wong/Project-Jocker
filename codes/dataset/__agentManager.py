@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-26 15:36:55
+@LastEditTime: 2023-06-12 20:19:57
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -19,10 +19,10 @@ from ..basemodels.layers.transfroms import (_BaseTransformLayer,
                                             get_transform_layers)
 from ..constant import INPUT_TYPES
 from ..utils import POOLING_BEFORE_SAVING, dir_check
+from .__base import Annotation, AnnotationManager, BaseInputManager
 from .__splitManager import SplitManager
-from .inputs import (AgentFilesManager, BaseInputManager, TrajectoryManager,
-                     maps)
-from .trajectories import Agent, Annotation, AnnotationManager
+from .agent_based import Agent, AgentFilesManager, TrajectoryManager, maps
+from .frame_based import FrameFilesManager, FrameManager
 
 
 class AgentManager(BaseManager):
@@ -86,8 +86,16 @@ class AgentManager(BaseManager):
         self.split_manager = SplitManager(manager=self,
                                           dataset=self.args.dataset,
                                           split=self.args.split)
-        self.traj_manager = TrajectoryManager(self)
-        self.file_manager = AgentFilesManager(self)
+
+        if (t := self.args.model_type) == 'agent-based':
+            self.traj_manager = TrajectoryManager(self)
+            self.file_manager = AgentFilesManager(self)
+        elif t == 'frame-based':
+            self.frame_manager = FrameManager(self)
+            self.file_manager = FrameFilesManager(self)
+        else:
+            self.log(f'Wrong model type `{t}`!',
+                     level='error', raiseError=ValueError)
 
         # file root paths
         self.base_path: str = None
@@ -131,7 +139,7 @@ class AgentManager(BaseManager):
 
     def update_agents(self, agents: list[Agent]):
         for a in agents:
-            a.agent_manager = self
+            a.manager = self
         return agents
 
     def append(self, target: list[Agent]):
@@ -336,16 +344,3 @@ def _get_gt_traj(input_agents: list[Agent],
 
 def _get_dest_traj(input_agents: list[Agent]) -> tf.Tensor:
     return _get_gt_traj(input_agents, destination=True, text='destinations')
-
-
-def _get_context_map(input_agents: list[Agent]) -> tf.Tensor:
-    """
-    Get the context map from agents.
-
-    :param input_agents: A list of input agents, type = `list[Agent]`.
-    :return inputs: A Tensor of maps.
-    """
-    inputs = []
-    for agent in tqdm(input_agents, 'Prepare maps...'):
-        inputs.append(agent.Map)
-    return tf.cast(inputs, tf.float32)

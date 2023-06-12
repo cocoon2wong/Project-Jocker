@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-05-22 16:26:26
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-29 19:49:39
+@LastEditTime: 2023-06-12 20:10:36
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -13,10 +13,9 @@ import numpy as np
 from ....base import BaseManager, SecondaryBar
 from ....constant import INPUT_TYPES
 from ....utils import AVOID_SIZE, INTEREST_SIZE
+from ...__base import BaseInputManager
 from ...__splitManager import Clip
-from ...trajectories import Agent
-from ..__baseInputManager import BaseInputManager
-from .__mapParasManager import MapParasManager
+from ...agent_based import Agent
 from .__trajMapManager import TrajMapManager
 from .__utils import add, cut, pooling2D
 

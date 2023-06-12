@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 11:13:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-06 09:16:15
+@LastEditTime: 2023-06-12 16:15:36
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,7 +13,7 @@ from typing import Any, Union
 import tensorflow as tf
 
 from ...base import BaseManager
-from ...dataset.trajectories import AnnotationManager
+from ...dataset import AnnotationManager
 from .__ade import ADE_2D
 from .__iou import AIoU, FIoU
 

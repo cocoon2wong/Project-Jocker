@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-07 11:13:43
+@LastEditTime: 2023-06-12 20:24:02
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,8 +12,8 @@ import numpy as np
 import tensorflow as tf
 
 from codes.constant import INPUT_TYPES
-from codes.dataset.inputs.maps import MapParasManager
-from codes.managers import AgentManager, SecondaryBar, Structure
+from codes.managers import (AgentManager, MapParasManager, SecondaryBar,
+                            Structure)
 from codes.utils import POOLING_BEFORE_SAVING
 
 from ..__args import SilverballersArgs

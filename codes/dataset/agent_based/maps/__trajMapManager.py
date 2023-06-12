@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-05-22 16:26:35
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-29 19:50:56
+@LastEditTime: 2023-06-12 20:11:18
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -13,12 +13,12 @@ from typing import Any
 import cv2
 import numpy as np
 
-from ....base import SecondaryBar
+from ....base import BaseManager, SecondaryBar
 from ....constant import INPUT_TYPES
 from ....utils import MAP_HALF_SIZE
+from ...__base import BaseInputManager
 from ...__splitManager import Clip
-from ...trajectories import Agent
-from ..__baseInputManager import BaseInputManager, BaseManager
+from ...agent_based import Agent
 from .__mapParasManager import MapParasManager
 from .__utils import add, cut, pooling2D
 

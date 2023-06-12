@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-26 15:48:02
+@LastEditTime: 2023-06-12 20:22:47
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,8 +13,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from ..base import BaseManager, SecondaryBar
-from ..dataset.__splitManager import Clip
-from ..dataset.trajectories import Agent, AnnotationManager
+from ..dataset import AnnotationManager, Clip
+from ..dataset.agent_based import Agent
 from ..utils import (DISTRIBUTION_IMAGE, DRAW_TEXT_IN_IMAGES,
                      DRAW_TEXT_IN_VIDEOS, GT_IMAGE, NEIGHBOR_IMAGE, OBS_IMAGE,
                      PRED_IMAGE)

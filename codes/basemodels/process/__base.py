@@ -14,7 +14,7 @@ import numpy as np
 import tensorflow as tf
 
 from ...constant import ANN_TYPES
-from ...dataset.trajectories import Annotation
+from ...dataset import Annotation
 
 
 class BaseProcessLayer(tf.keras.layers.Layer):

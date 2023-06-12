@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2023-05-22 16:26:35
-@LastEditors: Beihao Xia
-@LastEditTime: 2023-05-29 20:27:55
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-06-12 20:10:58
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -12,11 +12,12 @@
 import cv2
 import numpy as np
 
+from ....base import BaseManager
 from ....constant import INPUT_TYPES
 from ....utils import SEG_IMG
+from ...__base import BaseInputManager
 from ...__splitManager import Clip, SplitManager
-from ...trajectories import Agent
-from ..__baseInputManager import BaseInputManager, BaseManager
+from ...agent_based import Agent
 from .__trajMapManager import TrajMapManager
 
 
