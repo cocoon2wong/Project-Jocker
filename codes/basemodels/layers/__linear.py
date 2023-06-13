@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-12-21 15:19:11
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-08-03 14:36:57
+@LastEditTime: 2023-06-13 16:31:00
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -84,7 +84,7 @@ class LinearLayerND(LinearLayer):
             results.append(self.A_p @ Bx)
 
         results = tf.concat(results, axis=-1)
-        return results[:, -self.f:, :]
+        return results[..., -self.f:, :]
 
 
 class LinearInterpolation(tf.keras.layers.Layer):

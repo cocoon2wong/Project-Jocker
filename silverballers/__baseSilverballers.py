@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-07 17:12:49
+@LastEditTime: 2023-06-13 17:44:46
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -99,10 +99,10 @@ class BaseSilverballersModel(Model):
 
         # Down sampling from K*Kc generations (if needed)
         if self.args.down_sampling_rate < 1.0:
-            K_current = y_agent.shape[1]
+            K_current = y_agent.shape[-3]
             K_new = K_current * self.args.down_sampling_rate
             new_index = tf.random.shuffle(tf.range(K_current))[:int(K_new)]
-            y_agent = tf.gather(y_agent, new_index, axis=1)
+            y_agent = tf.gather(y_agent, new_index, axis=-3)
 
         ######################
         # Stage-2 Subnetwork #
@@ -194,7 +194,8 @@ class BaseSilverballers(BaseSubnetworkStructure):
         extra_args += ['--split', str(min_args_a.split),
                        '--anntype', str(min_args_a.anntype),
                        '--obs_frames', str(min_args_a.obs_frames),
-                       '--interval', str(min_args_a.interval)]
+                       '--interval', str(min_args_a.interval),
+                       '--model_type', str(min_args_a.model_type)]
 
         self.args = self.ARG_TYPE(terminal_args + extra_args)
 

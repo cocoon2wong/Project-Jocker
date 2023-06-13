@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-12 20:22:47
+@LastEditTime: 2023-06-13 18:02:11
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -87,7 +87,11 @@ class Visualization(BaseManager):
         obs = self.real2pixel(agent.traj, integer)
         pred = self.real2pixel(agent.pred, integer)
         gt = self.real2pixel(agent.groundtruth, integer)
-        nei = self.real2pixel(agent.traj_neighbor[:, -1], integer)
+
+        try:
+            nei = self.real2pixel(agent.traj_neighbor[:, -1], integer)
+        except:
+            nei = None
 
         if pred.ndim == 2:
             pred = pred[np.newaxis]
@@ -302,10 +306,18 @@ class Visualization(BaseManager):
                 f, neighbor, self.neighbor_file, draw_lines=False)
 
         if obs is not None:
-            f = self.helper.draw_traj(f, obs, self.obs_file)
+            if obs.ndim == 2:
+                obs = obs[np.newaxis]
+
+            for _obs in obs:
+                f = self.helper.draw_traj(f, _obs, self.obs_file)
 
         if gt is not None:
-            f = self.helper.draw_traj(f, gt, self.gt_file)
+            if gt.ndim == 2:
+                gt = gt[np.newaxis]
+
+            for _gt in gt:
+                f = self.helper.draw_traj(f, _gt, self.gt_file)
 
         # draw the background image
         if background is not None:

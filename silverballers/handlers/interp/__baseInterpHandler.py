@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-29 09:26:00
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-07 17:04:53
+@LastEditTime: 2023-06-13 10:38:07
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -52,9 +52,9 @@ class _BaseInterpHandlerModel(BaseHandlerModel):
         # Unpack inputs
         trajs = inputs[0]
 
-        if keypoints.ndim == 4:     # (batch, K, steps, dim)
+        if keypoints.ndim >= 4:     # (batch, K, steps, dim)
             K = keypoints.shape[-3]
-            trajs = tf.repeat(trajs[:, tf.newaxis], K, axis=-3)
+            trajs = tf.repeat(trajs[..., tf.newaxis, :, :], K, axis=-3)
 
         return self.interp(keypoints_index, keypoints, obs_traj=trajs)
 

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 10:50:35
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-03-21 15:13:19
+@LastEditTime: 2023-06-13 17:54:31
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,9 +10,12 @@
 
 import tensorflow as tf
 
+from ...utils import get_loss_mask
+
 
 def AIoU(outputs: list[tf.Tensor],
          labels: list[tf.Tensor],
+         model_inputs: list[tf.Tensor],
          coe: float = 1.0,
          *args, **kwargs) -> tf.Tensor:
     """
@@ -23,11 +26,15 @@ def AIoU(outputs: list[tf.Tensor],
     pred = outputs[0]
     GT = labels[0]
 
+    # (batch, steps, dim)
     if pred.ndim == 3:
         pred = pred[:, tf.newaxis, :, :]
 
+    mask = get_loss_mask(model_inputs[0], GT)
+    count = tf.reduce_sum(mask)
+
     K = pred.shape[-3]
-    GT = tf.repeat(GT[:, tf.newaxis, :, :], K, axis=-3)
+    GT = tf.repeat(GT[..., tf.newaxis, :, :], K, axis=-3)
 
     # (batch, K, steps)
     dim = pred.shape[-1]
@@ -37,15 +44,17 @@ def AIoU(outputs: list[tf.Tensor],
         func = __IoU_single_3Dbox
     else:
         raise ValueError(dim)
-    
+
     iou = func(pred, GT)
     iou = tf.reduce_mean(iou, axis=-1)
-    iou = tf.reduce_max(iou, axis=1)
-    return tf.reduce_mean(iou)
+    iou = tf.reduce_max(iou, axis=-1)
+    iou = tf.maximum(iou, 0.0)
+    return tf.reduce_sum(iou * mask)/count
 
 
 def FIoU(outputs: list[tf.Tensor],
          labels: list[tf.Tensor],
+         model_inputs: list[tf.Tensor],
          coe: float = 1.0,
          index: int = -1,
          length: int = 1,
@@ -61,7 +70,8 @@ def FIoU(outputs: list[tf.Tensor],
     steps = pred.shape[-2]
     index = tf.math.mod(index, steps)
     return AIoU([pred[..., index:index+length, :]],
-                [GT[..., index:index+length, :]])
+                [GT[..., index:index+length, :]],
+                model_inputs=model_inputs)
 
 
 def __IoU_single_3Dbox(box1: tf.Tensor, box2: tf.Tensor) -> tf.Tensor:
@@ -84,7 +94,7 @@ def __IoU_single_3Dbox(box1: tf.Tensor, box2: tf.Tensor) -> tf.Tensor:
     :param box1: Shape = (..., 6).
     :param box2: Shape = (..., 6).
     """
-    
+
     len1_x, len2_x, len_inter_x = \
         __get_len_1Dbox(tf.gather(box1, [0, 3], axis=-1),
                         tf.gather(box2, [0, 3], axis=-1))
@@ -92,11 +102,11 @@ def __IoU_single_3Dbox(box1: tf.Tensor, box2: tf.Tensor) -> tf.Tensor:
     len1_y, len2_y, len_inter_y = \
         __get_len_1Dbox(tf.gather(box1, [1, 4], axis=-1),
                         tf.gather(box2, [1, 4], axis=-1))
-    
+
     len1_z, len2_z, len_inter_z = \
         __get_len_1Dbox(tf.gather(box1, [2, 5], axis=-1),
                         tf.gather(box2, [2, 5], axis=-1))
-    
+
     v_inter = len_inter_x * len_inter_y * len_inter_z
     v_box1 = len1_x * len1_y * len1_z
     v_box2 = len2_x * len2_y * len2_z
@@ -108,7 +118,7 @@ def __IoU_single_2Dbox(box1: tf.Tensor, box2: tf.Tensor) -> tf.Tensor:
     """
     Calculate IoU on pred and GT.
     Boxes must have the same shape.
-    
+
     - box1:
 
     |  0  |  1  |  2  |  3  |
@@ -120,7 +130,7 @@ def __IoU_single_2Dbox(box1: tf.Tensor, box2: tf.Tensor) -> tf.Tensor:
     |  0  |  1  |  2  |  3  |
     |-----|-----|-----|-----|
     | xl2 | yl2 | xr2 | yr2 |
-    
+
     :param box1: Shape = (..., 4).
     :param box2: Shape = (..., 4).
     """

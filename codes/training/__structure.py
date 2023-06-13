@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-12 20:21:24
+@LastEditTime: 2023-06-13 16:58:11
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -184,7 +184,8 @@ class Structure(BaseManager):
             outputs = self.model.forward(inputs, training=True)
             loss, loss_dict = self.loss.call(outputs, labels,
                                              training=True,
-                                             coefficient=1.0)
+                                             coefficient=1.0,
+                                             model_inputs=inputs)
 
             loss_move_average = 0.7 * loss + 0.3 * loss_move_average
 
@@ -212,7 +213,8 @@ class Structure(BaseManager):
         metrics, metrics_dict = \
             self.metrics.call(outputs, labels,
                               training=None,
-                              coefficient=self.split_manager.scale)
+                              coefficient=self.split_manager.scale,
+                              model_inputs=inputs)
 
         return outputs, metrics, metrics_dict
 

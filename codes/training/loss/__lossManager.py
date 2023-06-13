@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 11:13:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-12 16:15:36
+@LastEditTime: 2023-06-13 17:57:43
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -14,6 +14,7 @@ import tensorflow as tf
 
 from ...base import BaseManager
 from ...dataset import AnnotationManager
+from ...utils import get_loss_mask
 from .__ade import ADE_2D
 from .__iou import AIoU, FIoU
 
@@ -82,7 +83,8 @@ class LossManager(BaseManager):
     def call(self, outputs: list[tf.Tensor],
              labels: list[tf.Tensor],
              training=None,
-             coefficient: float = 1.0):
+             coefficient: float = 1.0,
+             model_inputs: list[tf.Tensor] = None):
         """
         Call all loss functions recorded in the `loss_list`.
 
@@ -109,6 +111,7 @@ class LossManager(BaseManager):
             value = loss_func(outputs, labels,
                               coe=coefficient,
                               training=training,
+                              model_inputs=model_inputs,
                               **paras)
 
             loss_dict[f'{name}({self.name})'] = value
@@ -132,16 +135,19 @@ class LossManager(BaseManager):
 
     def l2(self, outputs: list[tf.Tensor],
            labels: list[tf.Tensor],
+            model_inputs: list[tf.Tensor],
            coe: float = 1.0,
            *args, **kwargs):
         """
         l2 loss on the keypoints.
         Support M-dimensional trajectories.
         """
-        return ADE_2D(outputs[0], labels[0], coe=coe)
+        mask = get_loss_mask(model_inputs[0], labels[0])
+        return ADE_2D(outputs[0], labels[0], coe=coe, mask=mask)
 
     def ADE(self, outputs: list[tf.Tensor],
             labels: list[tf.Tensor],
+            model_inputs: list[tf.Tensor],
             coe: float = 1.0,
             *args, **kwargs):
         """
@@ -153,6 +159,7 @@ class LossManager(BaseManager):
         :param labels: Shape of `labels[0]` is `(batch, pred, 2)`.
         """
         pred = outputs[0]
+        obs = model_inputs[0]
 
         if pred.ndim == 3:
             pred = pred[:, tf.newaxis, :, :]
@@ -160,12 +167,14 @@ class LossManager(BaseManager):
         ade = []
         picker = self.pickers.target.get_coordinate_series
         for p, gt in zip(picker(pred), picker(labels[0])):
-            ade.append(ADE_2D(p, gt, coe))
+            mask = get_loss_mask(obs, gt)
+            ade.append(ADE_2D(p, gt, coe, mask=mask))
 
         return tf.reduce_mean(ade)
 
     def avgCenter(self, outputs: list[tf.Tensor],
                   labels: list[tf.Tensor],
+                  model_inputs: list[tf.Tensor],
                   coe: float = 1.0,
                   *args, **kwargs):
         """
@@ -174,10 +183,12 @@ class LossManager(BaseManager):
         picker = self.pickers.target.get_center
         pred_center = picker(outputs[0])
         gt_center = picker(labels[0])
-        return ADE_2D(pred_center, gt_center, coe)
+        mask = get_loss_mask(model_inputs[0], gt_center)
+        return ADE_2D(pred_center, gt_center, coe, mask)
 
     def finalCenter(self, outputs: list[tf.Tensor],
                     labels: list[tf.Tensor],
+                    model_inputs: list[tf.Tensor],
                     coe: float = 1.0,
                     *args, **kwargs):
         """
@@ -186,10 +197,12 @@ class LossManager(BaseManager):
         picker = self.pickers.target.get_center
         pred_center = picker(outputs[0])
         gt_center = picker(labels[0])
-        return ADE_2D(pred_center[..., -1:, :], gt_center[..., -1:, :], coe)
+        mask = get_loss_mask(model_inputs[0], gt_center)
+        return ADE_2D(pred_center[..., -1:, :], gt_center[..., -1:, :], coe, mask)
 
     def FDE(self, outputs: list[tf.Tensor],
             labels: list[tf.Tensor],
+            model_inputs: list[tf.Tensor],
             index: int = -1,
             coe: float = 1.0,
             *args, **kwargs):
@@ -211,10 +224,12 @@ class LossManager(BaseManager):
         pred_final = pred[..., index, tf.newaxis, :]
         labels_final = labels[0][..., index, tf.newaxis, :]
 
-        return self.ADE([pred_final], [labels_final], coe)
+        return self.ADE([pred_final], [labels_final],
+                        model_inputs, coe)
 
     def HIoU(self, outputs: list[tf.Tensor],
              labels: list[tf.Tensor],
+             model_inputs: list[tf.Tensor],
              coe: float = 1.0,
              *args, **kwargs):
 
@@ -223,6 +238,7 @@ class LossManager(BaseManager):
         index = s//2 - 1
 
         return FIoU(outputs, labels, coe=1.0,
+                    model_inputs=model_inputs,
                     index=index, length=length)
 
     def print_info(self, **kwargs):

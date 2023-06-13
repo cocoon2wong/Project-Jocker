@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-06-12 10:16:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-12 20:16:40
+@LastEditTime: 2023-06-13 17:52:51
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -11,11 +11,11 @@
 import numpy as np
 import tensorflow as tf
 
+from ...base import BaseManager
 from ...basemodels.layers import LinearLayerND
 from ..__base import BaseInputObject
 
 LINEAR_LAYER = None
-MAX_AGENTS = 100
 
 
 class Frame(BaseInputObject):
@@ -37,8 +37,7 @@ class Frame(BaseInputObject):
                    '_id', '_agent_ids', '_agent_types',
                    '_frames', '_frames_future',
                    'linear_predict',
-                   'obs_length', 'total_frame',
-                   ]
+                   'obs_length', 'total_frame']
 
     def __init__(self):
 
@@ -64,7 +63,7 @@ class Frame(BaseInputObject):
         self.obs_length = 0
         self.total_frame = 0
 
-        self.manager = None
+        self.manager: BaseManager = None
 
     def padding(self, trajs: np.ndarray) -> np.ndarray:
         """
@@ -72,9 +71,15 @@ class Frame(BaseInputObject):
         Shape should be `(n_agent, steps, dim)`.
         """
         n = len(trajs)
-        zero_pad = np.pad(trajs,
-                          ((0, MAX_AGENTS-n), (0, 0), (0, 0)))
-        zero_pad[n:, :, :] = self._init_position
+        m = self.manager.args.max_agents
+
+        if n <= m:
+            zero_pad = np.pad(trajs,
+                              ((0, m-n), (0, 0), (0, 0)))
+            zero_pad[n:, :, :] = self._init_position
+        else:
+            zero_pad = trajs[:m]
+
         return zero_pad
 
     @property
@@ -102,6 +107,10 @@ class Frame(BaseInputObject):
     @property
     def agent_types(self) -> np.ndarray:
         return self._agent_types
+
+    @property
+    def type(self) -> str:
+        return 'Frame'
 
     @property
     def traj_mask(self) -> tf.Tensor:

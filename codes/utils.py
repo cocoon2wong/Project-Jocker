@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 20:10:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-29 16:37:34
+@LastEditTime: 2023-06-13 17:51:13
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,6 +13,8 @@ import plistlib
 import time
 
 import numpy as np
+import tensorflow as tf
+
 
 """
 Configs
@@ -26,7 +28,7 @@ DATASET_CONFIG_DIR = './dataset_configs'
 ANNOTATION_CONFIGS_FILE = './codes/annSettings.plist'
 
 # Dataset configs
-INIT_POSITION = 10000
+INIT_POSITION = 100000000
 
 # Context map configs
 SEG_IMG = 'segmentation_image'
@@ -109,3 +111,20 @@ def load_from_plist(path: str) -> dict:
         dat = plistlib.load(f)
 
     return dat
+
+
+def get_mask(input: tf.Tensor, dtype=tf.float32):
+    return tf.cast(input < 0.05 * INIT_POSITION, dtype)
+
+
+def get_loss_mask(obs: tf.Tensor, label: tf.Tensor):
+    """
+    Get mask from both model predictions and labels.
+    Return type: `tf.float32`.
+
+    :param obs: Observed trajectories, shape = `(..., steps, dim)`
+    :param label: Label trajectories, shape = `(..., steps, dim)`
+    """
+    pred_mask = get_mask(tf.reduce_sum(obs, axis=[-1, -2]))
+    label_mask = get_mask(tf.reduce_sum(label, axis=[-1, -2]))
+    return pred_mask * label_mask

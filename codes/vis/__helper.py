@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-29 09:53:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 11:02:28
+@LastEditTime: 2023-06-13 18:01:27
 @Description: png content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,7 +13,7 @@ import numpy as np
 import tensorflow as tf
 
 from ..constant import ANN_TYPES
-from ..utils import DISTRIBUTION_COLORBAR, DRAW_LINES
+from ..utils import DISTRIBUTION_COLORBAR, DRAW_LINES, INIT_POSITION
 
 CONV_LAYER = tf.keras.layers.Conv2D(
     1, (20, 20), (1, 1), 'same',
@@ -112,6 +112,9 @@ class CoordinateHelper(BaseVisHelper):
                   width=3,
                   draw_lines=True):
 
+        if inputs.max() >= 0.5 * INIT_POSITION:
+            return source
+
         steps = inputs.shape[-2]
 
         # draw lines
@@ -163,6 +166,12 @@ class BoundingboxHelper(BaseVisHelper):
                   color=(255, 255, 255),
                   width=3,
                   draw_lines=True):
+
+        if inputs.max() >= 0.5 * INIT_POSITION:
+            return source
+
+        if inputs.ndim == 3:
+            inputs = np.reshape(inputs, [-1, inputs.shape[-1]])
 
         for box in inputs:
             source = self.draw_single(

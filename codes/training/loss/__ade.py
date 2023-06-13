@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 09:06:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 11:22:26
+@LastEditTime: 2023-06-13 17:54:20
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,7 +13,8 @@ import tensorflow as tf
 
 def ADE_2D(pred: tf.Tensor,
            GT: tf.Tensor,
-           coe: float = 1.0) -> tf.Tensor:
+           coe: float = 1.0,
+           mask: tf.Tensor = None) -> tf.Tensor:
     """
     Calculate `ADE` or `minADE`.
 
@@ -25,16 +26,25 @@ def ADE_2D(pred: tf.Tensor,
         Return `ADE` when input_shape = [batch, pred_frames, 2];
         Return `minADE` when input_shape = [batch, K, pred_frames, 2].
     """
-    if pred.ndim == 3:
-        pred = pred[:, tf.newaxis, :, :]
+    if pred.ndim == GT.ndim:      # (batch, steps, dim)
+        pred = pred[..., tf.newaxis, :, :]
 
+    # Shape of all_ade: (..., K)
     all_ade = tf.reduce_mean(
         tf.linalg.norm(
-            pred - GT[:, tf.newaxis, :, :],
+            pred - GT[..., tf.newaxis, :, :],
             ord=2, axis=-1
         ), axis=-1)
-    best_ade = tf.reduce_min(all_ade, axis=1)
-    return coe * tf.reduce_mean(best_ade)
+
+    best_ade = tf.reduce_min(all_ade, axis=-1)
+
+    if mask is not None:
+        best_ade *= mask
+        count = tf.reduce_sum(mask)
+    else:
+        count = tf.reduce_sum(tf.ones_like(best_ade))
+
+    return coe * tf.reduce_sum(best_ade) / count
 
 
 def FDE_2D(pred: tf.Tensor,
