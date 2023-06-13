@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-05-30 09:26:04
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-08 09:15:12
+@LastEditTime: 2023-06-13 19:02:26
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -85,6 +85,11 @@ class Sieger300GhostModel(BaseAgentModel):
         # Unpack inputs
         obs = inputs[0]
 
+        kp_future, kp_past = self.call_cell(obs, training, *args, **kwargs)
+
+        return kp_future, obs, kp_past
+
+    def call_cell(self, obs: tf.Tensor, training=None, *args, **kwargs):
         # Linear predict
         pred_linear = self.linear0(obs)     # (batch, pred, dim)
         traj = self.traj_concat0([obs, pred_linear])
@@ -130,7 +135,7 @@ class Sieger300GhostModel(BaseAgentModel):
             p_all.append(y)
 
         Y = tf.concat(p_all, axis=1)
-        return Y[:, :, self.n_key_past:, :], obs, Y[:, :, :self.n_key_past, :]
+        return Y[:, :, self.n_key_past:, :], Y[:, :, :self.n_key_past, :]
 
 
 class Sieger300Ghost(BaseAgentStructure):

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-27 20:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-09 11:22:40
+@LastEditTime: 2023-06-09 14:57:42
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -27,7 +27,8 @@ class SilverballersMKII(BaseSilverballers):
 
         # Assign the model type of the first-stage subnetwork
         min_args_a = Args(is_temporary=True)._load_from_json(a_model_path)
-        agent_model_type = get_model_type(min_args_a.model)
+        agent_model_type = get_model_type(min_args_a.model,
+                                          min_args.experimental)
 
         # Assign the model type of the second-stage subnetwork
         interp_model = INTERPOLATION_TYPES.get_type(b_model_path)
@@ -67,7 +68,9 @@ __SILVERBALLERS_DICT = dict(
     agent47CE=[agents.Agent47CE, agents.Agent47CEModel],
 
     # ALPHA series
-    s300g=[alpha_agents.Sieger300Ghost, alpha_agents.Sieger300GhostModel],
+    s300g=[alpha_agents.Sieger300Ghost,
+           alpha_agents.Sieger300GhostModel,
+           alpha_agents.Sieger300GhostRefineModel],
 
     # Silverballers Structures
     MKII=[SilverballersMKII, None],
@@ -87,8 +90,12 @@ def get_structure(model_name: str):
     return __get(model_name)[0]
 
 
-def get_model_type(model_name: str):
-    return __get(model_name)[1]
+def get_model_type(model_name: str, experimental=False):
+    if experimental:
+        index = 2
+    else:
+        index = 1
+    return __get(model_name)[index]
 
 
 def __get(model_name: str):
