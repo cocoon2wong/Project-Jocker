@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-23 10:23:53
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-07 17:09:21
+@LastEditTime: 2023-06-15 17:24:58
 @Description: Second stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -37,6 +37,11 @@ class VBModel(BaseHandlerModel):
                  *args, **kwargs):
 
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
+
+        self.accept_batchK_inputs = True
+
+        if self.args.model_type == 'frame-based':
+            raise ValueError(self.args.model_type)
 
         # Transform layers
         input_steps = self.args.obs_frames
@@ -82,6 +87,10 @@ class VBModel(BaseHandlerModel):
 
         # unpack inputs
         trajs_md, maps = inputs[:2]
+        trajs_md = tf.repeat(trajs_md[..., tf.newaxis, :, :],
+                             repeats=tf.shape(keypoints)[-3],
+                             axis=-3)
+
         keypoints_md = keypoints
 
         # Only accept 2-dimensional trajectories
@@ -90,29 +99,35 @@ class VBModel(BaseHandlerModel):
 
         # Embedding and encoding
         # Transformations are applied in `self.te`
-        traj_feature = self.te(trajs)    # (batch, input_Tsteps, d//2)
+        # (batch, input_Tsteps, d//2)
+        traj_feature = self.te(trajs[..., 0, :, :])
         context_feature = self.ce(maps)  # (batch, input_Tsteps, d//2)
 
         # transformer inputs shape = (batch, input_Tsteps, d)
         t_inputs = tf.concat([traj_feature, context_feature], axis=-1)
 
         # transformer target shape = (batch, output_Tsteps, Tchannels)
+
         keypoints_index = tf.concat([[-1], keypoints_index], axis=0)
-        keypoints = tf.concat([trajs[:, -1:, :], keypoints], axis=1)
+        keypoints = tf.concat([trajs[..., -1:, :], keypoints], axis=-2)
 
         # Add the last obs point to finish linear interpolation
         linear_pred = self.linear_int(keypoints_index, keypoints)
+
         traj = tf.concat([trajs, linear_pred], axis=-2)
         t_outputs = self.t_layer(traj)
 
         # transformer output shape = (batch, output_Tsteps, Tchannels)
+        t_inputs = tf.repeat(t_inputs[..., tf.newaxis, :, :],
+                             repeats=tf.shape(keypoints)[-3],
+                             axis=-3)
         p_fft, _ = self.transformer(t_inputs,
                                     t_outputs,
                                     training=training)
 
         # Inverse transform
         p = self.it_layer(p_fft)
-        y = p[:, self.args.obs_frames:, :]
+        y = p[..., self.args.obs_frames:, :]
 
         if training:
             if self.args.anntype != ANN_TYPES.CO_2D:
@@ -123,7 +138,8 @@ class VBModel(BaseHandlerModel):
             return y
 
         # Calculate linear prediction (M-dimensional)
-        keypoints_md = tf.concat([trajs_md[:, -1:, :], keypoints_md], axis=1)
+        keypoints_md = tf.concat(
+            [trajs_md[..., -1:, :], keypoints_md], axis=-2)
         l = self.linear_int(keypoints_index, keypoints_md)
 
         # Linear center points
