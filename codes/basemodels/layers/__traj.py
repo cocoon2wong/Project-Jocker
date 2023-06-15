@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-12-21 15:25:47
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-09 21:01:10
+@LastEditTime: 2023-06-15 15:09:46
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -59,7 +59,9 @@ class TrajEncoding(tf.keras.layers.Layer):
             t = self.Tlayer(trajs)  # (batch, Tsteps, Tchannels)
 
             if not self.channels_first:
-                t = tf.transpose(t, [0, 2, 1])  # (batch, Tchannels, Tsteps)
+                i = list(tf.range(t.ndim))
+                # (batch, Tchannels, Tsteps)
+                t = tf.transpose(t, i[:-2] + [i[-1], i[-2]])
 
             fc2 = self.fc2(t)
             return self.fc1(fc2)

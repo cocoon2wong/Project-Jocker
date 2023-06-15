@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-11-21 10:15:13
-@LastEditors: Beihao Xia
-@LastEditTime: 2022-11-22 11:25:50
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-06-15 15:07:32
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -47,16 +47,28 @@ class _BasePooling2D(tf.keras.layers.Layer, BaseObject):
         """
         Run the 2D pooling operation.
 
-        :param inputs: The input tensor, shape = `(batch, channels, a, b)`
+        :param inputs: The input tensor, shape = `(..., channels, a, b)`
         """
+        reshape = False
+        if inputs.ndim >= 5:
+            reshape = True
+            s = list(tf.shape(inputs))
+            inputs = tf.reshape(inputs, [-1] + s[-3:])
+
         # Pool layer with 'channels_first' runs only on gpus
         if self.transpose:
-            # Reshape the input to (batch, a, b, channels)
+            # Reshape the input to (..., a, b, channels)
             i_reshape = tf.transpose(inputs, [0, 2, 3, 1])
             pooled = self.pool_layer(i_reshape)
-            return tf.transpose(pooled, [0, 3, 1, 2])
+            res = tf.transpose(pooled, [0, 3, 1, 2])
         else:
-            return self.pool_layer(inputs)
+            res = self.pool_layer(inputs)
+
+        if reshape:
+            s1 = list(tf.shape(res))
+            res = tf.reshape(res, s[:-3] + s1[1:])
+
+        return res
 
 
 class MaxPooling2D(_BasePooling2D):

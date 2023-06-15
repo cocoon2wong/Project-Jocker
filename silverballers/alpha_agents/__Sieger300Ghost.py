@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-05-30 09:26:04
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-13 19:02:26
+@LastEditTime: 2023-06-15 15:49:16
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -50,6 +50,7 @@ class Sieger300GhostModel(BaseAgentModel):
         self.outer0 = OuterLayer(self.d//2, self.d//2, reshape=False)
         self.pooling0 = layers.MaxPooling2D(pool_size=(2, 2),
                                             data_format='channels_first')
+        self.flatten0 = layers.Flatten(axes_num=2)
         self.outer_fc0 = tf.keras.layers.Dense(self.d//2, tf.nn.tanh)
 
         # Random id encoding
@@ -96,13 +97,10 @@ class Sieger300GhostModel(BaseAgentModel):
 
         # Feature embedding and encoding
         # Use the bilinear structure to encode features
-        f = self.te0(traj)           # (batch, Tsteps, d/2)
-        f = self.outer0(f, f)               # (batch, Tsteps, d/2, d/2)
-        f = self.pooling0(f)                # (batch, Tsteps, d/4, d/4)
-
-        # Flatten
-        s = tf.shape(f)
-        f = tf.reshape(f, [s[0], s[1], -1])  # (batch, Tsteps, d*d/16)
+        f = self.te0(traj)          # (batch, Tsteps, d/2)
+        f = self.outer0(f, f)       # (batch, Tsteps, d/2, d/2)
+        f = self.pooling0(f)        # (batch, Tsteps, d/4, d/4)
+        f = self.flatten0(f)        # (batch, Tsteps, d*d/16)
         f_bi = self.outer_fc0(f)            # (batch, Tsteps, d/2)
 
         # Sample random predictions
@@ -111,7 +109,8 @@ class Sieger300GhostModel(BaseAgentModel):
 
         for _ in range(repeats):
             # Assign random noise and embedding
-            z = tf.random.normal([s[0], self.Tsteps, self.d_id])
+            z = tf.random.normal(
+                list(tf.shape(obs)[:-2]) + [self.Tsteps, self.d_id])
             f_z = self.ie0(z)
 
             # Feed into transformer
@@ -122,20 +121,23 @@ class Sieger300GhostModel(BaseAgentModel):
                                     training=training)
 
             # Multiple generations
-            adj = tf.transpose(self.adj_fc0(f_tran), [0, 2, 1])
+            adj = self.adj_fc0(f_tran)
+            i = list(range(adj.ndim))
+            adj = tf.transpose(adj, i[:-2] + [i[-1], i[-2]])
             f_multi = self.gcn0(f_behavior, adj)
 
             # Forecast keypoints
             f_p = self.decoder_fc0(f_multi)
             f_p = self.decoder_fc1(f_p)
-            f_p = self.decoder_reshape0(f_p)
+            f_p = tf.reshape(f_p, list(tf.shape(f_p)[:-1]) +
+                             [self.Tsteps_de, self.Tchannels_de])
 
             # Inverse transform
             y = self.it0(f_p)
             p_all.append(y)
 
-        Y = tf.concat(p_all, axis=1)
-        return Y[:, :, self.n_key_past:, :], Y[:, :, :self.n_key_past, :]
+        Y = tf.concat(p_all, axis=-3)
+        return Y[..., self.n_key_past:, :], Y[..., :self.n_key_past, :]
 
 
 class Sieger300Ghost(BaseAgentStructure):

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-06-08 15:59:32
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-13 19:02:43
+@LastEditTime: 2023-06-15 11:53:33
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -43,27 +43,29 @@ class Sieger300GhostRefineModel(Sieger300GhostModel):
         all_batch = len(obs)
         run_count = math.ceil(all_batch/threads)
         
-        # Run cells
-        kp_past = []
-        kp_future = []
+        kp_future, kp_past = self.call_cell(obs, training, *args, **kwargs)
 
-        obs = list(obs)
-        for _i in SecondaryBar(range(run_count), manager=self.get_top_manager(), desc='Calculate on batch...'):
+        # # Run cells
+        # kp_past = []
+        # kp_future = []
+
+        # obs = list(obs)
+        # for _i in SecondaryBar(range(run_count), manager=self.get_top_manager(), desc='Calculate on batch...'):
             
-            start = _i * threads
-            end = min(all_batch, (_i + 1) * threads)
-            _obs = tf.concat(obs[start:end], axis=-3)
+        #     start = _i * threads
+        #     end = min(all_batch, (_i + 1) * threads)
+        #     _obs = tf.concat(obs[start:end], axis=-3)
 
-            _kp_future, _kp_past = self.call_cell(_obs, training, *args, **kwargs)
+        #     _kp_future, _kp_past = self.call_cell(_obs, training, *args, **kwargs)
       
-            kp_past.append(_kp_past)
-            kp_future.append(_kp_future)
+        #     kp_past.append(_kp_past)
+        #     kp_future.append(_kp_future)
 
-        kp_future = tf.concat(kp_future, axis=0)
-        kp_past = tf.concat(kp_past, axis=0)
+        # kp_future = tf.concat(kp_future, axis=0)
+        # kp_past = tf.concat(kp_past, axis=0)
 
-        kp_future = tf.reshape(kp_future, [all_batch, current_batch_size] + kp_future.shape[1:])
-        kp_past = tf.reshape(kp_past, [all_batch, current_batch_size] + kp_past.shape[1:])
+        # kp_future = tf.reshape(kp_future, [all_batch, current_batch_size] + kp_future.shape[1:])
+        # kp_past = tf.reshape(kp_past, [all_batch, current_batch_size] + kp_past.shape[1:])
 
         return kp_future, obs, kp_past
 

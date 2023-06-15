@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-04-30 15:09:20
 @LastEditors: Conghao Wong
-@LastEditTime: 2021-12-21 15:58:52
+@LastEditTime: 2023-06-15 15:26:50
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,7 +13,26 @@ import numpy as np
 import tensorflow as tf
 
 
-def get_angles(pos: np.ndarray, i: np.ndarray, d_model:int):
+def batch_matmul(a: tf.Tensor, b: tf.Tensor, *args, **kwargs):
+    """
+    Run matmul operations on a batch of inputs.
+    Other args will be wrapped to `tf.matmul`.
+
+    :param a: Input, shape is `(..., a, b)`.
+    :param b: Another input, shape is `(..., b, c)`.
+    """
+    if a.ndim <= 4:
+        return tf.matmul(a, b, *args, **kwargs)
+
+    batch = tf.shape(a)[:-3]
+    _a = tf.reshape(a, [-1]+list(tf.shape(a)[2:]))
+    _b = tf.reshape(b, [-1]+list(tf.shape(b)[2:]))
+    res = tf.matmul(_a, _b, *args, **kwargs)
+
+    return tf.reshape(res, list(batch) + list(tf.shape(res)[1:]))
+
+
+def get_angles(pos: np.ndarray, i: np.ndarray, d_model: int):
     """
     Get the relative position representation in angles.
 
@@ -66,10 +85,11 @@ def create_padding_mask(seq):
     该 mask 表明填充值 `0` 出现的位置：在这些位置 mask 输出 `1`，否则输出 `0`。
     """
     seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
-    
+
     # 添加额外的维度来将填充加到
     # 注意力对数（logits）。
-    return seq[:, tf.newaxis, tf.newaxis, :]  # (batch_size, 1, 1, seq_len)
+    # (..., steps, 1, 1, seq_len, dim)
+    return seq[..., tf.newaxis, tf.newaxis, :, :]
 
 
 def create_look_ahead_mask(size):
@@ -85,23 +105,23 @@ def create_look_ahead_mask(size):
 
 
 def create_encoder_mask(inp):
-    return create_padding_mask(inp)[:, :, :, :, 0]
+    return create_padding_mask(inp)[..., 0]
 
 
 def create_masks(inp, tar):
     # 编码器填充遮挡
-    enc_padding_mask = create_padding_mask(inp)[:, :, :, :, 0]
-    
+    enc_padding_mask = create_padding_mask(inp)[..., 0]
+
     # 在解码器的第二个注意力模块使用。
     # 该填充遮挡用于遮挡编码器的输出。
-    dec_padding_mask = create_padding_mask(inp)[:, :, :, :, 0]
-    
+    dec_padding_mask = create_padding_mask(inp)[..., 0]
+
     # 在解码器的第一个注意力模块使用。
     # 用于填充（pad）和遮挡（mask）解码器获取到的输入的后续标记（future tokens）。
-    look_ahead_mask = create_look_ahead_mask(tf.shape(tar)[1])
-    dec_target_padding_mask = create_padding_mask(tar)[:, :, :, :, 0]
+    look_ahead_mask = create_look_ahead_mask(tf.shape(tar)[-2])
+    dec_target_padding_mask = create_padding_mask(tar)[..., 0]
     combined_mask = tf.maximum(dec_target_padding_mask, look_ahead_mask)
-    
+
     return enc_padding_mask, combined_mask, dec_padding_mask
 
 
@@ -134,33 +154,35 @@ def scaled_dot_product_attention(q, k, v, mask):
     k, v 必须有匹配的倒数第二个维度，例如：seq_len_k = seq_len_v。
     虽然 mask 根据其类型（填充或前瞻）有不同的形状，
     但是 mask 必须能进行广播转换以便求和。
-    
+
     参数:
         q: 请求的形状 == (..., seq_len_q, depth)
         k: 主键的形状 == (..., seq_len_k, depth)
         v: 数值的形状 == (..., seq_len_v, depth_v)
         mask: Float 张量，其形状能转换成
             (..., seq_len_q, seq_len_k)。默认为None。
-        
+
     返回值:
         输出，注意力权重
     """
 
-    matmul_qk = tf.matmul(q, k, transpose_b=True)  # (..., seq_len_q, seq_len_k)
-    
+    # (..., seq_len_q, seq_len_k)
+    matmul_qk = batch_matmul(q, k, transpose_b=True)
+
     # 缩放 matmul_qk
     dk = tf.cast(tf.shape(k)[-1], tf.float32)
     scaled_attention_logits = matmul_qk / tf.math.sqrt(dk)
 
     # 将 mask 加入到缩放的张量上。
     if mask is not None:
-        scaled_attention_logits += (mask * -1e9)  
+        scaled_attention_logits += (mask * -1e9)
 
     # softmax 在最后一个轴（seq_len_k）上归一化，因此分数
     # 相加等于1。
-    attention_weights = tf.nn.softmax(scaled_attention_logits, axis=-1)  # (..., seq_len_q, seq_len_k)
+    attention_weights = tf.nn.softmax(
+        scaled_attention_logits, axis=-1)  # (..., seq_len_q, seq_len_k)
 
-    output = tf.matmul(attention_weights, v)  # (..., seq_len_q, depth_v)
+    output = batch_matmul(attention_weights, v)  # (..., seq_len_q, depth_v)
 
     return output, attention_weights
 
@@ -189,51 +211,59 @@ class MultiHeadAttention(tf.keras.layers.Layer):
     因为多头允许模型共同注意来自不同表示空间的不同位置的信息。
     在分拆后，每个头部的维度减少，因此总的计算成本与有着全部维度的单个注意力头相同。
     """
+
     def __init__(self, d_model, num_heads):
         super(MultiHeadAttention, self).__init__()
         self.num_heads = num_heads
         self.d_model = d_model
-        
+
         assert d_model % self.num_heads == 0
-        
+
         self.depth = d_model // self.num_heads
-        
+
         self.wq = tf.keras.layers.Dense(d_model)
         self.wk = tf.keras.layers.Dense(d_model)
         self.wv = tf.keras.layers.Dense(d_model)
-        
+
         self.dense = tf.keras.layers.Dense(d_model)
-            
-    def split_heads(self, x, batch_size):
+
+    def split_heads(self, x):
         """分拆最后一个维度到 (num_heads, depth).
-        转置结果使得形状为 (batch_size, num_heads, seq_len, depth)
+        转置结果使得形状为 (..., num_heads, seq_len, depth)
         """
-        x = tf.reshape(x, (batch_size, -1, self.num_heads, self.depth))
-        return tf.transpose(x, perm=[0, 2, 1, 3])
-        
+        x = tf.reshape(
+            x, list(tf.shape(x)[:-1]) + [self.num_heads, self.depth])
+        i = list(tf.range(x.ndim))
+        return tf.transpose(x, perm=i[:-3] + [i[-2], i[-3], i[-1]])
+
     def call(self, v, k, q, mask):
         batch_size = tf.shape(q)[0]
-        
-        q = self.wq(q)  # (batch_size, seq_len, d_model)
-        k = self.wk(k)  # (batch_size, seq_len, d_model)
-        v = self.wv(v)  # (batch_size, seq_len, d_model)
-        
-        q = self.split_heads(q, batch_size)  # (batch_size, num_heads, seq_len_q, depth)
-        k = self.split_heads(k, batch_size)  # (batch_size, num_heads, seq_len_k, depth)
-        v = self.split_heads(v, batch_size)  # (batch_size, num_heads, seq_len_v, depth)
-        
-        # scaled_attention.shape == (batch_size, num_heads, seq_len_q, depth)
-        # attention_weights.shape == (batch_size, num_heads, seq_len_q, seq_len_k)
+
+        q = self.wq(q)  # (..., seq_len, d_model)
+        k = self.wk(k)  # (..., seq_len, d_model)
+        v = self.wv(v)  # (..., seq_len, d_model)
+
+        q = self.split_heads(q)  # (..., num_heads, seq_len_q, depth)
+        k = self.split_heads(k)  # (..., num_heads, seq_len_k, depth)
+        v = self.split_heads(v)  # (..., num_heads, seq_len_v, depth)
+
+        # scaled_attention.shape == (..., num_heads, seq_len_q, depth)
+        # attention_weights.shape == (..., num_heads, seq_len_q, seq_len_k)
         scaled_attention, attention_weights = scaled_dot_product_attention(
             q, k, v, mask)
-        
-        scaled_attention = tf.transpose(scaled_attention, perm=[0, 2, 1, 3])  # (batch_size, seq_len_q, num_heads, depth)
 
-        concat_attention = tf.reshape(scaled_attention, 
-                                    (batch_size, -1, self.d_model))  # (batch_size, seq_len_q, d_model)
+        i = list(tf.range(scaled_attention.ndim))
+        scaled_attention = tf.transpose(
+            scaled_attention,
+            perm=i[:-3] + [i[-2], i[-3], i[-1]])  # (..., seq_len_q, num_heads, depth)
 
-        output = self.dense(concat_attention)  # (batch_size, seq_len_q, d_model)
-            
+        concat_attention = tf.reshape(
+            scaled_attention,
+            list(tf.shape(scaled_attention)[:-3]) + [-1, self.d_model])  # (..., seq_len_q, d_model)
+
+        # (batch_size, seq_len_q, d_model)
+        output = self.dense(concat_attention)
+
         return output, attention_weights
 
 
@@ -244,9 +274,9 @@ def point_wise_feed_forward_network(d_model, dff):
     点式前馈网络由两层全联接层组成，两层之间有一个 ReLU 激活函数。
     """
     return tf.keras.Sequential([
-        tf.keras.layers.Dense(dff, activation='relu'),  
+        tf.keras.layers.Dense(dff, activation='relu'),
         # (batch_size, seq_len, dff)
 
-        tf.keras.layers.Dense(d_model)  
+        tf.keras.layers.Dense(d_model)
         # (batch_size, seq_len, d_model)
     ])
