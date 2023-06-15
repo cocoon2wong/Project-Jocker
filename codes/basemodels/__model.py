@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-08 14:39:01
+@LastEditTime: 2023-06-15 16:59:41
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -85,6 +85,8 @@ class Model(tf.keras.Model, BaseManager):
                                       PROCESS_TYPES.SCALE: Args.pscale,
                                       PROCESS_TYPES.ROTATE: Args.protate}
 
+        self.__unprocessed_inputs: list[tf.Tensor] = None
+
         # Inference times
         self.inference_times: list[float] = []
 
@@ -99,6 +101,15 @@ class Model(tf.keras.Model, BaseManager):
     @structure.setter
     def structure(self, value: T) -> T:
         self.manager = value
+
+    @property
+    def original_model_inputs(self) -> list[tf.Tensor]:
+        """
+        A list of original model inputs without applying any
+        preprocess methods.
+        It is only accessible during the `forward` call.
+        """
+        return self.__unprocessed_inputs
 
     @property
     def average_inference_time(self) -> int:
@@ -142,6 +153,7 @@ class Model(tf.keras.Model, BaseManager):
         :return outputs_p: Model's output. type=`list[tf.Tensor]`.
         """
         # Preprocess
+        self.__unprocessed_inputs = inputs
         inputs_p = self.process(inputs, preprocess=True, training=training)
 
         # Model inference
@@ -158,6 +170,7 @@ class Model(tf.keras.Model, BaseManager):
 
         # Postprocess
         outputs_p = self.process(outputs, preprocess=False, training=training)
+        self.__unprocessed_inputs = None
         return outputs_p
 
     def set_inputs(self, *args):
