@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2023-06-12 10:33:29
-@LastEditors: Conghao Wong
-@LastEditTime: 2023-06-12 20:17:10
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-06-15 10:22:27
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -37,6 +37,8 @@ class FrameManager(BaseInputObjectManager):
 
         train_samples = []
 
+        gone_agents = []
+
         for p in SecondaryBar(
                 range(frame_step * self.args.obs_frames,
                       frame_count,
@@ -53,7 +55,19 @@ class FrameManager(BaseInputObjectManager):
 
             # Only considers agents apperaed during observation period
             appeared_agents = neighbor_indices[obs: p: frame_step]
+            current_agents = appeared_agents[-1]
+            last_agents = appeared_agents[-2]
+
+            gone_agents += [i for i in last_agents
+                            if i not in current_agents]
+            gone_agents = list(set(gone_agents))
+
             appeared_agents = np.unique(np.concatenate(appeared_agents))
+            appeared_agents = np.array([i for i in appeared_agents
+                                        if i not in gone_agents])
+
+            if not len(appeared_agents):
+                continue
 
             traj_matrix = matrix[obs: end: frame_step, appeared_agents]
             traj_matrix = np.transpose(traj_matrix, [1, 0, 2])
