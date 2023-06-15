@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-04-30 14:58:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-04-21 10:59:11
+@LastEditTime: 2023-06-15 16:39:52
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -168,7 +168,7 @@ class Encoder(tf.keras.layers.Layer):
 
     def call(self, x, training, mask):
 
-        seq_len = tf.shape(x)[1]
+        seq_len = tf.shape(x)[-2]
 
         # 将嵌入和位置编码相加。
         x = self.embedding(x)  # (batch_size, input_seq_len, d_model)
@@ -220,7 +220,7 @@ class Decoder(tf.keras.layers.Layer):
     def call(self, x, enc_output, training,
              look_ahead_mask, padding_mask):
 
-        seq_len = tf.shape(x)[1]
+        seq_len = tf.shape(x)[-2]
         attention_weights = {}
 
         x = self.embedding(x)  # (batch_size, target_seq_len, d_model)
