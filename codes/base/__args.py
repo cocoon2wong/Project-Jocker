@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-13 18:00:03
+@LastEditTime: 2023-06-16 09:28:47
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -77,7 +77,9 @@ class Args(ArgsManager):
                     break
 
             if not dataset:
-                raise ValueError(self.split)
+                self.log(f'Dataset of the specified split `{self.split}`' +
+                         ' not found. Please check your spell.',
+                         level='error', raiseError=ValueError)
 
             self._set('dataset', dataset)
         self._args_need_initialize.remove('dataset')

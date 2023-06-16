@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 10:38:49
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-30 09:55:41
+@LastEditTime: 2023-06-16 09:26:15
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -13,16 +13,18 @@ from typing import Union
 import numpy as np
 import tensorflow as tf
 
+from ...base import BaseObject
 from ...constant import ANN_TYPES
 from ...dataset import Annotation
 
 
-class BaseProcessLayer(tf.keras.layers.Layer):
+class BaseProcessLayer(tf.keras.layers.Layer, BaseObject):
 
     def __init__(self, anntype: str, ref,
                  *args, **kwargs):
 
-        super().__init__(*args, **kwargs)
+        tf.keras.layers.Layer.__init__(self, *args, **kwargs)
+        BaseObject.__init__(self, name=self.name)
 
         self.ref = ref
         self.anntype = anntype

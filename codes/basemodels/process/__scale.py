@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 10:40:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 14:47:56
+@LastEditTime: 2023-06-16 09:25:11
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -41,7 +41,8 @@ class Scale(BaseProcessLayer):
         super().__init__(anntype, ref, *args, **kwargs)
 
         if self.picker.base_dim != 2:
-            raise NotImplementedError(f'Rotate is not supported on {anntype}.')
+            self.log(f'Rotate is not supported on {anntype}.',
+                     level='error', raiseError=NotImplementedError)
 
     def update_paras(self, trajs: tf.Tensor) -> None:
         steps = trajs.shape[-2]

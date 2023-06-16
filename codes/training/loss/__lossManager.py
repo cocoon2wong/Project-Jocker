@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 11:13:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-13 17:57:43
+@LastEditTime: 2023-06-16 09:11:12
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -226,20 +226,6 @@ class LossManager(BaseManager):
 
         return self.ADE([pred_final], [labels_final],
                         model_inputs, coe)
-
-    def HIoU(self, outputs: list[tf.Tensor],
-             labels: list[tf.Tensor],
-             model_inputs: list[tf.Tensor],
-             coe: float = 1.0,
-             *args, **kwargs):
-
-        s = self.args.pred_frames
-        length = 2 if s % 2 == 0 else 1
-        index = s//2 - 1
-
-        return FIoU(outputs, labels, coe=1.0,
-                    model_inputs=model_inputs,
-                    index=index, length=length)
 
     def print_info(self, **kwargs):
         funcs = [f.__name__ for f in self.loss_list]

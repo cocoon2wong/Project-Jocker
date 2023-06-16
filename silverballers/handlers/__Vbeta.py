@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-23 10:23:53
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-15 17:24:58
+@LastEditTime: 2023-06-16 09:12:21
 @Description: Second stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -87,6 +87,11 @@ class VBModel(BaseHandlerModel):
 
         # unpack inputs
         trajs_md, maps = inputs[:2]
+
+        # Reshape keypoints to (..., K, steps, dim)
+        if keypoints.ndim == trajs_md.ndim:
+            keypoints = keypoints[..., tf.newaxis, :, :]
+
         trajs_md = tf.repeat(trajs_md[..., tf.newaxis, :, :],
                              repeats=tf.shape(keypoints)[-3],
                              axis=-3)

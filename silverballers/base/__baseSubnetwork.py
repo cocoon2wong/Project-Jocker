@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-06-06 16:45:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-07 16:37:33
+@LastEditTime: 2023-06-16 09:14:44
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -15,7 +15,7 @@ import tensorflow as tf
 from codes.args import Args
 from codes.basemodels import Model
 from codes.managers import AgentManager, Model, Structure
-from codes.training.loss import ADE_2D
+from codes.training.loss import ADE_2D, get_loss_mask
 
 from .__args import BaseSilverballersArgs
 
@@ -183,6 +183,7 @@ class BaseSubnetworkStructure(Structure):
     #####################
     def keyl2(self, outputs: list[tf.Tensor],
               labels: list[tf.Tensor],
+              model_inputs: list[tf.Tensor],
               coe: float = 1.0,
               *args, **kwargs):
         """
@@ -191,10 +192,13 @@ class BaseSubnetworkStructure(Structure):
         """
         indices = self.model.key_indices_future
         labels_pickled = tf.gather(labels[0], indices, axis=-2)
-        return ADE_2D(outputs[0], labels_pickled, coe=coe)
+        mask = get_loss_mask(model_inputs[0], labels[0])
+        return ADE_2D(outputs[0], labels_pickled,
+                      coe=coe, mask=mask)
 
     def avgKey(self, outputs: list[tf.Tensor],
                labels: list[tf.Tensor],
+               model_inputs: list[tf.Tensor],
                coe: float = 1.0,
                *args, **kwargs):
         """
@@ -216,4 +220,4 @@ class BaseSubnetworkStructure(Structure):
 
         labels_key = tf.gather(labels[0], indices, axis=-2)
 
-        return self.loss.ADE([pred], [labels_key], coe)
+        return self.loss.ADE([pred], [labels_key], model_inputs, coe=coe)
