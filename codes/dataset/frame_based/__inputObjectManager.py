@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2023-06-12 10:33:29
-@LastEditors: Beihao Xia
-@LastEditTime: 2023-06-15 10:22:27
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-06-16 10:39:06
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -42,7 +42,7 @@ class FrameManager(BaseInputObjectManager):
         for p in SecondaryBar(
                 range(frame_step * self.args.obs_frames,
                       frame_count,
-                      self.args.step * frame_step),
+                      int(np.ceil(self.args.step * frame_step))),
                 manager=self.manager,
                 desc='Process frames...'):
 

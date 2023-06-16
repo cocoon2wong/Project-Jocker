@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-06-12 18:44:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-12 20:05:34
+@LastEditTime: 2023-06-16 10:31:18
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -48,6 +48,8 @@ class BaseFilesManager(BaseInputManager):
                       f'{self.args.obs_frames}to{self.args.pred_frames}')
 
         endstring = '' if self.args.step == 4 else str(self.args.step)
+        if endstring.endswith('.0'):
+            endstring = endstring[:-2]
         f_name = f_name + endstring + '.npz'
         return os.path.join(base_dir, f_name)
 

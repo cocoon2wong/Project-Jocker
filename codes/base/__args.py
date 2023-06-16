@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-16 09:28:47
+@LastEditTime: 2023-06-16 10:40:08
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -359,11 +359,11 @@ class Args(ArgsManager):
         return self._arg('draw_distribution', 0, argtype=TEMPORARY, short_name='dd')
 
     @property
-    def step(self) -> int:
+    def step(self) -> float:
         """
         Frame interval for sampling training data.
         """
-        return self._arg('step', 1, argtype=DYNAMIC)
+        return self._arg('step', 1.0, argtype=DYNAMIC)
 
     @property
     def test_mode(self) -> str:
