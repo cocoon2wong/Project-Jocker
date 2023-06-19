@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-06-12 10:33:29
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-16 10:39:06
+@LastEditTime: 2023-06-19 16:03:45
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -36,7 +36,6 @@ class FrameManager(BaseInputObjectManager):
         frame_step = int(self.args.interval / (sample_rate / frame_rate))
 
         train_samples = []
-
         gone_agents = []
 
         for p in SecondaryBar(
@@ -46,12 +45,12 @@ class FrameManager(BaseInputObjectManager):
                 manager=self.manager,
                 desc='Process frames...'):
 
+            if p + frame_step * (self.args.pred_frames - 1) >= frame_count:
+                break
+
             # Calculate frame indices
             obs = p - frame_step * self.args.obs_frames
             end = p + frame_step * self.args.pred_frames
-
-            if end > frame_count:
-                break
 
             # Only considers agents apperaed during observation period
             appeared_agents = neighbor_indices[obs: p: frame_step]

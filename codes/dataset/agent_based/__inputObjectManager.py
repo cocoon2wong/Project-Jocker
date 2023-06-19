@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-05-19 14:38:26
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-16 10:38:17
+@LastEditTime: 2023-06-19 15:42:01
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -58,7 +58,7 @@ class TrajectoryManager(BaseInputObjectManager):
                            int(np.ceil(self.args.step * frame_step))):
                 # Normal mode
                 if self.args.pred_frames > 0:
-                    if p + (self.args.obs_frames + self.args.pred_frames) * frame_step > end_frame:
+                    if p + (self.args.obs_frames + self.args.pred_frames - 1) * frame_step >= end_frame:
                         break
 
                     obs = p + self.args.obs_frames * frame_step
