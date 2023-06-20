@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-12 20:24:02
+@LastEditTime: 2023-06-20 09:19:32
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -14,10 +14,12 @@ import tensorflow as tf
 from codes.constant import INPUT_TYPES
 from codes.managers import (AgentManager, MapParasManager, SecondaryBar,
                             Structure)
+from codes.training import loss
 from codes.utils import POOLING_BEFORE_SAVING
 
 from ..__args import SilverballersArgs
 from ..base import BaseSubnetwork, BaseSubnetworkStructure
+from ..loss import avgKey
 from .__args import HandlerArgs
 
 
@@ -189,12 +191,12 @@ class BaseHandlerStructure(BaseSubnetworkStructure):
 
         # Configs, losses, and metrics
         self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
-        self.loss.set({self.loss.l2: 1.0})
+        self.loss.set({loss.l2: 1.0})
 
         if self.args.key_points == 'null':
-            self.metrics.set({self.metrics.ADE: 1.0,
-                              self.metrics.FDE: 0.0})
+            self.metrics.set({loss.ADE: 1.0,
+                              loss.FDE: 0.0})
         else:
-            self.metrics.set({self.metrics.ADE: 1.0,
-                              self.metrics.FDE: 0.0,
-                              self.avgKey: 0.0})
+            self.metrics.set({loss.ADE: 1.0,
+                              loss.FDE: 0.0,
+                              avgKey: 0.0})

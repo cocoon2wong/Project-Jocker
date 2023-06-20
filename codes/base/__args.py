@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-16 10:40:08
+@LastEditTime: 2023-06-19 21:46:27
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -247,6 +247,13 @@ class Args(ArgsManager):
         to other given args.
         """
         return self._arg('load', 'null', argtype=TEMPORARY, short_name='l')
+
+    @property
+    def compute_loss(self) -> int:
+        """
+        Controls whether compute losses when testing.
+        """
+        return self._arg('compute_loss', 0, argtype=TEMPORARY)
 
     @property
     def model(self) -> str:

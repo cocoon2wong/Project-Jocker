@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-12 10:50:35
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-13 17:54:31
+@LastEditTime: 2023-06-19 21:09:57
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,71 +10,61 @@
 
 import tensorflow as tf
 
-from ...utils import get_loss_mask
+from .__layers import BaseLossLayer
 
 
-def AIoU(outputs: list[tf.Tensor],
-         labels: list[tf.Tensor],
-         model_inputs: list[tf.Tensor],
-         coe: float = 1.0,
-         *args, **kwargs) -> tf.Tensor:
+class AIOU(BaseLossLayer):
     """
     Calculate the average IoU on predicted bounding boxes among the `time` axis.
     It is only used for models with `anntype == 'boundingbox'`.
     Each dimension of the predictions should be `(xl, yl, xr, yr)`.
     """
-    pred = outputs[0]
-    GT = labels[0]
 
-    # (batch, steps, dim)
-    if pred.ndim == 3:
-        pred = pred[:, tf.newaxis, :, :]
+    def call(self, outputs: list, labels: list, inputs: list,
+             mask=None, training=None, *args, **kwargs):
 
-    mask = get_loss_mask(model_inputs[0], GT)
-    count = tf.reduce_sum(mask)
+        pred = outputs[0]
+        GT = labels[0]
+        mask_count = tf.reduce_sum(mask)
 
-    K = pred.shape[-3]
-    GT = tf.repeat(GT[..., tf.newaxis, :, :], K, axis=-3)
+        # reshape to (..., K, steps, dim)
+        if pred.ndim == GT.ndim:
+            pred = pred[..., tf.newaxis, :, :]
 
-    # (batch, K, steps)
-    dim = pred.shape[-1]
-    if dim == 4:
-        func = __IoU_single_2Dbox
-    elif dim == 6:
-        func = __IoU_single_3Dbox
-    else:
-        raise ValueError(dim)
+        K = pred.shape[-3]
+        GT = tf.repeat(GT[..., tf.newaxis, :, :], K, axis=-3)
 
-    iou = func(pred, GT)
-    iou = tf.reduce_mean(iou, axis=-1)
-    iou = tf.reduce_max(iou, axis=-1)
-    iou = tf.maximum(iou, 0.0)
-    return tf.reduce_sum(iou * mask)/count
+        dim = pred.shape[-1]
+        if dim == 4:
+            func = IoU_single_2Dbox
+        elif dim == 6:
+            func = IoU_single_3Dbox
+        else:
+            raise ValueError(dim)
+
+        iou = func(pred, GT)
+        iou = tf.reduce_mean(iou, axis=-1)
+        iou = tf.reduce_max(iou, axis=-1)
+        iou = tf.maximum(iou, 0.0)
+        return tf.reduce_sum(iou * mask)/mask_count
 
 
-def FIoU(outputs: list[tf.Tensor],
-         labels: list[tf.Tensor],
-         model_inputs: list[tf.Tensor],
-         coe: float = 1.0,
-         index: int = -1,
-         length: int = 1,
-         *args, **kwargs) -> tf.Tensor:
+class FIOU(AIOU):
     """
     Calculate the IoU on the final prediction time step.
     It is only used for models with `anntype == 'boundingbox'`.
     Each dimension of the predictions should be `(xl, yl, xr, yr)`.
     """
-    pred = outputs[0]
-    GT = labels[0]
 
-    steps = pred.shape[-2]
-    index = tf.math.mod(index, steps)
-    return AIoU([pred[..., index:index+length, :]],
-                [GT[..., index:index+length, :]],
-                model_inputs=model_inputs)
+    def call(self, outputs: list, labels: list, inputs: list,
+             mask=None, training=None, *args, **kwargs):
+
+        return super().call([outputs[0][..., -1, tf.newaxis, :]],
+                            [labels[0][..., -1, tf.newaxis, :]],
+                            inputs, mask, training, *args, **kwargs)
 
 
-def __IoU_single_3Dbox(box1: tf.Tensor, box2: tf.Tensor) -> tf.Tensor:
+def IoU_single_3Dbox(box1: tf.Tensor, box2: tf.Tensor) -> tf.Tensor:
     """
     Calculate IoU on pred and GT.
     Boxes must have the same shape.
@@ -114,7 +104,7 @@ def __IoU_single_3Dbox(box1: tf.Tensor, box2: tf.Tensor) -> tf.Tensor:
     return iou
 
 
-def __IoU_single_2Dbox(box1: tf.Tensor, box2: tf.Tensor) -> tf.Tensor:
+def IoU_single_2Dbox(box1: tf.Tensor, box2: tf.Tensor) -> tf.Tensor:
     """
     Calculate IoU on pred and GT.
     Boxes must have the same shape.

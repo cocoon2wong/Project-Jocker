@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-13 16:58:11
+@LastEditTime: 2023-06-20 09:05:42
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -21,6 +21,7 @@ from ..constant import ANN_TYPES, INPUT_TYPES
 from ..dataset import AgentManager, Annotation, AnnotationManager, SplitManager
 from ..utils import WEIGHTS_FORMAT, dir_check
 from ..vis import Visualization
+from . import loss
 from .loss import LossManager
 
 
@@ -67,7 +68,8 @@ class Structure(BaseManager):
         self._am = AgentManager(self)
         self.annmanager = AnnotationManager(self, self.split_manager.anntype)
         self.loss = LossManager(self, name='Loss')
-        self.metrics = LossManager(self, name='Metrics')
+        self.metrics = LossManager(self, name='Metrics',
+                                   trajectory_scale=self.split_manager.scale)
 
         # init model options
         self.model: Model = None
@@ -78,38 +80,37 @@ class Structure(BaseManager):
         # Set labels, loss functions, and metrics
         self.label_types: list[str] = []
         self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
-        self.loss.set({self.loss.ADE: 1.0})
+        self.loss.set({loss.ADE: 1.0})
 
         if self.args.anntype in [ANN_TYPES.BB_2D,
                                  ANN_TYPES.BB_3D]:
 
-            self.metrics.set({self.metrics.ADE: 1.0,
-                              self.metrics.FDE: 0.0,
-                              self.metrics.AIoU: 0.0,
-                              self.metrics.FIoU: 0.0})
+            self.metrics.set({loss.ADE: 1.0,
+                              loss.FDE: 0.0,
+                              loss.AIOU: 0.0,
+                              loss.FIOU: 0.0})
 
         elif self.args.anntype in [ANN_TYPES.SKE_3D_17]:
             # These configs are only used on `h36m` dataset
             i = int(1000 * self.args.interval)  # Sample interval
-            fde = self.metrics.FDE
 
             if self.args.pred_frames == 10:
                 self.metrics.set([
-                    [fde, [0.0, {'index': 1, 'name': f'FDE@{2*i}ms'}]],
-                    [fde, [0.0, {'index': 3, 'name': f'FDE@{4*i}ms'}]],
-                    [fde, [0.0, {'index': 7, 'name': f'FDE@{8*i}ms'}]],
-                    [fde, [1.0, {'index': 9, 'name': f'FDE@{10*i}ms'}]],
+                    [loss.FDE, [0.0, {'index': 1, 'name': f'FDE@{2*i}ms'}]],
+                    [loss.FDE, [0.0, {'index': 3, 'name': f'FDE@{4*i}ms'}]],
+                    [loss.FDE, [0.0, {'index': 7, 'name': f'FDE@{8*i}ms'}]],
+                    [loss.FDE, [1.0, {'index': 9, 'name': f'FDE@{10*i}ms'}]],
                 ])
 
             elif self.args.pred_frames == 25:
                 self.metrics.set([
-                    [fde, [0.0, {'index': 13, 'name': f'FDE@{14*i}ms'}]],
-                    [fde, [1.0, {'index': 24, 'name': f'FDE@{25*i}ms'}]],
+                    [loss.FDE, [0.0, {'index': 13, 'name': f'FDE@{14*i}ms'}]],
+                    [loss.FDE, [1.0, {'index': 24, 'name': f'FDE@{25*i}ms'}]],
                 ])
 
         else:
-            self.metrics.set({self.metrics.ADE: 1.0,
-                              self.metrics.FDE: 0.0})
+            self.metrics.set({loss.ADE: 1.0,
+                              loss.FDE: 0.0})
 
     @property
     def agent_manager(self) -> AgentManager:
@@ -182,10 +183,8 @@ class Structure(BaseManager):
 
         with tf.GradientTape() as tape:
             outputs = self.model.forward(inputs, training=True)
-            loss, loss_dict = self.loss.call(outputs, labels,
-                                             training=True,
-                                             coefficient=1.0,
-                                             model_inputs=inputs)
+            loss, loss_dict = self.loss.call(
+                outputs, labels, inputs=inputs, training=True)
 
             loss_move_average = 0.7 * loss + 0.3 * loss_move_average
 
@@ -210,11 +209,14 @@ class Structure(BaseManager):
         :return loss_dict: A dict contains all loss.
         """
         outputs = self.model.forward(inputs, training)
-        metrics, metrics_dict = \
-            self.metrics.call(outputs, labels,
-                              training=None,
-                              coefficient=self.split_manager.scale,
-                              model_inputs=inputs)
+        metrics, metrics_dict = self.metrics.call(
+            outputs, labels, inputs=inputs, training=None)
+
+        if self.args.compute_loss:
+            _, loss_dict = self.loss.call(
+                outputs, labels, inputs=inputs, training=None)
+
+            metrics_dict.update(loss_dict)
 
         return outputs, metrics, metrics_dict
 

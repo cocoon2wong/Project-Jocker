@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-06-06 16:45:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-16 09:14:44
+@LastEditTime: 2023-06-20 09:19:27
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -15,7 +15,6 @@ import tensorflow as tf
 from codes.args import Args
 from codes.basemodels import Model
 from codes.managers import AgentManager, Model, Structure
-from codes.training.loss import ADE_2D, get_loss_mask
 
 from .__args import BaseSilverballersArgs
 
@@ -177,47 +176,3 @@ class BaseSubnetworkStructure(Structure):
             struct.model.load_weights_from_logDir(load)
 
         return struct
-
-    #####################
-    # New loss functions
-    #####################
-    def keyl2(self, outputs: list[tf.Tensor],
-              labels: list[tf.Tensor],
-              model_inputs: list[tf.Tensor],
-              coe: float = 1.0,
-              *args, **kwargs):
-        """
-        l2 loss on the future keypoints.
-        Support M-dimensional trajectories.
-        """
-        indices = self.model.key_indices_future
-        labels_pickled = tf.gather(labels[0], indices, axis=-2)
-        mask = get_loss_mask(model_inputs[0], labels[0])
-        return ADE_2D(outputs[0], labels_pickled,
-                      coe=coe, mask=mask)
-
-    def avgKey(self, outputs: list[tf.Tensor],
-               labels: list[tf.Tensor],
-               model_inputs: list[tf.Tensor],
-               coe: float = 1.0,
-               *args, **kwargs):
-        """
-        l2 (2D-point-wise) loss on the future keypoints.
-
-        :param outputs: A list of tensors, where `outputs[0].shape`
-            is `(batch, K, pred, 2)` or `(batch, pred, 2)`
-            or `(batch, K, n_key, 2)` or `(batch, n_key, 2)`.
-        :param labels: Shape of `labels[0]` is `(batch, pred, 2)`.
-        """
-        pred = outputs[0]
-        indices = self.model.key_indices_future
-
-        if pred.ndim == 3:
-            pred = pred[:, tf.newaxis, :, :]
-
-        if pred.shape[-2] != len(indices):
-            pred = tf.gather(pred, indices, axis=-2)
-
-        labels_key = tf.gather(labels[0], indices, axis=-2)
-
-        return self.loss.ADE([pred], [labels_key], model_inputs, coe=coe)

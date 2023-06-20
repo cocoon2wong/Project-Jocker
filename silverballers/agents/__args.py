@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-06-07 11:08:13
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-07 15:52:09
+@LastEditTime: 2023-06-19 21:44:49
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -40,4 +40,4 @@ class AgentArgs(BaseSilverballersArgs):
         Loss used to train agent models.
         Canbe `'avgkey'` or `'keyl2'`.
         """
-        return self._arg('loss', 'keyl2', argtype=TEMPORARY)
+        return self._arg('loss', 'keyl2', argtype=DYNAMIC)

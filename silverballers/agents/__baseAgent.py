@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-07 16:39:31
+@LastEditTime: 2023-06-19 20:36:39
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,8 +10,10 @@
 
 from codes.constant import INPUT_TYPES
 from codes.managers import Structure
+from codes.training import loss
 
 from ..base import BaseSubnetwork, BaseSubnetworkStructure
+from ..loss import avgKey, keyl2
 from .__args import AgentArgs
 
 
@@ -66,14 +68,14 @@ class BaseAgentStructure(BaseSubnetworkStructure):
 
         # Losses and metrics
         if self.args.loss == 'keyl2':
-            self.loss.set({self.keyl2: 1.0})
+            self.loss.set({keyl2: 1.0})
         elif self.args.loss == 'avgkey':
-            self.loss.set({self.avgKey: 1.0})
+            self.loss.set({avgKey: 1.0})
         else:
             raise ValueError(self.args.loss)
 
-        self.metrics.set({self.avgKey: 1.0,
-                          self.metrics.FDE: 0.0})
+        self.metrics.set({avgKey: 1.0,
+                          loss.FDE: 0.0})
 
     def print_test_results(self, loss_dict: dict[str, float], **kwargs):
         super().print_test_results(loss_dict, **kwargs)
