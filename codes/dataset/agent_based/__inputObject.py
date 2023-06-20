@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-12 20:19:26
+@LastEditTime: 2023-06-20 10:03:55
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -285,15 +285,17 @@ class Trajectory():
         self._neighbors = neighbors
         self._frames = frames
 
-        base = self.traj.T[0]
+        base = np.concatenate([[init_position],
+                               self.traj.T[0],
+                               [init_position]])
         diff = base[:-1] - base[1:]
 
         appear = np.where(diff > init_position/2)[0]
         # disappear in the next step
         disappear = np.where(diff < -init_position/2)[0]
 
-        self._start_frame = appear[0] + 1 if len(appear) else 0
-        self._end_frame = disappear[0] + 1 if len(disappear) else len(base)
+        self._start_frame = appear[0] if len(appear) else 0
+        self._end_frame = disappear[0] if len(disappear) else len(base - 2)
 
     @property
     def id(self):
