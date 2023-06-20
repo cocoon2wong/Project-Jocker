@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-06-19 20:14:39
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-20 09:20:29
+@LastEditTime: 2023-06-20 20:37:27
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -41,8 +41,8 @@ class keyl2_past(loss.l2):
         if (indices := self.manager.manager.model.key_indices_past) is None:
             return 0
 
-        labels_pickled = tf.gather(outputs[1], indices, axis=-2)
-        return super().call([outputs[2]], [labels_pickled],
+        labels_pickled = tf.gather(inputs[0], indices, axis=-2)
+        return super().call([outputs[1]], [labels_pickled],
                             inputs, mask, training, *args, **kwargs)
 
 

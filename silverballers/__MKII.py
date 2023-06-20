@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-27 20:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-20 16:18:52
+@LastEditTime: 2023-06-20 20:46:02
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -69,6 +69,8 @@ __SILVERBALLERS_DICT = dict(
     # ALPHA series
     s300g=[alpha_agents.Sieger300Ghost,
            alpha_agents.Sieger300GhostModel],
+    alpha=[alpha_agents.AlphaStructure,
+           alpha_agents.AlphaModel],
 
     # Silverballers Structures
     MKII=[SilverballersMKII, None],
