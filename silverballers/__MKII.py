@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-27 20:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-09 14:57:42
+@LastEditTime: 2023-06-20 16:18:52
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -27,8 +27,7 @@ class SilverballersMKII(BaseSilverballers):
 
         # Assign the model type of the first-stage subnetwork
         min_args_a = Args(is_temporary=True)._load_from_json(a_model_path)
-        agent_model_type = get_model_type(min_args_a.model,
-                                          min_args.experimental)
+        agent_model_type = get_model_type(min_args_a.model)
 
         # Assign the model type of the second-stage subnetwork
         interp_model = INTERPOLATION_TYPES.get_type(b_model_path)
@@ -69,8 +68,7 @@ __SILVERBALLERS_DICT = dict(
 
     # ALPHA series
     s300g=[alpha_agents.Sieger300Ghost,
-           alpha_agents.Sieger300GhostModel,
-           alpha_agents.Sieger300GhostRefineModel],
+           alpha_agents.Sieger300GhostModel],
 
     # Silverballers Structures
     MKII=[SilverballersMKII, None],

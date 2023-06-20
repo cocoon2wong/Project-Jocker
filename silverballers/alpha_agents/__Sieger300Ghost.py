@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-05-30 09:26:04
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-15 15:49:16
+@LastEditTime: 2023-06-20 16:47:23
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -12,8 +12,8 @@ import tensorflow as tf
 
 from codes.basemodels import layers, transformer
 from codes.managers import Structure
-from codes.training.loss import ADE_2D
 
+from .. import loss
 from ..__layers import OuterLayer
 from ..agents import AgentArgs, BaseAgentModel, BaseAgentStructure
 
@@ -26,6 +26,8 @@ class Sieger300GhostModel(BaseAgentModel):
                  *args, **kwargs):
 
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
+
+        self.log('This model is deprecated.', level='warning')
 
         # Layers
         # Linear prediction
@@ -77,20 +79,13 @@ class Sieger300GhostModel(BaseAgentModel):
         self.decoder_fc0 = tf.keras.layers.Dense(self.d, tf.nn.tanh)
         self.decoder_fc1 = tf.keras.layers.Dense(
             self.Tsteps_de * self.Tchannels_de)
-        self.decoder_reshape0 = tf.keras.layers.Reshape([self.args.Kc,
-                                                         self.Tsteps_de,
-                                                         self.Tchannels_de])
+        self.padding0 = layers.Padding(axis=-4)
 
     def call(self, inputs, training=None, *args, **kwargs):
 
         # Unpack inputs
         obs = inputs[0]
 
-        kp_future, kp_past = self.call_cell(obs, training, *args, **kwargs)
-
-        return kp_future, obs, kp_past
-
-    def call_cell(self, obs: tf.Tensor, training=None, *args, **kwargs):
         # Linear predict
         pred_linear = self.linear0(obs)     # (batch, pred, dim)
         traj = self.traj_concat0([obs, pred_linear])
@@ -137,7 +132,7 @@ class Sieger300GhostModel(BaseAgentModel):
             p_all.append(y)
 
         Y = tf.concat(p_all, axis=-3)
-        return Y[..., self.n_key_past:, :], Y[..., :self.n_key_past, :]
+        return Y[..., self.n_key_past:, :], obs, Y[..., :self.n_key_past, :]
 
 
 class Sieger300Ghost(BaseAgentStructure):
@@ -148,23 +143,8 @@ class Sieger300Ghost(BaseAgentStructure):
         self.set_model_type(Sieger300GhostModel)
 
         if self.args.loss == 'keyl2':
-            self.loss.set({self.keyl2: 1.0, self.keyl2_past: 1.0})
+            self.loss.set({loss.keyl2: 1.0, loss.keyl2_past: 1.0})
         elif self.args.loss == 'avgkey':
-            self.loss.set({self.avgKey: 1.0})
+            self.loss.set({loss.avgKey: 1.0})
         else:
             raise ValueError(self.args.loss)
-
-    def keyl2_past(self, outputs: list[tf.Tensor],
-                   labels: list[tf.Tensor],
-                   coe: float = 1.0,
-                   *args, **kwargs):
-
-        if self.model.n_key_past:
-            labels_pickled_past = tf.gather(
-                outputs[1],
-                self.model.key_indices_past,
-                axis=-2)
-            ade_past = ADE_2D(outputs[2], labels_pickled_past, coe=coe)
-            return ade_past
-        else:
-            return 0
