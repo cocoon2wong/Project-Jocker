@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-05-09 20:25:36
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-09 20:26:06
+@LastEditTime: 2023-06-21 14:47:02
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -73,20 +73,16 @@ class _BaseTransformLayer(tf.keras.layers.Layer):
         # calculate with a big batch size
         if self.mode == 0:
             shape_original = None
-            if inputs.ndim == 4:
-                shape_original = tf.shape(inputs)
-                inputs = tf.reshape(inputs, [shape_original[0]*shape_original[1],
-                                             shape_original[2],
-                                             shape_original[3]])
+            if inputs.ndim >= 4:
+                shape_original = list(tf.shape(inputs))
+                inputs = tf.reshape(inputs, [-1] + shape_original[-2:])
 
             outputs = self.kernel_function(inputs, *args, **kwargs)
 
             if shape_original is not None:
-                shape_new = tf.shape(outputs)
-                outputs = tf.reshape(outputs, [shape_original[0],
-                                               shape_original[1],
-                                               shape_new[1],
-                                               shape_new[2]])
+                shape_new = list(tf.shape(outputs))
+                outputs = tf.reshape(outputs,
+                                     shape_original[:-2] + shape_new[-2:])
 
         # calculate recurrently
         elif self.mode == 1:
