@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 10:38:49
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-16 09:26:15
+@LastEditTime: 2023-06-21 09:37:23
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -28,10 +28,13 @@ class BaseProcessLayer(tf.keras.layers.Layer, BaseObject):
 
         self.ref = ref
         self.anntype = anntype
-        self.picker = Annotation(anntype)
         self.paras = None
 
-        self.order = self.set_order(anntype)
+        self.need_mask = False
+        self.mask_paras = None
+
+        self.picker = Annotation(anntype) if anntype else None
+        self.order = self.set_order(anntype) if anntype else None
 
     def call(self, inputs: list[tf.Tensor],
              preprocess: bool,

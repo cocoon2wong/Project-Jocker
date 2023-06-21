@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-06-20 16:48:45
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-20 20:46:17
+@LastEditTime: 2023-06-21 10:25:05
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -10,7 +10,7 @@
 
 import tensorflow as tf
 
-from codes.basemodels import layers, transformer
+from codes.basemodels import layers, process, transformer
 from codes.managers import Structure
 from codes.utils import get_mask
 
@@ -19,17 +19,67 @@ from ..__layers import OuterLayer
 from ..agents import AgentArgs, BaseAgentModel, BaseAgentStructure
 
 
+class CenterMove(process.BaseProcessLayer):
+    """
+    Move the center of a frame of trajectories (at the reference moment)
+    to $$\\vec{0}$$.
+    The default reference time step is the last observation step.
+    It is only used for `'frame-based'` models.
+    """
+
+    def __init__(self, anntype: str = None, ref: int = -1, *args, **kwargs):
+        super().__init__(anntype, ref, *args, **kwargs)
+
+        self.need_mask = True
+
+    def update_paras(self, trajs: tf.Tensor) -> None:
+        # (batch, agents, (K), steps, dim)
+        frame = trajs[..., tf.newaxis, self.ref, :]
+
+        # Compute mask, shape = (batch, agents, (K), 1, 1)
+        mask = get_mask(frame)[..., 0:1]
+        mask_count = tf.reduce_sum(mask, axis=1, keepdims=True)
+
+        # Compute center (with mask)
+        frame *= mask
+        center = tf.reduce_sum(frame, axis=1, keepdims=True)
+        center /= mask_count
+
+        # Save parameters
+        self.paras = center
+        self.mask_paras = mask
+
+    def preprocess(self, trajs: tf.Tensor, use_new_paras=True) -> tf.Tensor:
+        if use_new_paras:
+            self.update_paras(trajs)
+
+        return self.move(trajs, center=self.paras)
+
+    def postprocess(self, trajs: tf.Tensor) -> tf.Tensor:
+        return self.move(trajs, center=self.paras, inverse=True)
+
+    def move(self, trajs: tf.Tensor, center: tf.Tensor, inverse=False):
+        while center.ndim < trajs.ndim:
+            center = center[..., tf.newaxis, :, :]
+
+        mask = self.mask_paras
+        while mask.ndim < trajs.ndim:
+            mask = mask[..., tf.newaxis, :, :]
+
+        if inverse:
+            center *= -1.0
+
+        return (trajs - center) * mask
+
+
 class AlphaModel(BaseAgentModel):
 
     def __init__(self, Args: AgentArgs, as_single_model: bool = True,
                  structure: Structure = None, *args, **kwargs):
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
-        self.set_preprocess()
-
-        if self.args.model_type != 'frame-based':
-            self.log('This model only support model type `"frame-based"`',
-                     level='error', raiseError=ValueError)
+        # Preprocess
+        self.set_preprocess_layers([CenterMove()])
 
         # Layers
         self.linear0 = layers.LinearLayerND(obs_frames=self.args.obs_frames,
@@ -83,14 +133,10 @@ class AlphaModel(BaseAgentModel):
             self.args.max_agents * self.Tsteps_de * self.Tchannels_de)
         self.padding0 = layers.Padding(axis=-4)
 
-    def call(self, inputs, training=None, *args, **kwargs):
+    def call(self, inputs, training=None, mask=None, *args, **kwargs):
 
         # Unpack inputs
         obs = inputs[0]         # (b:=batch, a:=agents, obs, dim)
-
-        # mask shape: (b, a, 1, 1)
-        mask = get_mask(tf.reduce_sum(obs, axis=[-1, -2]))
-        mask = mask[..., tf.newaxis, tf.newaxis]
         obs = obs * mask
 
         # Linear predict
@@ -150,6 +196,7 @@ class AlphaModel(BaseAgentModel):
 class AlphaStructure(BaseAgentStructure):
 
     def __init__(self, terminal_args: list[str], manager: Structure = None, as_single_model: bool = True):
+        terminal_args += ['--model_type', 'frame-based']
         super().__init__(terminal_args, manager, as_single_model)
         self.set_model_type(AlphaModel)
         self.loss.set({loss.keyl2: 1.0, loss.keyl2_past: 1.0})

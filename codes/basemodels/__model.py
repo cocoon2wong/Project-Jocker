@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-15 16:59:41
+@LastEditTime: 2023-06-21 10:37:50
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -19,7 +19,7 @@ import tensorflow as tf
 from ..args import Args
 from ..base import BaseManager
 from ..constant import INPUT_TYPES, PROCESS_TYPES
-from ..utils import CHECKPOINT_FILENAME, WEIGHTS_FORMAT
+from ..utils import CHECKPOINT_FILENAME, WEIGHTS_FORMAT, get_mask
 from . import process
 
 T = TypeVar('T')
@@ -139,6 +139,7 @@ class Model(tf.keras.Model, BaseManager):
 
     def call(self, inputs,
              training=None,
+             mask=None,
              *args, **kwargs):
 
         raise NotImplementedError
@@ -154,11 +155,12 @@ class Model(tf.keras.Model, BaseManager):
         """
         # Preprocess
         self.__unprocessed_inputs = inputs
+        mask = get_mask(tf.reduce_sum(inputs[0], axis=[-1, -2], keepdims=True))
         inputs_p = self.process(inputs, preprocess=True, training=training)
 
         # Model inference
         time_start = time.time()
-        outputs = self(inputs_p, training=training)
+        outputs = self(inputs_p, training=training, mask=mask)
         time_end = time.time()
 
         l = MAX_INFERENCE_TIME_STORGED
@@ -224,6 +226,14 @@ class Model(tf.keras.Model, BaseManager):
                     process_list.append(processor(self.args.anntype, value))
 
         self.processor = process.ProcessModel(process_list)
+
+    def set_preprocess_layers(self, layers: list[process.BaseProcessLayer]):
+        """
+        Set pre/post-process layers manually.
+
+        :param layers: A list of pre/post-process layer objects.
+        """
+        self.processor = process.ProcessModel(layers)
 
     def process(self, inputs: list[tf.Tensor],
                 preprocess: bool,
