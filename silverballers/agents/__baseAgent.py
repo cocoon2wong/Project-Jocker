@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-19 20:36:39
+@LastEditTime: 2023-06-25 10:39:04
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -32,14 +32,6 @@ class BaseAgentModel(BaseSubnetwork):
 
         # Model input types
         self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ)
-
-    def print_info(self, **kwargs):
-        info = {'Transform type': self.args.T,
-                'Index of keypoints': self.key_indices_future,
-                'Index of past keypoints': self.key_indices_past}
-
-        kwargs.update(**info)
-        return super().print_info(**kwargs)
 
 
 class BaseAgentStructure(BaseSubnetworkStructure):
