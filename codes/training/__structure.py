@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-20 09:05:42
+@LastEditTime: 2023-06-25 15:18:06
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -252,7 +252,7 @@ class Structure(BaseManager):
         clips_train = self.split_manager.train_sets
         clips_val = self.split_manager.test_sets
         ds_train = self.agent_manager.make(clips_train, 'train')
-        ds_val = self.agent_manager.make(clips_val, 'test')
+        ds_val = self.agent_manager.clean().make(clips_val, 'test')
 
         # train on all test/train clips
         _, _, best_metric, best_epoch = self.__train(ds_train, ds_val)

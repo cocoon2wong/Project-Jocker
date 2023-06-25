@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-12 20:19:57
+@LastEditTime: 2023-06-25 15:19:19
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -192,6 +192,13 @@ class AgentManager(BaseManager):
             )
 
         return dataset
+
+    def clean(self):
+        """
+        Clean all agent objects in this manager.
+        """
+        self.agents = []
+        return self
 
     def make(self, clips: list[str], mode: str) -> tf.data.Dataset:
         """
