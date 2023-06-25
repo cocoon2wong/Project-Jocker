@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-29 09:53:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-13 18:01:27
+@LastEditTime: 2023-06-25 11:16:16
 @Description: png content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -128,6 +128,9 @@ class CoordinateHelper(BaseVisHelper):
                 source[:, :, -1] = 255 * np.sign(source[:, :, 0])
 
         # draw points
+        if inputs.ndim > 2:
+            inputs = np.reshape(inputs, [-1, inputs.shape[-1]])
+            
         for input in inputs:
             source = self.draw_single(source, input, png)
 
