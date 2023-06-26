@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:41:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-07 11:21:27
+@LastEditTime: 2023-06-26 10:39:44
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -53,7 +53,7 @@ class BaseSilverballersArgs(Args):
         - The second bit: re-`SCALE` trajectories;
         - The third bit: `ROTATE` trajectories.
         """
-        return self._arg('preprocess', '111', argtype=STATIC)
+        return self._arg('preprocess', '100', argtype=STATIC)
 
     @property
     def T(self) -> str:
