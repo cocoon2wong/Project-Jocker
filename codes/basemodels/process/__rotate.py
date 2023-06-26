@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 11:15:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-04-25 14:43:19
+@LastEditTime: 2023-06-26 10:53:04
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,7 +10,7 @@
 
 import tensorflow as tf
 
-from ...utils import ROTATE_BIAS
+from ...utils import ROTATE_BIAS, batch_matmul
 from .__base import BaseProcessLayer
 
 
@@ -89,13 +89,14 @@ class Rotate(BaseProcessLayer):
 
             if ndim >= 3:
                 # transpose to (batch, 2, 2)
-                rotate_matrix = tf.transpose(rotate_matrix, [2, 0, 1])
+                rotate_matrix = tf.transpose(
+                    rotate_matrix, list(tf.range(2, rotate_matrix.ndim)) + [0, 1])
 
             while rotate_matrix.ndim < ndim:
                 rotate_matrix = tf.expand_dims(rotate_matrix, -3)
 
             _trajs = tf.gather(trajs, [x, y], axis=-1)
-            _trajs_rotated = _trajs @ rotate_matrix
+            _trajs_rotated = batch_matmul(_trajs, rotate_matrix)
             trajs_rotated.append(_trajs_rotated)
 
         trajs_rotated = tf.concat(trajs_rotated, axis=-1)

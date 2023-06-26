@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 20:10:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-13 17:51:13
+@LastEditTime: 2023-06-26 10:52:36
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -128,3 +128,22 @@ def get_loss_mask(obs: tf.Tensor, label: tf.Tensor):
     pred_mask = get_mask(tf.reduce_sum(obs, axis=[-1, -2]))
     label_mask = get_mask(tf.reduce_sum(label, axis=[-1, -2]))
     return pred_mask * label_mask
+
+
+def batch_matmul(a: tf.Tensor, b: tf.Tensor, *args, **kwargs):
+    """
+    Run matmul operations on a batch of inputs.
+    Other args will be wrapped to `tf.matmul`.
+
+    :param a: Input, shape is `(..., a, b)`.
+    :param b: Another input, shape is `(..., b, c)`.
+    """
+    if a.ndim <= 4:
+        return tf.matmul(a, b, *args, **kwargs)
+
+    batch = tf.shape(a)[:-3]
+    _a = tf.reshape(a, [-1]+list(tf.shape(a)[2:]))
+    _b = tf.reshape(b, [-1]+list(tf.shape(b)[2:]))
+    res = tf.matmul(_a, _b, *args, **kwargs)
+
+    return tf.reshape(res, list(batch) + list(tf.shape(res)[1:]))
