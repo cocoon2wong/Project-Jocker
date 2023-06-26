@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-21 10:37:50
+@LastEditTime: 2023-06-26 10:36:42
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -192,9 +192,13 @@ class Model(tf.keras.Model, BaseManager):
         """
         self.input_types = [item for item in args]
 
-    def set_preprocess(self, **kwargs):
+    def set_preprocess(self, builtin: bool = True, **kwargs):
         """
         Set pre-process methods used before training.
+        For example, enable all three preprocess methods by
+        ```python
+        self.set_preprocess(move=-1, scale='autoref', rotate=0)
+        ```
 
         args: pre-process methods.
             - Move positions on the observation step to (0, 0):
@@ -205,6 +209,10 @@ class Model(tf.keras.Model, BaseManager):
 
             - Rotate observations:
                 args in `['Rotate', ...]`
+
+        :param builtin: Controls whether preprocess methods applied
+            outside from the `call` method. If `builtin == True`, the
+            preprocess layer will be called outside from the `call`.
         """
 
         preprocess_dict: dict[str, tuple[str, type[process.BaseProcessLayer]]] = {
@@ -225,7 +233,12 @@ class Model(tf.keras.Model, BaseManager):
 
                     process_list.append(processor(self.args.anntype, value))
 
-        self.processor = process.ProcessModel(process_list)
+        layer = process.ProcessModel(process_list)
+
+        if builtin:
+            self.processor = layer
+
+        return layer
 
     def set_preprocess_layers(self, layers: list[process.BaseProcessLayer]):
         """
