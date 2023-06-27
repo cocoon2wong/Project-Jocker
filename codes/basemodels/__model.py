@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-26 10:36:42
+@LastEditTime: 2023-06-27 18:03:23
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -233,20 +233,19 @@ class Model(tf.keras.Model, BaseManager):
 
                     process_list.append(processor(self.args.anntype, value))
 
-        layer = process.ProcessModel(process_list)
+        return self.set_preprocess_layers(builtin=builtin, layers=process_list)
 
-        if builtin:
-            self.processor = layer
-
-        return layer
-
-    def set_preprocess_layers(self, layers: list[process.BaseProcessLayer]):
+    def set_preprocess_layers(self, builtin: bool = False,
+                              layers: list[process.BaseProcessLayer] = None):
         """
         Set pre/post-process layers manually.
 
         :param layers: A list of pre/post-process layer objects.
         """
-        self.processor = process.ProcessModel(layers)
+        layer = process.ProcessModel(layers)
+        if builtin:
+            self.processor = layer
+        return layer
 
     def process(self, inputs: list[tf.Tensor],
                 preprocess: bool,
