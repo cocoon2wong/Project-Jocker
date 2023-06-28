@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
-@LastEditors: Conghao Wong
-@LastEditTime: 2023-06-13 17:44:46
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-06-28 16:19:58
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -110,6 +110,9 @@ class BaseSilverballersModel(Model):
         x_handler = [inputs[i] for i in self.handler_input_index]
         x_handler.append(y_agent)
         y_handler = self.handler.forward(x_handler)
+
+        if not training and (c := self.args.channel) != -1:
+            y_handler[0] = y_handler[0][..., c, tf.newaxis, :, :]
 
         return y_handler
 

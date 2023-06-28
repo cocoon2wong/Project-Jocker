@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-20 21:41:10
-@LastEditors: Conghao Wong
-@LastEditTime: 2023-06-07 11:11:09
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-06-28 16:20:27
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -42,3 +42,11 @@ class SilverballersArgs(BaseSilverballersArgs):
         valid when the model's input contains `MAPS` and `MAP_PARAS`.
         """
         return self._arg('pick_trajectories', 1.0, argtype=TEMPORARY, short_name='p')
+
+    @property
+    def channel(self) -> int:
+        """
+        Specify the k-th channel of the model output.
+        If `channel == -1`, it outputs all channels' predictions.
+        """
+        return self._arg('channel', -1, argtype=TEMPORARY, short_name='c')
