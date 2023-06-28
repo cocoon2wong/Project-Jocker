@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-06-20 16:48:45
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-27 20:56:04
+@LastEditTime: 2023-06-28 10:26:20
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -160,7 +160,7 @@ class AlphaModel(BaseAgentModel):
 
         # Unpack inputs
         obs = inputs[0]         # (b:=batch, a:=agents, obs, dim)
-        obs = obs * mask
+        obs = obs * mask        # mask shape: (batch, agents, 1, 1)
 
         obs_absolute = self.process_absolute([obs], preprocess=True,
                                              update_paras=True,
@@ -171,6 +171,7 @@ class AlphaModel(BaseAgentModel):
                                              training=training)[0]
 
         # Trajectory (relative) embedding and encoding
+        traj_targets = self.t1(obs_relative)
         f = self.te(obs_relative)
         f = self.outer(f, f)
         f = self.pooling(f)
@@ -198,6 +199,12 @@ class AlphaModel(BaseAgentModel):
         else:
             f_behavior = f_traj
 
+        # Remove masked trajectories
+        batch_mask = tf.cast(mask[..., 0, 0], tf.int32)
+        agent_counts = tf.reduce_sum(batch_mask, axis=-1)
+        f_behavior = tf.boolean_mask(f_behavior, batch_mask)
+        traj_targets = tf.boolean_mask(traj_targets, batch_mask)
+
         # Sampling random noise vectors
         all_predictions = []
         repeats = self.args.K_train if training else self.args.K
@@ -209,7 +216,7 @@ class AlphaModel(BaseAgentModel):
 
             # Transformer outputs' shape is (b, a, steps, d)
             f_tran, _ = self.T(inputs=f_final,
-                               targets=self.t1(obs_relative),
+                               targets=traj_targets,
                                training=training)
 
             # Multiple generations
@@ -228,6 +235,22 @@ class AlphaModel(BaseAgentModel):
             all_predictions.append(y)
 
         Y = tf.concat(all_predictions, axis=-3)   # (b, a, K, n_key, dim)
+
+        # Zero padding masked trajectories
+        _Y = []
+        p = 0
+        d = Y.ndim
+        for count in agent_counts:
+            _p = Y[p:p+count]
+            _padding_agents = self.args.max_agents - len(_p)
+            _paddings = tf.transpose(tf.stack([tf.zeros(d, dtype=tf.int32),
+                                               tf.one_hot(d-4, d, _padding_agents)]))
+            _Y.append(tf.pad(_p, _paddings))
+            p += count
+
+        Y = tf.stack(_Y)
+
+        # Post-process predictions
         Y = self.process_relative([Y], preprocess=False,
                                   update_paras=False,
                                   training=training)[0]
