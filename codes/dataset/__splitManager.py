@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-19 11:19:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-29 17:11:07
+@LastEditTime: 2023-07-05 10:24:30
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -111,6 +111,9 @@ class Clip(BaseManager):
     def other_files(self) -> dict[str, str]:
         """
         Paths of all other dataset files.
+        Available keys:
+          - `'rgb_image'`: Path of the scene RGB image;
+          - `'segmentation_image'`: Path of the scene seg image.
         """
         return self.__other_files
 

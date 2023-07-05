@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-13 18:02:11
+@LastEditTime: 2023-07-05 10:27:08
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -37,13 +37,14 @@ class Visualization(BaseManager):
         self.info: Clip = self.manager.split_manager.clips_dict[clip]
 
         # Try to open the video
-        path = self.info.video_path
-        vc = cv2.VideoCapture(path)
-        self._vc = vc if vc.open(path) else None
+        video_path = self.info.video_path
+        vc = cv2.VideoCapture(video_path)
+        self._vc = vc if vc.open(video_path) else None
 
         # Try to read the scene image
+        img_path = self.info.other_files['rgb_image']
         try:
-            self.scene_image = cv2.imread(path)
+            self.scene_image = cv2.imread(img_path)
         except:
             self.scene_image = None
 
@@ -184,7 +185,7 @@ class Visualization(BaseManager):
             vis_func = self.vis
             text_func = self.text
             integer = True
-            f = self.scene_image
+            f = np.array(self.scene_image).copy()
 
         else:
             state = DRAW_ON_EMPTY
@@ -228,7 +229,7 @@ class Visualization(BaseManager):
 
                 # TODO: draw agent-wise outputs on images
 
-            if DRAW_TEXT_IN_IMAGES:
+            if save_as_images:
                 cv2.imwrite(save_name + f'_{frame}.jpg', f)
             return
 
