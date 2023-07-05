@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-25 15:18:06
+@LastEditTime: 2023-07-05 15:55:20
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -19,7 +19,7 @@ from ..base import BaseManager
 from ..basemodels import Model
 from ..constant import ANN_TYPES, INPUT_TYPES
 from ..dataset import AgentManager, Annotation, AnnotationManager, SplitManager
-from ..utils import WEIGHTS_FORMAT, dir_check
+from ..utils import WEIGHTS_FORMAT, dir_check, get_loss_mask
 from ..vis import Visualization
 from . import loss
 from .loss import LossManager
@@ -493,13 +493,22 @@ class Structure(BaseManager):
         timebar = self.timebar(ds, 'Test...') if show_timebar else ds
 
         count = []
+        len_labels = len(self.label_types)
         for dat in timebar:
-            len_labels = len(self.label_types)
+            x = dat[:-len_labels]
+            gt = dat[-len_labels:]
+            mask = get_loss_mask(x[0], gt[0])
+            valid_count = tf.reduce_sum(mask)
+
             outputs, metrics, metrics_dict = self.model_validate(
-                inputs=dat[:-len_labels],
-                labels=dat[-len_labels:],
-                training=False,
-            )
+                inputs=x, labels=gt, training=False)
+
+            # Check if there are valid trajectories in this batch
+            if valid_count == 0:
+                if return_results:
+                    outputs[0] = tf.zeros_like(outputs[0]) / 0.0
+                    outputs_all = append_batch_results(outputs_all, outputs)
+                continue
 
             # Add metrics and outputs to their dicts
             count.append(outputs[0].shape[0])

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 20:10:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-26 10:52:36
+@LastEditTime: 2023-07-05 15:39:16
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -117,7 +117,7 @@ def get_mask(input: tf.Tensor, dtype=tf.float32):
     return tf.cast(input < 0.05 * INIT_POSITION, dtype)
 
 
-def get_loss_mask(obs: tf.Tensor, label: tf.Tensor):
+def get_loss_mask(obs: tf.Tensor, label: tf.Tensor, return_numpy=False):
     """
     Get mask from both model predictions and labels.
     Return type: `tf.float32`.
@@ -127,7 +127,10 @@ def get_loss_mask(obs: tf.Tensor, label: tf.Tensor):
     """
     pred_mask = get_mask(tf.reduce_sum(obs, axis=[-1, -2]))
     label_mask = get_mask(tf.reduce_sum(label, axis=[-1, -2]))
-    return pred_mask * label_mask
+    mask = pred_mask * label_mask
+    if return_numpy:
+        mask = mask.numpy()
+    return mask
 
 
 def batch_matmul(a: tf.Tensor, b: tf.Tensor, *args, **kwargs):

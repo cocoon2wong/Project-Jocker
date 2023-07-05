@@ -2,17 +2,17 @@
 @Author: Conghao Wong
 @Date: 2023-06-12 10:16:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-13 17:52:51
+@LastEditTime: 2023-07-05 15:53:57
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
 """
 
 import numpy as np
-import tensorflow as tf
 
 from ...base import BaseManager
 from ...basemodels.layers import LinearLayerND
+from ...utils import get_loss_mask
 from ..__base import BaseInputObject
 
 LINEAR_LAYER = None
@@ -113,12 +113,12 @@ class Frame(BaseInputObject):
         return 'Frame'
 
     @property
-    def traj_mask(self) -> tf.Tensor:
+    def traj_mask(self) -> np.ndarray:
         """
         The mask matrix to show whether the trajectory
-        is valid. Type is `tf.bool`.
+        is valid.
         """
-        return tf.cast(self.traj == self._init_position, tf.bool)
+        return get_loss_mask(self.traj, self.groundtruth, return_numpy=True)
 
     @property
     def groundtruth(self) -> np.ndarray:

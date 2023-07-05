@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-20 10:03:55
+@LastEditTime: 2023-07-05 15:53:28
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,7 +10,7 @@
 
 import numpy as np
 
-from ...utils import INIT_POSITION
+from ...utils import INIT_POSITION, get_loss_mask
 from ..__base import BaseInputObject
 
 
@@ -99,6 +99,14 @@ class Agent(BaseInputObject):
         Agent type
         """
         return self._type
+
+    @property
+    def traj_mask(self) -> np.ndarray:
+        """
+        The mask matrix to show whether the trajectory
+        is valid.
+        """
+        return get_loss_mask(self.traj, self.groundtruth, return_numpy=True)
 
     @property
     def traj(self) -> np.ndarray:

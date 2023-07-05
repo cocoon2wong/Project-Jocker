@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-05 10:27:08
+@LastEditTime: 2023-07-05 15:49:51
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -93,6 +93,17 @@ class Visualization(BaseManager):
             nei = self.real2pixel(agent.traj_neighbor[:, -1], integer)
         except:
             nei = None
+
+        if self.args.model_type == 'frame-based':
+            mask = agent.traj_mask
+            valid_index = np.where(mask > 0)[0]
+
+            if not len(valid_index):
+                return None, None, None, None
+
+            obs = obs[valid_index]
+            pred = pred[valid_index]
+            gt = gt[valid_index]
 
         if pred.ndim == 2:
             pred = pred[np.newaxis]
