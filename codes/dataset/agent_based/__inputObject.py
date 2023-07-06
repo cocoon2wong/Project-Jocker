@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-05 15:53:28
+@LastEditTime: 2023-07-06 10:34:55
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -63,50 +63,9 @@ class Agent(BaseInputObject):
     def __init__(self):
 
         super().__init__()
-
-        self._traj: np.ndarray = None
-        self._traj_future: np.ndarray = None
-
-        self._traj_pred: np.ndarray = None
-        self._traj_linear: np.ndarray = None
-
-        self._id = None
-        self._type = None
-
-        self._frames: np.ndarray = None
-        self._frames_future: np.ndarray = None
-
-        self.linear_predict = False
-        self.obs_length = 0
-        self.total_frame = 0
-
         self.neighbor_number = 0
         self._traj_neighbor: np.ndarray = None
         self._traj_linear_neighbor: np.ndarray = None
-
-        self.manager = None
-
-    @property
-    def id(self) -> str:
-        """
-        Agent ID
-        """
-        return self._id
-
-    @property
-    def type(self) -> str:
-        """
-        Agent type
-        """
-        return self._type
-
-    @property
-    def traj_mask(self) -> np.ndarray:
-        """
-        The mask matrix to show whether the trajectory
-        is valid.
-        """
-        return get_loss_mask(self.traj, self.groundtruth, return_numpy=True)
 
     @property
     def traj(self) -> np.ndarray:
@@ -128,22 +87,6 @@ class Agent(BaseInputObject):
         predicted trajectory, shape = (pred, dim)
         """
         return self._traj_pred
-
-    @property
-    def frames(self) -> np.ndarray:
-        """
-        a list of frame indexes during observation and prediction time.
-        shape = (obs + pred)
-        """
-        return np.concatenate([self._frames, self._frames_future])
-
-    @property
-    def frames_future(self) -> np.ndarray:
-        """
-        a list of frame indexes during prediction time.
-        shape = (pred)
-        """
-        return self._frames_future
 
     @property
     def pred_linear(self) -> np.ndarray:
@@ -168,6 +111,9 @@ class Agent(BaseInputObject):
         shape = (pred, dim)
         """
         return self.pickers.get(self._traj_future)
+
+    def write_pred(self, pred: np.ndarray):
+        self._traj_pred = pred
 
     def init_data(self, id: str,
                   type: str,

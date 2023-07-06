@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-05 15:55:20
+@LastEditTime: 2023-07-06 10:36:23
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -624,7 +624,7 @@ class Structure(BaseManager):
             for index in self.timebar(agent_indexes, 'Saving...'):
                 # write traj
                 agent = self.agent_manager.agents[index]
-                agent._traj_pred = pred_all[index]
+                agent.write_pred(pred_all[index])
 
                 # extra outputs
                 to = dict([(k, v[index])

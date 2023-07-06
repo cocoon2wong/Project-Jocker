@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-06-12 10:16:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-05 15:53:57
+@LastEditTime: 2023-07-06 10:35:24
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -10,9 +10,7 @@
 
 import numpy as np
 
-from ...base import BaseManager
 from ...basemodels.layers import LinearLayerND
-from ...utils import get_loss_mask
 from ..__base import BaseInputObject
 
 LINEAR_LAYER = None
@@ -43,27 +41,12 @@ class Frame(BaseInputObject):
 
         super().__init__()
 
-        self._traj: np.ndarray = None
-        self._traj_future: np.ndarray = None
-
-        self._traj_pred: np.ndarray = None
-        self._traj_linear: np.ndarray = None
-
         self._init_position: float = None
 
-        self._id: str = None
+        self._type = 'Frame'
 
         self._agent_ids: np.ndarray = None
         self._agent_types: np.ndarray = None
-
-        self._frames: np.ndarray = None
-        self._frames_future: np.ndarray = None
-
-        self.linear_predict = False
-        self.obs_length = 0
-        self.total_frame = 0
-
-        self.manager: BaseManager = None
 
     def padding(self, trajs: np.ndarray) -> np.ndarray:
         """
@@ -83,13 +66,6 @@ class Frame(BaseInputObject):
         return zero_pad
 
     @property
-    def id(self) -> str:
-        """
-        Frame ID of the current frame (after the observation period).
-        """
-        return self._id
-
-    @property
     def traj(self) -> np.ndarray:
         """
         Trajectory matrix of all observed frames.
@@ -107,18 +83,6 @@ class Frame(BaseInputObject):
     @property
     def agent_types(self) -> np.ndarray:
         return self._agent_types
-
-    @property
-    def type(self) -> str:
-        return 'Frame'
-
-    @property
-    def traj_mask(self) -> np.ndarray:
-        """
-        The mask matrix to show whether the trajectory
-        is valid.
-        """
-        return get_loss_mask(self.traj, self.groundtruth, return_numpy=True)
 
     @property
     def groundtruth(self) -> np.ndarray:
@@ -143,21 +107,8 @@ class Frame(BaseInputObject):
         """
         return self.padding(self.pickers.get(self._traj_linear))
 
-    @property
-    def frames(self) -> np.ndarray:
-        """
-        a list of frame indexes during observation and prediction time.
-        shape = (obs + pred)
-        """
-        return np.concatenate([self._frames, self._frames_future])
-
-    @property
-    def frames_future(self) -> np.ndarray:
-        """
-        a list of frame indexes during prediction time.
-        shape = (pred)
-        """
-        return self._frames_future
+    def write_pred(self, pred: np.ndarray):
+        self._traj_pred = self._get_masked_traj(pred)
 
     def init_data(self, id: str,
                   traj: np.ndarray,
