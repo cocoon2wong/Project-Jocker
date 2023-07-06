@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-06-12 10:16:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-06 10:35:24
+@LastEditTime: 2023-07-06 10:55:53
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -11,6 +11,7 @@
 import numpy as np
 
 from ...basemodels.layers import LinearLayerND
+from ...utils import get_loss_mask
 from ..__base import BaseInputObject
 
 LINEAR_LAYER = None
@@ -137,11 +138,18 @@ class Frame(BaseInputObject):
         self.obs_length = (obs_frame - start_frame) // frame_step
         self.total_frame = (end_frame - start_frame) // frame_step
 
+        # Write trajectories
+        _x = traj[..., :self.obs_length, :]
+        _y = traj[..., self.obs_length:, :]
+        _mask = get_loss_mask(_x, _y)
+        _valid_indices = np.where(_mask)[0]
+
+        self._traj = _x[_valid_indices]
+        self._traj_future = _y[_valid_indices]
+
         self._id = id
-        self._agent_ids = agent_ids
-        self._agent_types = agent_types
-        self._traj = traj[..., :self.obs_length, :]
-        self._traj_future = traj[..., self.obs_length:, :]
+        self._agent_ids = agent_ids[_valid_indices]
+        self._agent_types = agent_types[_valid_indices]
 
         frames = np.array(frames)
         self._frames = frames[:self.obs_length]
