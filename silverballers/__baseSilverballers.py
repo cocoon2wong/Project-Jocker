@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
-@LastEditors: Beihao Xia
-@LastEditTime: 2023-06-28 16:19:58
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-07-10 14:58:38
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -57,6 +57,13 @@ class BaseSilverballersModel(Model):
         a_type = self.agent.input_types
         h_type = self.handler.input_types[:-1]
         self.input_types = list(set(a_type + h_type))
+
+        # Make sure that obs trajs are the first model input
+        if ((t := INPUT_TYPES.OBSERVED_TRAJ) in self.input_types and
+                self.input_types[0] != t):
+            self.input_types.remove(t)
+            self.input_types = [t] + self.input_types
+
         self.agent_input_index = self.get_input_index(a_type)
         self.handler_input_index = self.get_input_index(h_type)
 

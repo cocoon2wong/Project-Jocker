@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-23 18:01:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-25 14:54:55
+@LastEditTime: 2023-07-08 10:02:22
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -29,6 +29,7 @@ class INPUT_TYPES():
     Type names of all kinds of model inputs.
     """
     OBSERVED_TRAJ = 'TRAJ'
+    NEIGHBOR_TRAJ = 'TRAJ_NEIGHBOR'
     MAP = 'MAP'
     MAP_PARAS = 'MAP_PARAS'
     DESTINATION_TRAJ = 'DEST'

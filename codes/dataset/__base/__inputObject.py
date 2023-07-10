@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-06-12 15:11:35
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-06 10:33:53
+@LastEditTime: 2023-07-10 14:58:03
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -13,7 +13,7 @@ import copy
 import numpy as np
 
 from ...base import BaseManager
-from ...utils import get_loss_mask
+from ...utils import INIT_POSITION, get_loss_mask
 from .__picker import AnnotationManager
 
 
@@ -73,6 +73,23 @@ class BaseInputObject():
             else:
                 setattr(self, item, zipped_data[item])
         return self
+    
+    def padding(self, trajs: np.ndarray) -> np.ndarray:
+        """
+        Padding all agents' trajectories.
+        Shape should be `(n_agent, steps, dim)`.
+        """
+        n = len(trajs)
+        m = self.manager.args.max_agents
+
+        if n <= m:
+            zero_pad = np.pad(trajs,
+                              ((0, m-n), (0, 0), (0, 0)))
+            zero_pad[n:, :, :] = INIT_POSITION
+        else:
+            zero_pad = trajs[:m]
+
+        return zero_pad
 
     ##########################################
     # Trajectories data

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 09:26:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-06 10:34:55
+@LastEditTime: 2023-07-08 10:20:36
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -77,9 +77,13 @@ class Agent(BaseInputObject):
     @property
     def traj_neighbor(self) -> np.ndarray:
         """
-        neighbors' historical trajectories, shape = (n, obs, dim)
+        All neighbors' historical trajectories (after padding), 
+        shape = (max_agents, obs, dim).
+        NOTE: Returned trajectories are all reletive, corresponding to
+        current agents' last observed point.
         """
-        return self.pickers.get(self._traj_neighbor)
+        ref = self.traj[..., -1:, :]
+        return self.padding(self.pickers.get(self._traj_neighbor)) - ref
 
     @property
     def pred(self) -> np.ndarray:

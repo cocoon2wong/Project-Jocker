@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-06-12 10:16:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-06 10:55:53
+@LastEditTime: 2023-07-08 10:12:44
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -48,23 +48,6 @@ class Frame(BaseInputObject):
 
         self._agent_ids: np.ndarray = None
         self._agent_types: np.ndarray = None
-
-    def padding(self, trajs: np.ndarray) -> np.ndarray:
-        """
-        Padding all agents' trajectories.
-        Shape should be `(n_agent, steps, dim)`.
-        """
-        n = len(trajs)
-        m = self.manager.args.max_agents
-
-        if n <= m:
-            zero_pad = np.pad(trajs,
-                              ((0, m-n), (0, 0), (0, 0)))
-            zero_pad[n:, :, :] = self._init_position
-        else:
-            zero_pad = trajs[:m]
-
-        return zero_pad
 
     @property
     def traj(self) -> np.ndarray:

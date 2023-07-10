@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-25 15:19:19
+@LastEditTime: 2023-07-10 14:57:49
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -276,6 +276,9 @@ class AgentManager(BaseManager):
         if t == INPUT_TYPES.OBSERVED_TRAJ:
             return _get_obs_traj(self.agents)
 
+        elif t == INPUT_TYPES.NEIGHBOR_TRAJ:
+            return _get_neighbor_traj(self.agents)
+
         elif t == INPUT_TYPES.DESTINATION_TRAJ:
             return _get_dest_traj(self.agents)
 
@@ -327,6 +330,13 @@ def _get_obs_traj(input_agents: list[Agent]) -> tf.Tensor:
     inputs = []
     for agent in tqdm(input_agents, 'Prepare trajectories...'):
         inputs.append(agent.traj)
+    return tf.cast(inputs, tf.float32)
+
+
+def _get_neighbor_traj(input_agents: list[Agent]) -> tf.Tensor:
+    inputs = []
+    for agent in tqdm(input_agents, 'Prepare neighbors...'):
+        inputs.append(agent.traj_neighbor)
     return tf.cast(inputs, tf.float32)
 
 
