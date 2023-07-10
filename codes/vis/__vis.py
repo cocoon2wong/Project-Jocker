@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-06 10:10:37
+@LastEditTime: 2023-07-10 15:12:42
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -90,7 +90,9 @@ class Visualization(BaseManager):
         gt = self.real2pixel(agent.masked_groundtruth, integer)
 
         try:
-            nei = self.real2pixel(agent.traj_neighbor[:, -1], integer)
+            ref = agent.traj[np.newaxis, -1:, :]
+            nei = agent.traj_neighbor[:agent.neighbor_number] + ref
+            nei = self.real2pixel(nei[:, -1, :], integer)
         except:
             nei = None
 
