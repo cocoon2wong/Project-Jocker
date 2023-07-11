@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2023-07-10 15:21:12
-@LastEditors: Conghao Wong
-@LastEditTime: 2023-07-11 10:39:30
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-07-11 14:31:56
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -57,14 +57,6 @@ class BetaModel(BaseAgentModel):
         self.flatten = layers.Flatten(axes_num=2)
         self.outer_fc = tf.keras.layers.Dense(self.d//2, tf.nn.tanh)
 
-        # For social interactions
-        self.te_s = layers.TrajEncoding(self.d//2, tf.nn.relu)
-        self.outer_s = OuterLayer(self.d//2, self.d//2)
-        self.pooling_s = layers.MaxPooling2D(
-            (2, 2), data_format='channels_first')
-        self.flatten_s = layers.Flatten(axes_num=2)
-        self.outer_fc_s = tf.keras.layers.Dense(self.d//2, tf.nn.tanh)
-
         # Noise encoding
         self.ie = layers.TrajEncoding(self.d//2, tf.nn.tanh)
         self.concat = tf.keras.layers.Concatenate(axis=-1)
@@ -111,8 +103,6 @@ class BetaModel(BaseAgentModel):
         nei_angle = tf.atan2(x=nei_vector[..., 0], y=nei_vector[..., 1])
         obs_angle = tf.atan2(x=obs_vector[..., 0], y=obs_vector[..., 1])
         rel_angle = tf.math.mod(nei_angle - obs_angle, 2*np.pi)
-        angle_indices = rel_angle / (2*np.pi/self.args.obs_frames)
-        angle_indices = tf.cast(angle_indices, tf.int32)
 
         # Calculate relative walking distances with all neighbors
         nei_vector_len = tf.linalg.norm(nei_vector, axis=-1)    # (batch, a)
@@ -120,8 +110,12 @@ class BetaModel(BaseAgentModel):
         rel_vector_len = (nei_vector_len + 0.0001) / (obs_vector_len + 0.0001)
 
         # Calculate distances between neighbors and the target agent
-        nei_distance = tf.linalg.norm(c_nei[..., -1, :] -
-                                      c_obs[..., tf.newaxis, -1, :], axis=-1)
+        nei_posion_vector = c_nei[..., -1, :] - c_obs[..., tf.newaxis, -1, :]
+        nei_distance = tf.linalg.norm(nei_posion_vector, axis=-1)
+        nei_posion_angle = tf.atan2(x=nei_posion_vector[..., 0],
+                                    y=nei_posion_vector[..., 1])
+        angle_indices = nei_posion_angle / (2*np.pi/self.args.obs_frames)
+        angle_indices = tf.cast(angle_indices, tf.int32)
 
         # Mask neighbors
         nei_mask = get_mask(tf.reduce_sum(nei, axis=[-1, -2]), tf.int32)
@@ -136,7 +130,8 @@ class BetaModel(BaseAgentModel):
             n = _mask_count + 0.0001
             avg_len = tf.reduce_sum(rel_vector_len * _mask, axis=-1) / n
             avg_disance = tf.reduce_sum(nei_distance * _mask, axis=-1) / n
-            social_circle.append([avg_len, avg_disance])
+            avg_angle = tf.reduce_sum(nei_posion_angle * _mask, axis=-1) / n
+            social_circle.append([avg_len, avg_disance, avg_angle])
 
         # Shape of the final SocialCircle: (batch, obs, 2)
         social_circle = tf.cast(social_circle, tf.float32)
