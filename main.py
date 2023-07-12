@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 15:28:14
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-07 15:34:48
+@LastEditTime: 2023-07-12 17:41:35
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -19,7 +19,7 @@ from scripts.update_readme import print_help_info
 from scripts.utils import get_value
 
 
-def main(args: list[str]):
+def main(args: list[str], run_train_or_test=True):
     h_value = None
 
     if '--help' in args:
@@ -41,7 +41,9 @@ def main(args: list[str]):
         s = silverballers.get_structure(model)
 
     t = s(terminal_args=args)
-    t.train_or_test()
+
+    if run_train_or_test:
+        t.train_or_test()
 
     # It is used to debug
     # t.print_info_all()
