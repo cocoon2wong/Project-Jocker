@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
-@LastEditors: Beihao Xia
-@LastEditTime: 2023-07-12 20:27:33
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-07-12 20:59:19
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -140,7 +140,7 @@ if __name__ == '__main__':
     toy = BetaToyExample(args)
 
     root = tk.Tk()
-    root.title('Toy Example fot Beta Model')
+    root.title('Toy Example of SocialCircle in Beta Model')
 
     agent_id = tk.StringVar(root, '1195')
     tk.Label(root, text='Agent ID').grid(column=0, row=0)
