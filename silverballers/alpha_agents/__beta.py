@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-10 15:21:12
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-11 19:08:27
+@LastEditTime: 2023-07-12 09:02:36
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -99,11 +99,6 @@ class BetaModel(BaseAgentModel):
         nei_vector = c_nei[..., -1, :] - c_nei[..., 0, :]       # (batch, a, 2)
         obs_vector = c_obs[..., -1:, :] - c_obs[..., 0:1, :]    # (batch, 1, 2)
 
-        # Calculate neighbors' relative move angles
-        nei_angle = tf.atan2(x=nei_vector[..., 0], y=nei_vector[..., 1])
-        obs_angle = tf.atan2(x=obs_vector[..., 0], y=obs_vector[..., 1])
-        rel_angle = tf.math.mod(nei_angle - obs_angle, 2*np.pi)
-
         # Calculate relative walking distances with all neighbors
         nei_vector_len = tf.linalg.norm(nei_vector, axis=-1)    # (batch, a)
         obs_vector_len = tf.linalg.norm(obs_vector, axis=-1)    # (batch, 1)
@@ -131,9 +126,8 @@ class BetaModel(BaseAgentModel):
             n = _mask_count + 0.0001
             avg_len = tf.reduce_sum(rel_vector_len * _mask, axis=-1) / n
             avg_disance = tf.reduce_sum(nei_distance * _mask, axis=-1) / n
-            avg_angle = tf.reduce_sum(rel_angle * _mask, axis=-1) / n
             avg_nei_angle = tf.reduce_sum(nei_posion_angle * _mask, axis=-1) / n
-            social_circle.append([avg_len, avg_disance, avg_angle, avg_nei_angle])
+            social_circle.append([avg_len, avg_disance, avg_nei_angle])
 
         # Shape of the final SocialCircle: (batch, obs, 2)
         social_circle = tf.cast(social_circle, tf.float32)
