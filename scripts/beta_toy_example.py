@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
-@LastEditors: Conghao Wong
-@LastEditTime: 2023-07-12 20:09:35
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-07-12 20:27:33
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -119,7 +119,7 @@ def run_prediction(t: BetaToyExample,
                    py: tk.StringVar,
                    canvas: tk.Label):
 
-    if len(x := px.get()) and len(y := py.get()):
+    if px and py and len(x := px.get()) and len(y := py.get()):
         x = float(x)
         y = float(y)
         extra_neighbor = [x, y]
@@ -154,9 +154,14 @@ if __name__ == '__main__':
     tk.Label(root, text='New Neighbor (y-axis)').grid(column=2, row=0)
     tk.Entry(root,  textvariable=py).grid(column=2, row=1)
 
-    (canvas := tk.Label(root)).grid(column=0, row=3, columnspan=3)
+    (canvas := tk.Label(root)).grid(column=0, row=4, columnspan=3)
 
-    tk.Button(root, text='Run Prediction', command=lambda: run_prediction(toy, agent_id, px, py, canvas)).grid(
-        column=0, row=2, columnspan=3)
+    tk.Button(root, text='Run Prediction', 
+              command=lambda: run_prediction(toy, agent_id, px, py, canvas)).grid(
+              column=0, row=2, columnspan=3)
+    
+    tk.Button(root, text='Run Prediction (Ignore the given neighbors)', 
+              command=lambda: run_prediction(toy, agent_id, None, None, canvas)).grid(
+              column=0, row=3, columnspan=3)
 
     root.mainloop()
