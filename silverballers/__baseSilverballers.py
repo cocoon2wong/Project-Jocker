@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-10 14:58:38
+@LastEditTime: 2023-07-13 15:35:12
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -96,11 +96,13 @@ class BaseSilverballersModel(Model):
         ######################
         # Stage-1 Subnetwork #
         ######################
+        y_all_agent = []
         y_agent = []
         for traj in all_trajs:
             # Call the first stage model multiple times
             x_agent = [traj] + [inputs[i] for i in self.agent_input_index[1:]]
-            y_agent.append(self.agent.forward(x_agent)[0])
+            y_all_agent.append(o := self.agent.forward(x_agent))
+            y_agent.append(o[0])
 
         y_agent = tf.concat(y_agent, axis=-1)
 
@@ -121,7 +123,7 @@ class BaseSilverballersModel(Model):
         if not training and (c := self.args.channel) != -1:
             y_handler[0] = y_handler[0][..., c, tf.newaxis, :, :]
 
-        return y_handler
+        return [y_handler[0], y_all_agent, y_handler]
 
     def print_info(self, **kwargs):
         info = {'Indices of future keypoints': self.agent.key_indices_future,

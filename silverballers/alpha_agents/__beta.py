@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-10 15:21:12
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-12 09:02:36
+@LastEditTime: 2023-07-13 09:13:53
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -179,7 +179,7 @@ class BetaModel(BaseAgentModel):
             all_predictions.append(y)
 
         Y = tf.concat(all_predictions, axis=-3)   # (batch, K, n_key, dim)
-        return Y
+        return Y, social_circle, nei_posion_angle
 
 
 class BetaStructure(BaseAgentStructure):
