@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-12 20:59:19
+@LastEditTime: 2023-07-13 15:29:34
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -55,28 +55,39 @@ class BetaToyExample():
         self.forward(inputs)
         self.draw_results()
 
-    def add_one_neighbor(self, inputs: list[tf.Tensor], 
-                         position: tuple[float, float]):
-        """
+    def add_one_neighbor(self, inputs: list[tf.Tensor],
+                         position: list[tuple[float, float]]):
+        '''
         Shape of `nei` should be `(1, max_agents, obs, 2)`
-        """
+        '''
         obs = inputs[0]
         nei = inputs[1]
 
-        nei_mask = get_mask(tf.reduce_sum(nei, axis=[-1, -2]))
-        nei_count = int(tf.reduce_sum(nei_mask))
-
         nei = nei.numpy()
         steps = nei.shape[-2]
-        ref_seq = np.ones(steps)
-        traj = np.column_stack([position[0] * ref_seq,
-                                position[1] * ref_seq])
-        nei[0, nei_count] = traj - obs.numpy()[-1:, :]
+
+        xp = np.array([0, steps-1])
+        fp = np.array(position)
+        x = np.arange(steps)
+
+        traj = np.column_stack([np.interp(x, xp, fp[:, 0]),
+                                np.interp(x, xp, fp[:, 1])])
+
+        nei_count = self.get_neighbor_count(nei)
+        nei[0, nei_count] = traj - obs.numpy()[0, -1:, :]
         return tf.cast(nei, tf.float32)
 
     def forward(self, inputs: list[tf.Tensor]):
         self.inputs = inputs
         self.outputs = self.t.model.forward(inputs, training=False)
+
+    def get_neighbor_count(self, neighbor_obs: tf.Tensor):
+        '''
+        Input's shape should be `(1, max_agents, obs, dim)`.
+        '''
+        nei = neighbor_obs[0]
+        nei_mask = get_mask(tf.reduce_sum(nei, axis=[-1, -2]))
+        return int(tf.reduce_sum(nei_mask))
 
     def draw_results(self):
         inputs = self.inputs
@@ -85,9 +96,6 @@ class BetaToyExample():
         obs = inputs[0][0].numpy()      # (obs, dim)
         nei = inputs[1][0].numpy()      # (max_agents, obs, dim)
         out = outputs[0][0].numpy()
-
-        nei_mask = get_mask(tf.reduce_sum(nei, axis=[-1, -2]))
-        nei_count = int(tf.reduce_sum(nei_mask))
 
         c_obs = self.t.picker.get_center(obs)
         c_nei = self.t.picker.get_center(nei)
@@ -98,7 +106,9 @@ class BetaToyExample():
         plt.plot(c_obs[:, 0], c_obs[:, 1], 'o', color='cornflowerblue')
 
         # draw neighbors
-        _nei = c_nei[:nei_count, -1, :] + c_obs[-1, :]
+        nei_count = self.get_neighbor_count(inputs[1])
+        _nei = c_nei[:nei_count, :, :] + c_obs[np.newaxis, -1, :]
+        _nei = np.reshape(_nei, [-1, 2])
         plt.plot(_nei[:, 0], _nei[:, 1], 's', color='purple')
 
         # draw predictions
@@ -115,14 +125,19 @@ class BetaToyExample():
 
 def run_prediction(t: BetaToyExample,
                    agent_id: tk.StringVar,
-                   px: tk.StringVar,
-                   py: tk.StringVar,
-                   canvas: tk.Label):
+                   px0: tk.StringVar,
+                   py0: tk.StringVar,
+                   px1: tk.StringVar,
+                   py1: tk.StringVar,
+                   canvas: tk.Label,
+                   social_circle: tk.Label,
+                   nei_angles: tk.Label):
 
-    if px and py and len(x := px.get()) and len(y := py.get()):
-        x = float(x)
-        y = float(y)
-        extra_neighbor = [x, y]
+    if (px0 and py0 and px0 and py0 and
+        len(x0 := px0.get()) and len(y0 := py0.get()) and
+            len(x1 := px1.get()) and len(y1 := py1.get())):
+        extra_neighbor = [[float(x0), float(y0)],
+                          [float(x1), float(y1)]]
     else:
         extra_neighbor = None
 
@@ -130,38 +145,121 @@ def run_prediction(t: BetaToyExample,
                    extra_neighbor_position=extra_neighbor)
     canvas.config(image=t.image)
 
+    # Set numpy format
+    np.set_printoptions(formatter={'float': '{:0.3f}'.format})
+
+    # SocialCircle
+    sc = t.outputs[1][0][1].numpy()[0]
+    social_circle.config(text=str(sc.T))
+
+    # All neighbors' angles
+    count = t.get_neighbor_count(t.inputs[1])
+    na = t.outputs[1][0][2].numpy()[0][:count]
+    nei_angles.config(text=str(na*180/np.pi))
+
 
 if __name__ == '__main__':
 
-    args = ["main.py", "--model", "MKII",
-            "--loada", MODEL_PATH,
-            "--loadb", "speed"]
+    args = ['main.py', '--model', 'MKII',
+            '--loada', MODEL_PATH,
+            '--loadb', 'speed']
 
     toy = BetaToyExample(args)
 
     root = tk.Tk()
     root.title('Toy Example of SocialCircle in Beta Model')
 
-    agent_id = tk.StringVar(root, '1195')
-    tk.Label(root, text='Agent ID').grid(column=0, row=0)
-    tk.Entry(root, textvariable=agent_id).grid(column=0, row=1)
+    # Left column
+    l_args = {
+        # 'background': '#FFFFFF',
+        'border': 5,
+    }
 
-    px = tk.StringVar(root)
-    tk.Label(root, text='New Neighbor (x-axis)').grid(column=1, row=0)
-    tk.Entry(root, textvariable=px).grid(column=1, row=1)
+    left_frame = tk.Frame(root, **l_args)
+    left_frame.grid(row=0, column=0, sticky=tk.NW)
 
-    py = tk.StringVar(root)
-    tk.Label(root, text='New Neighbor (y-axis)').grid(column=2, row=0)
-    tk.Entry(root,  textvariable=py).grid(column=2, row=1)
+    tk.Label(left_frame, text='Settings',
+             font=('', 24, 'bold'),
+             height=2, **l_args).grid(
+                 column=0, row=0, sticky=tk.W)
 
-    (canvas := tk.Label(root)).grid(column=0, row=4, columnspan=3)
+    agent_id = tk.StringVar(left_frame, '1195')
+    tk.Label(left_frame, text='Agent ID', **l_args).grid(
+        column=0, row=1)
+    tk.Entry(left_frame, textvariable=agent_id).grid(
+        column=0, row=2)
 
-    tk.Button(root, text='Run Prediction', 
-              command=lambda: run_prediction(toy, agent_id, px, py, canvas)).grid(
-              column=0, row=2, columnspan=3)
-    
-    tk.Button(root, text='Run Prediction (Ignore the given neighbors)', 
-              command=lambda: run_prediction(toy, agent_id, None, None, canvas)).grid(
-              column=0, row=3, columnspan=3)
+    px0 = tk.StringVar(left_frame)
+    tk.Label(left_frame, text='New Neighbor (x-axis, start)', **l_args).grid(
+        column=0, row=3)
+    tk.Entry(left_frame, textvariable=px0).grid(
+        column=0, row=4)
+
+    py0 = tk.StringVar(left_frame)
+    tk.Label(left_frame, text='New Neighbor (y-axis, start)', **l_args).grid(
+        column=0, row=5)
+    tk.Entry(left_frame,  textvariable=py0).grid(
+        column=0, row=6)
+
+    px1 = tk.StringVar(left_frame)
+    tk.Label(left_frame, text='New Neighbor (x-axis, end)', **l_args).grid(
+        column=0, row=7)
+    tk.Entry(left_frame, textvariable=px1).grid(
+        column=0, row=8)
+
+    py1 = tk.StringVar(left_frame)
+    tk.Label(left_frame, text='New Neighbor (y-axis, end)', **l_args).grid(
+        column=0, row=9)
+    tk.Entry(left_frame,  textvariable=py1).grid(
+        column=0, row=10)
+
+    # Right Column
+    r_args = {
+        'background': '#FFFFFF',
+        'border': 5,
+    }
+
+    right_frame = tk.Frame(root, **r_args)
+    right_frame.grid(row=0, column=1, sticky=tk.NW, rowspan=2)
+
+    tk.Label(right_frame, text='Predictions',
+             font=('', 24, 'bold'),
+             height=2, **r_args).grid(column=0, row=0, sticky=tk.W)
+
+    tk.Label(right_frame, text='Social Circle:', width=16, anchor=tk.E, **r_args).grid(
+        column=0, row=1, rowspan=2)
+    (sc := tk.Label(right_frame, width=60, height=3, **r_args)).grid(
+        column=1, row=1, rowspan=2)
+
+    tk.Label(right_frame, text='Neighbor Angles:', width=16, anchor=tk.E, **r_args).grid(
+        column=0, row=3, rowspan=2)
+    (angles := tk.Label(right_frame, width=60, height=3, **r_args)).grid(
+        column=1, row=3, rowspan=2)
+
+    tk.Canvas(right_frame, width=640, height=480, **r_args).grid(
+        column=0, row=5, columnspan=2)
+    (canvas := tk.Label(right_frame, **r_args)).grid(
+        column=0, row=5, columnspan=2)
+
+    # Button Frame
+    b_args = {
+        # 'background': '#FFFFFF',
+        # 'border': 5,
+    }
+
+    button_frame = tk.Frame(root, **b_args)
+    button_frame.grid(column=0, row=1, sticky=tk.N)
+
+    tk.Button(button_frame, text='Run Prediction',
+              command=lambda: run_prediction(
+                  toy, agent_id, px0, py0, px1, py1,
+                  canvas, sc, angles), **b_args).grid(
+        column=0, row=10, sticky=tk.N)
+
+    tk.Button(button_frame, text='Run Prediction (original)',
+              command=lambda: run_prediction(
+                  toy, agent_id, None, None, None, None,
+                  canvas, sc, angles), **b_args).grid(
+        column=0, row=11, sticky=tk.N)
 
     root.mainloop()
