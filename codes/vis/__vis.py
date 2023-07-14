@@ -42,8 +42,8 @@ class Visualization(BaseManager):
         self._vc = vc if vc.open(video_path) else None
 
         # Try to read the scene image
-        img_path = self.info.other_files['rgb_image']
         try:
+            img_path = self.info.other_files['rgb_image']
             self.scene_image = cv2.imread(img_path)
         except:
             self.scene_image = None
