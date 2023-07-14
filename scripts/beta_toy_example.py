@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-13 21:26:35
+@LastEditTime: 2023-07-14 10:23:07
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -149,12 +149,12 @@ def run_prediction(t: BetaToyExample,
     np.set_printoptions(formatter={'float': '{:0.3f}'.format})
 
     # SocialCircle
-    sc = t.outputs[1][0][1].numpy()[0]
+    sc = t.outputs[1][1].numpy()[0]
     social_circle.config(text=str(sc.T))
 
     # All neighbors' angles
     count = t.get_neighbor_count(t.inputs[1])
-    na = t.outputs[1][0][2].numpy()[0][:count]
+    na = t.outputs[1][2].numpy()[0][:count]
     nei_angles.config(text=str(na*180/np.pi))
 
 

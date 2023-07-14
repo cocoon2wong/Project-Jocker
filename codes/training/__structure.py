@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-14 09:52:08
+@LastEditTime: 2023-07-14 14:48:30
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -488,8 +488,9 @@ class Structure(BaseManager):
         """
         # init variables for test
         outputs_all = []
-        metrics_all = []
-        metrics_dict_all = {}
+        batch_all_metrics = []
+        batch_weightedsum_metrics = []
+        metrics_names: list[str] = None
 
         # divide with batch size
         ds = ds.batch(self.args.batch_size)
@@ -510,29 +511,32 @@ class Structure(BaseManager):
 
             # Check if there are valid trajectories in this batch
             if valid_count == 0:
-                if return_results:
-                    outputs[0] = tf.zeros_like(outputs[0]) / 0.0
-                    outputs_all = append_batch_results(outputs_all, outputs)
-                continue
+                outputs[0] = tf.zeros_like(outputs[0]) / 0.0
 
             # Add metrics and outputs to their dicts
-            count.append(outputs[0].shape[0])
-            metrics_all.append(metrics)
-            metrics_dict_all = append_batch_results(
-                metrics_dict_all, metrics_dict)
+            else:
+                count.append(outputs[0].shape[0])
+                metrics_names = list(metrics_dict.keys())
+                batch_all_metrics.append(list(metrics_dict.values()))
+                batch_weightedsum_metrics.append(metrics)
 
             if return_results:
-                outputs_all = append_batch_results(outputs_all, outputs)
+                outputs_all.append(outputs)
 
         # Stack all model results
         if return_results:
-            outputs_all = stack_results(outputs_all)
+            outputs_all = stack_batch_outputs(outputs_all)
 
-        # calculate average metric
-        m_avg = weighted_avg_results([metrics_all], count, numpy=True)[0]
-        mdict_avg = weighted_avg_results(metrics_dict_all, count, numpy=True)
+        # Calculate average metrics
+        all_metrics = weighted_average(batch_all_metrics, count,
+                                       return_numpy=True)
+        weightedsum_metrics = weighted_average(batch_weightedsum_metrics,
+                                               count, return_numpy=True)
 
-        # Inference time
+        # Make the metric dict
+        mdict_avg = dict(zip(metrics_names, all_metrics))
+
+        # Compute the inference time
         if not test_during_training:
             if len(self.model.inference_times) < 3:
                 self.log('The "AverageInferenceTime" is for reference only and you can set a lower "batch_size" ' +
@@ -542,9 +546,9 @@ class Structure(BaseManager):
             mdict_avg['Fastest Inference Time'] = f'{self.model.fastest_inference_time} ms'
 
         if return_results:
-            return outputs_all, m_avg, mdict_avg
+            return outputs_all, weightedsum_metrics, mdict_avg
         else:
-            return m_avg, mdict_avg
+            return weightedsum_metrics, mdict_avg
 
     def print_info(self, **kwargs):
         info = {'Batch size': self.args.batch_size,
@@ -664,81 +668,60 @@ class Structure(BaseManager):
             self.log(f'Prediction result images are saved at {img_dir}')
 
 
-def stack_results(results: list[tf.Tensor]):
-    for index, tensor in enumerate(results):
-        results[index] = tf.concat(tensor, axis=0)
-    return results
+def _get_item(item, indices: list):
+    res = item
+    for i in indices:
+        res = res[i]
+    return res
 
 
-@overload
-def append_batch_results(results_container: list[list[tf.Tensor]],
-                         new_results: list[tf.Tensor]) -> list[list[tf.Tensor]]: ...
+def stack_batch_outputs(outputs: list[list[tf.Tensor]]):
+    """
+    Stack several batches' model outputs.
+    Input of this function should be a list of model outputs,
+    where each list member is a batch's output.
+    """
+    # Check output shapes
+    indices = []
+    for index, item in enumerate(outputs[0]):
+        if type(item) in [list, tuple]:
+            indices += [[index, i] for i in range(len(item))]
+        else:
+            indices.append([index])
+
+    # Concat all output tensors
+    o = [tf.concat([_get_item(_o, _i) for _o in outputs], axis=0)
+         for _i in indices]
+
+    final_outputs = []
+    for tensor, index in zip(o, indices):
+        if (l := len(index)) == 1:
+            final_outputs.append(tensor)
+        elif l == 2:
+            if len(final_outputs) <= index[0]:
+                final_outputs.append([])
+            final_outputs[index[0]].append(tensor)
+        else:
+            raise NotImplementedError
+
+    return final_outputs
 
 
-@overload
-def append_batch_results(results_container: dict[str, list[tf.Tensor]],
-                         new_results: dict[str, tf.Tensor]) -> dict[str, list[tf.Tensor]]: ...
-
-
-def append_batch_results(source, new):
-    if type(new) in [list, tuple]:
-        if not len(source):
-            for _ in range(len(new)):
-                source.append([])
-
-        for index, value in enumerate(new):
-            source[index].append(value)
-
-    elif type(new) in [dict]:
-        if not len(source):
-            for key in new.keys():
-                source[key] = []
-
-        for [key, value] in new.items():
-            source[key].append(value)
-
-    else:
-        raise TypeError(new)
-
-    return source
-
-
-@overload
-def weighted_avg_results(target: list[list[tf.Tensor]],
-                         weights: list,
-                         numpy=False) -> list[tf.Tensor]: ...
-
-
-@overload
-def weighted_avg_results(target: dict[str, list[tf.Tensor]],
-                         weights: list,
-                         numpy=False) -> dict[str, tf.Tensor]: ...
-
-
-def weighted_avg_results(target, weights: list, numpy=False):
-
+def weighted_average(inputs: list, weights: list, return_numpy=False) -> list:
+    """
+    Weighted sum all the inputs.
+    NOTE: The length of `inputs` and `weights` should be the same value.
+    """
+    inputs = tf.cast(inputs, tf.float32)
     weights = tf.cast(weights, tf.float32)
     count = tf.reduce_sum(weights)
 
-    if type(target) in [list, tuple]:
-        new_res = []
-        for item in target:
-            sum = tf.reduce_sum(item * weights)
-            res = sum/count
-            if numpy:
-                res = res.numpy()
-            new_res.append(res)
+    while weights.ndim < inputs.ndim:
+        weights = weights[..., tf.newaxis]
 
-    elif type(target) in [dict]:
-        new_res = {}
-        for key, value in target.items():
-            sum = tf.reduce_sum(value * weights)
-            res = sum/count
-            if numpy:
-                res = res.numpy()
-            new_res[key] = res
+    res = tf.reduce_sum(inputs * weights / count, axis=0)
 
-    else:
-        raise TypeError(target)
+    if return_numpy:
+        res = res.numpy()
 
-    return new_res
+    return list(res) if res.ndim else res

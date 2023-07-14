@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-13 15:35:12
+@LastEditTime: 2023-07-14 10:23:27
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -123,7 +123,7 @@ class BaseSilverballersModel(Model):
         if not training and (c := self.args.channel) != -1:
             y_handler[0] = y_handler[0][..., c, tf.newaxis, :, :]
 
-        return [y_handler[0], y_all_agent, y_handler]
+        return [y_handler[0]] + y_all_agent + [y_handler]
 
     def print_info(self, **kwargs):
         info = {'Indices of future keypoints': self.agent.key_indices_future,
