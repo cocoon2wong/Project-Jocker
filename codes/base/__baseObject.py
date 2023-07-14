@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-11 10:05:11
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-05-24 19:19:26
+@LastEditTime: 2023-07-14 15:45:59
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -14,7 +14,7 @@ from typing import TypeVar, Union
 import tensorflow as tf
 from tqdm import tqdm
 
-from ..utils import LOG_FILE, LOG_MAX_LIST_LEN
+from .. import utils
 
 T = TypeVar('T')
 
@@ -62,11 +62,11 @@ class BaseObject():
             logger.setLevel(logging.INFO)
 
             # Add the file handler (`./test.log`)
-            fhandler = logging.FileHandler(filename=LOG_FILE, mode='a')
+            fhandler = logging.FileHandler(filename=utils.LOG_FILE, mode='a')
             fhandler.setLevel(logging.INFO)
 
             # Add the terminal handler
-            thandler = logging.StreamHandler()
+            thandler = utils.LOG_STREAM_HANDLER
             thandler.setLevel(logging.INFO)
 
             # Add formatters
@@ -166,8 +166,8 @@ class BaseObject():
                 value = value.numpy()
 
             if (type(value) == list and
-                    len(value) > LOG_MAX_LIST_LEN):
-                value = value[:LOG_MAX_LIST_LEN] + ['...']
+                    len(value) > utils.LOG_MAX_LIST_LEN):
+                value = value[:utils.LOG_MAX_LIST_LEN] + ['...']
 
             print(f'    - {key}: {value}.')
 

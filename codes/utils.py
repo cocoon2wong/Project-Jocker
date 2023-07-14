@@ -2,19 +2,19 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 20:10:58
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-05 15:39:16
+@LastEditTime: 2023-07-14 16:36:42
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
+import logging
 import os
 import plistlib
 import time
 
 import numpy as np
 import tensorflow as tf
-
 
 """
 Configs
@@ -63,6 +63,7 @@ DISTRIBUTION_IMAGE = './figures/dis.png'
 # Log paths and configs
 LOG_FILE = './test.log'
 LOG_MAX_LIST_LEN = 10
+LOG_STREAM_HANDLER = logging.StreamHandler()
 
 # Weights configs
 WEIGHTS_FORMAT = '.tf'
