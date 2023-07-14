@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-13 15:29:34
+@LastEditTime: 2023-07-13 21:26:35
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -218,27 +218,30 @@ if __name__ == '__main__':
         'background': '#FFFFFF',
         'border': 5,
     }
+    t_args = {
+        'foreground': '#000000',
+    }
 
     right_frame = tk.Frame(root, **r_args)
     right_frame.grid(row=0, column=1, sticky=tk.NW, rowspan=2)
 
     tk.Label(right_frame, text='Predictions',
              font=('', 24, 'bold'),
-             height=2, **r_args).grid(column=0, row=0, sticky=tk.W)
+             height=2, **r_args, **t_args).grid(column=0, row=0, sticky=tk.W)
 
-    tk.Label(right_frame, text='Social Circle:', width=16, anchor=tk.E, **r_args).grid(
+    tk.Label(right_frame, text='Social Circle:', width=16, anchor=tk.E, **r_args, **t_args).grid(
         column=0, row=1, rowspan=2)
-    (sc := tk.Label(right_frame, width=60, height=3, **r_args)).grid(
+    (sc := tk.Label(right_frame, width=60, height=3, **r_args, **t_args)).grid(
         column=1, row=1, rowspan=2)
 
-    tk.Label(right_frame, text='Neighbor Angles:', width=16, anchor=tk.E, **r_args).grid(
+    tk.Label(right_frame, text='Neighbor Angles:', width=16, anchor=tk.E, **r_args, **t_args).grid(
         column=0, row=3, rowspan=2)
-    (angles := tk.Label(right_frame, width=60, height=3, **r_args)).grid(
+    (angles := tk.Label(right_frame, width=60, height=3, **r_args, **t_args)).grid(
         column=1, row=3, rowspan=2)
 
     tk.Canvas(right_frame, width=640, height=480, **r_args).grid(
         column=0, row=5, columnspan=2)
-    (canvas := tk.Label(right_frame, **r_args)).grid(
+    (canvas := tk.Label(right_frame, **r_args, **t_args)).grid(
         column=0, row=5, columnspan=2)
 
     # Button Frame
