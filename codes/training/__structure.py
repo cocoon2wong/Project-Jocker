@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:27:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-06 10:36:23
+@LastEditTime: 2023-07-14 09:52:08
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -405,12 +405,17 @@ class Structure(BaseManager):
 
             # Write tensorboard
             with tb.as_default():
-                for name in log_dict.keys():
+                for name, value in log_dict.items():
                     if name == 'best':
-                        continue
+                        value = best_metrics_dict
+                        if '-' in value.keys():
+                            continue
 
-                    value = log_dict[name]
-                    tf.summary.scalar(name, value, step=epoch)
+                        for k, v in value.items():
+                            tf.summary.scalar(k + ' (Best)', v, step=epoch)
+
+                    else:
+                        tf.summary.scalar(name, value, step=epoch)
 
         return log_dict, metrics_dict, best_metric, best_epoch
 
