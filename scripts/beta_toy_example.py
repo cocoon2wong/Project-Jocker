@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-14 10:23:07
+@LastEditTime: 2023-07-14 17:34:33
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -15,6 +15,7 @@ import tkinter as tk
 import numpy as np
 import tensorflow as tf
 from matplotlib import pyplot as plt
+from utils import TK_BORDER_WIDTH, TK_TITLE_STYLE, TextboxHandler
 
 sys.path.insert(0, os.path.abspath('.'))
 import codes
@@ -24,6 +25,7 @@ from main import main
 CLIP = 'zara1'
 TEMP_IMG_PATH = './temp_files/beta_toy_example/fig.png'
 MODEL_PATH = 'weights/Silverbullet/20230712-102506_beta_new_NEWEST_NEWESTbetazara1'
+LOG_PATH = './temp_files/beta_toy_example/run.log'
 
 
 class BetaToyExample():
@@ -138,12 +140,17 @@ def run_prediction(t: BetaToyExample,
             len(x1 := px1.get()) and len(y1 := py1.get())):
         extra_neighbor = [[float(x0), float(y0)],
                           [float(x1), float(y1)]]
+        t.t.log('Start running with an addition neighbor' +
+            f'from {extra_neighbor[0]} to {extra_neighbor[1]}...')
     else:
         extra_neighbor = None
+        t.t.log('Start running without any manual inputs...')
 
     t.run_on_agent(int(agent_id.get()),
                    extra_neighbor_position=extra_neighbor)
     canvas.config(image=t.image)
+    time = int(1000 * t.t.model.inference_times[-1])
+    t.t.log(f'Running done. Time cost = {time} ms.')
 
     # Set numpy format
     np.set_printoptions(formatter={'float': '{:0.3f}'.format})
@@ -160,27 +167,20 @@ def run_prediction(t: BetaToyExample,
 
 if __name__ == '__main__':
 
-    args = ['main.py', '--model', 'MKII',
-            '--loada', MODEL_PATH,
-            '--loadb', 'speed']
-
-    toy = BetaToyExample(args)
-
     root = tk.Tk()
     root.title('Toy Example of SocialCircle in Beta Model')
 
     # Left column
     l_args = {
         # 'background': '#FFFFFF',
-        'border': 5,
+        'border': TK_BORDER_WIDTH,
     }
 
     left_frame = tk.Frame(root, **l_args)
     left_frame.grid(row=0, column=0, sticky=tk.NW)
 
     tk.Label(left_frame, text='Settings',
-             font=('', 24, 'bold'),
-             height=2, **l_args).grid(
+             **TK_TITLE_STYLE, **l_args).grid(
                  column=0, row=0, sticky=tk.W)
 
     agent_id = tk.StringVar(left_frame, '1195')
@@ -216,7 +216,7 @@ if __name__ == '__main__':
     # Right Column
     r_args = {
         'background': '#FFFFFF',
-        'border': 5,
+        'border': TK_BORDER_WIDTH,
     }
     t_args = {
         'foreground': '#000000',
@@ -226,8 +226,8 @@ if __name__ == '__main__':
     right_frame.grid(row=0, column=1, sticky=tk.NW, rowspan=2)
 
     tk.Label(right_frame, text='Predictions',
-             font=('', 24, 'bold'),
-             height=2, **r_args, **t_args).grid(column=0, row=0, sticky=tk.W)
+             **TK_TITLE_STYLE, **r_args, **t_args).grid(
+                 column=0, row=0, sticky=tk.W)
 
     tk.Label(right_frame, text='Social Circle:', width=16, anchor=tk.E, **r_args, **t_args).grid(
         column=0, row=1, rowspan=2)
@@ -243,11 +243,31 @@ if __name__ == '__main__':
         column=0, row=5, columnspan=2)
     (canvas := tk.Label(right_frame, **r_args, **t_args)).grid(
         column=0, row=5, columnspan=2)
+    
+    # Log frame
+    log_frame = tk.Frame(right_frame, **r_args)
+    log_frame.grid(column=0, row=6, columnspan=2)
+
+    logbar = tk.Text(log_frame, width=89, height=7, **r_args)
+    (scroll := tk.Scrollbar(log_frame, command=logbar.yview)).pack(
+        side=tk.RIGHT, fill=tk.Y)
+    logbar.config(yscrollcommand=scroll.set)
+    logbar.pack()
+    
+    # Init model and training structure
+    args = ['main.py', '--model', 'MKII',
+            '--loada', MODEL_PATH,
+            '--loadb', 'speed']
+
+    codes.set_log_path(LOG_PATH)
+    codes.set_log_stream_handler(TextboxHandler(logbar))
+    toy = BetaToyExample(args)
+    toy.t.log(f'Model `{toy.t.args.loada}` and dataset files ({CLIP}) loaded.')
 
     # Button Frame
     b_args = {
         # 'background': '#FFFFFF',
-        # 'border': 5,
+        # 'border': TK_BORDER_WIDTH,
     }
 
     button_frame = tk.Frame(root, **b_args)
