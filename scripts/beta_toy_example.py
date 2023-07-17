@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-17 17:19:41
+@LastEditTime: 2023-07-17 17:46:23
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -11,6 +11,7 @@
 import os
 import sys
 import tkinter as tk
+from tkinter import filedialog
 
 import numpy as np
 import tensorflow as tf
@@ -223,12 +224,6 @@ if __name__ == '__main__':
     tk.Entry(left_frame,  textvariable=py1).grid(
         column=0, row=10)
 
-    model_path = tk.StringVar(left_frame, MODEL_PATH)
-    tk.Label(left_frame, text='Model Path', **l_args).grid(
-        column=0, row=11)
-    tk.Entry(left_frame,  textvariable=model_path).grid(
-        column=0, row=12)
-
     # Right Column
     r_args = {
         'background': '#FFFFFF',
@@ -244,25 +239,31 @@ if __name__ == '__main__':
     tk.Label(right_frame, text='Predictions',
              **TK_TITLE_STYLE, **r_args, **t_args).grid(
                  column=0, row=0, sticky=tk.W)
+    
+    tk.Label(right_frame, text='Model Path:', width=16, anchor=tk.E, **r_args, **t_args).grid(
+        column=0, row=1)
+    (model_path := tk.Label(right_frame, width=60, wraplength=510, 
+                            text=MODEL_PATH, **r_args, **t_args)).grid(
+        column=1, row=1)
 
     tk.Label(right_frame, text='Social Circle:', width=16, anchor=tk.E, **r_args, **t_args).grid(
-        column=0, row=1, rowspan=2)
-    (sc := tk.Label(right_frame, width=60, height=3, **r_args, **t_args)).grid(
-        column=1, row=1, rowspan=2)
+        column=0, row=2)
+    (sc := tk.Label(right_frame, width=60, **r_args, **t_args)).grid(
+        column=1, row=2)
 
     tk.Label(right_frame, text='Neighbor Angles:', width=16, anchor=tk.E, **r_args, **t_args).grid(
-        column=0, row=3, rowspan=2)
-    (angles := tk.Label(right_frame, width=60, height=3, **r_args, **t_args)).grid(
-        column=1, row=3, rowspan=2)
+        column=0, row=3)
+    (angles := tk.Label(right_frame, width=60, **r_args, **t_args)).grid(
+        column=1, row=3)
 
     tk.Canvas(right_frame, width=640, height=480, **r_args).grid(
-        column=0, row=5, columnspan=2)
+        column=0, row=4, columnspan=2)
     (canvas := tk.Label(right_frame, **r_args, **t_args)).grid(
-        column=0, row=5, columnspan=2)
+        column=0, row=4, columnspan=2)
 
     # Log frame
     log_frame = tk.Frame(right_frame, **r_args)
-    log_frame.grid(column=0, row=6, columnspan=2)
+    log_frame.grid(column=0, row=5, columnspan=2)
 
     logbar = tk.Text(log_frame, width=89, height=7, **r_args)
     (scroll := tk.Scrollbar(log_frame, command=logbar.yview)).pack(
@@ -277,7 +278,7 @@ if __name__ == '__main__':
 
     codes.set_log_path(LOG_PATH)
     codes.set_log_stream_handler(TextboxHandler(logbar))
-    toy = BetaToyExample(args(model_path.get()))
+    toy = BetaToyExample(args(MODEL_PATH))
 
     # Button Frame
     b_args = {
@@ -301,7 +302,8 @@ if __name__ == '__main__':
         column=0, row=11, sticky=tk.N)
 
     tk.Button(button_frame, text='Reload Model Weights',
-              command=lambda: toy.load_model(args(model_path.get()))).grid(
+              command=lambda: [toy.load_model(args(p := filedialog.askdirectory(initialdir='./'))),
+                               model_path.config(text=p)]).grid(
         column=0, row=12, sticky=tk.N)
 
     root.mainloop()
