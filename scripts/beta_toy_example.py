@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-14 17:34:33
+@LastEditTime: 2023-07-17 17:19:41
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -30,8 +30,8 @@ LOG_PATH = './temp_files/beta_toy_example/run.log'
 
 class BetaToyExample():
     def __init__(self, args: list[str]) -> None:
-        self.t: codes.training.Structure = main(args, run_train_or_test=False)
-        self.init_model()
+        self.t: codes.training.Structure = None
+        self.load_model(args)
         self.image: tk.PhotoImage = None
 
         self.inputs: list[tf.Tensor] = None
@@ -43,6 +43,16 @@ class BetaToyExample():
                                        self.t.label_types)
         self.input_and_gt: list[list[tf.Tensor]] = \
             list(self.t.agent_manager.make(CLIP, 'test'))
+
+    def load_model(self, args: list[str]) -> codes.training.Structure:
+        try:
+            t = main(args, run_train_or_test=False)
+            self.t = t
+            self.init_model()
+            self.t.log(
+                f'Model `{toy.t.args.loada}` and dataset files ({CLIP}) loaded.')
+        except:
+            pass
 
     def run_on_agent(self, agent_index: int,
                      extra_neighbor_position=None):
@@ -141,7 +151,7 @@ def run_prediction(t: BetaToyExample,
         extra_neighbor = [[float(x0), float(y0)],
                           [float(x1), float(y1)]]
         t.t.log('Start running with an addition neighbor' +
-            f'from {extra_neighbor[0]} to {extra_neighbor[1]}...')
+                f'from {extra_neighbor[0]} to {extra_neighbor[1]}...')
     else:
         extra_neighbor = None
         t.t.log('Start running without any manual inputs...')
@@ -213,6 +223,12 @@ if __name__ == '__main__':
     tk.Entry(left_frame,  textvariable=py1).grid(
         column=0, row=10)
 
+    model_path = tk.StringVar(left_frame, MODEL_PATH)
+    tk.Label(left_frame, text='Model Path', **l_args).grid(
+        column=0, row=11)
+    tk.Entry(left_frame,  textvariable=model_path).grid(
+        column=0, row=12)
+
     # Right Column
     r_args = {
         'background': '#FFFFFF',
@@ -243,7 +259,7 @@ if __name__ == '__main__':
         column=0, row=5, columnspan=2)
     (canvas := tk.Label(right_frame, **r_args, **t_args)).grid(
         column=0, row=5, columnspan=2)
-    
+
     # Log frame
     log_frame = tk.Frame(right_frame, **r_args)
     log_frame.grid(column=0, row=6, columnspan=2)
@@ -253,16 +269,15 @@ if __name__ == '__main__':
         side=tk.RIGHT, fill=tk.Y)
     logbar.config(yscrollcommand=scroll.set)
     logbar.pack()
-    
+
     # Init model and training structure
-    args = ['main.py', '--model', 'MKII',
-            '--loada', MODEL_PATH,
-            '--loadb', 'speed']
+    def args(path): return ['main.py', '--model', 'MKII',
+                            '--loada', path,
+                            '--loadb', 'speed']
 
     codes.set_log_path(LOG_PATH)
     codes.set_log_stream_handler(TextboxHandler(logbar))
-    toy = BetaToyExample(args)
-    toy.t.log(f'Model `{toy.t.args.loada}` and dataset files ({CLIP}) loaded.')
+    toy = BetaToyExample(args(model_path.get()))
 
     # Button Frame
     b_args = {
@@ -284,5 +299,9 @@ if __name__ == '__main__':
                   toy, agent_id, None, None, None, None,
                   canvas, sc, angles), **b_args).grid(
         column=0, row=11, sticky=tk.N)
+
+    tk.Button(button_frame, text='Reload Model Weights',
+              command=lambda: toy.load_model(args(model_path.get()))).grid(
+        column=0, row=12, sticky=tk.N)
 
     root.mainloop()
