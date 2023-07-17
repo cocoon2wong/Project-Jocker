@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-17 20:01:55
+@LastEditTime: 2023-07-17 21:00:34
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -38,12 +38,16 @@ class BetaToyExample():
         self.inputs: list[tf.Tensor] = None
         self.outputs: list[tf.Tensor] = None
 
+        self.input_and_gt: list[list[tf.Tensor]] = None
+
     def init_model(self):
         self.t.model = self.t.create_model()
         self.t.agent_manager.set_types(self.t.model.input_types,
                                        self.t.label_types)
-        self.input_and_gt: list[list[tf.Tensor]] = \
-            list(self.t.agent_manager.make(CLIP, 'test'))
+        
+        if self.input_and_gt is None:
+            self.input_and_gt = \
+                list(self.t.agent_manager.make(CLIP, 'test'))
 
     def load_model(self, args: list[str]) -> codes.training.Structure:
         try:
@@ -302,7 +306,7 @@ if __name__ == '__main__':
         column=0, row=11, sticky=tk.N)
 
     tk.Button(button_frame, text='Reload Model Weights',
-              command=lambda: [toy.load_model(args(p := filedialog.askdirectory(initialdir='./'))),
+              command=lambda: [toy.load_model(args(p := filedialog.askdirectory(initialdir=os.path.dirname(MODEL_PATH)))),
                                model_path.config(text=p)]).grid(
         column=0, row=12, sticky=tk.N)
 
