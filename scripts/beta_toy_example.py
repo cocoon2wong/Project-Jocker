@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-17 17:46:23
+@LastEditTime: 2023-07-17 20:01:55
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -265,7 +265,7 @@ if __name__ == '__main__':
     log_frame = tk.Frame(right_frame, **r_args)
     log_frame.grid(column=0, row=5, columnspan=2)
 
-    logbar = tk.Text(log_frame, width=89, height=7, **r_args)
+    logbar = tk.Text(log_frame, width=89, height=7, **r_args, **t_args)
     (scroll := tk.Scrollbar(log_frame, command=logbar.yview)).pack(
         side=tk.RIGHT, fill=tk.Y)
     logbar.config(yscrollcommand=scroll.set)
