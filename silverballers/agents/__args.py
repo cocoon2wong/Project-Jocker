@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-06-07 11:08:13
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-11 10:39:18
+@LastEditTime: 2023-07-17 16:07:02
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -41,3 +41,12 @@ class AgentArgs(BaseSilverballersArgs):
         Canbe `'avgkey'` or `'keyl2'` (default).
         """
         return self._arg('loss', 'keyl2', argtype=DYNAMIC)
+
+    @property
+    def rel_speed(self) -> int:
+        """
+        Choose wheather use the relative speed or the absolute speed
+        as the speed factor in the SocialCircle (only for Beta Model).
+        (Default to the `relative speed`)
+        """
+        return self._arg('rel_speed', 1, argtype=STATIC)

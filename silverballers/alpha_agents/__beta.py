@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-10 15:21:12
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-13 09:13:53
+@LastEditTime: 2023-07-17 16:06:46
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -102,32 +102,41 @@ class BetaModel(BaseAgentModel):
         # Calculate relative walking distances with all neighbors
         nei_vector_len = tf.linalg.norm(nei_vector, axis=-1)    # (batch, a)
         obs_vector_len = tf.linalg.norm(obs_vector, axis=-1)    # (batch, 1)
-        rel_vector_len = (nei_vector_len + 0.0001) / (obs_vector_len + 0.0001)
 
-        # Calculate distances between neighbors and the target agent
+        # Speed factor in the SocialCircle
+        if self.args.rel_speed:
+            f_speed = (nei_vector_len + 0.0001) / (obs_vector_len + 0.0001)
+        else:
+            f_speed = nei_vector_len
+
+        # Distance factor
         nei_posion_vector = c_nei[..., -1, :] - c_obs[..., tf.newaxis, -1, :]
-        nei_distance = tf.linalg.norm(nei_posion_vector, axis=-1)
-        nei_posion_angle = tf.atan2(x=nei_posion_vector[..., 0],
-                                    y=nei_posion_vector[..., 1])
-        nei_posion_angle = tf.math.mod(nei_posion_angle, 2*np.pi)
-        angle_indices = nei_posion_angle / (2*np.pi/self.args.obs_frames)
+        f_distance = tf.linalg.norm(nei_posion_vector, axis=-1)
+
+        # Direction factor
+        f_direction = tf.atan2(x=nei_posion_vector[..., 0],
+                               y=nei_posion_vector[..., 1])
+        f_direction = tf.math.mod(f_direction, 2*np.pi)
+
+        # Angles (the independent variable \theta)
+        angle_indices = f_direction / (2*np.pi/self.args.obs_frames)
         angle_indices = tf.cast(angle_indices, tf.int32)
 
         # Mask neighbors
         nei_mask = get_mask(tf.reduce_sum(nei, axis=[-1, -2]), tf.int32)
         angle_indices = angle_indices * nei_mask + -1 * (1 - nei_mask)
 
-        # Compute SocialCircle
+        # Compute the SocialCircle
         social_circle = []
         for ang in range(self.args.obs_frames):
             _mask = tf.cast(angle_indices == ang, tf.float32)
             _mask_count = tf.reduce_sum(_mask, axis=-1)
 
             n = _mask_count + 0.0001
-            avg_len = tf.reduce_sum(rel_vector_len * _mask, axis=-1) / n
-            avg_disance = tf.reduce_sum(nei_distance * _mask, axis=-1) / n
-            avg_nei_angle = tf.reduce_sum(nei_posion_angle * _mask, axis=-1) / n
-            social_circle.append([avg_len, avg_disance, avg_nei_angle])
+            _speed = tf.reduce_sum(f_speed * _mask, axis=-1) / n
+            _distance = tf.reduce_sum(f_distance * _mask, axis=-1) / n
+            _direction = tf.reduce_sum(f_direction * _mask, axis=-1) / n
+            social_circle.append([_speed, _distance, _direction])
 
         # Shape of the final SocialCircle: (batch, obs, 2)
         social_circle = tf.cast(social_circle, tf.float32)
@@ -179,7 +188,7 @@ class BetaModel(BaseAgentModel):
             all_predictions.append(y)
 
         Y = tf.concat(all_predictions, axis=-3)   # (batch, K, n_key, dim)
-        return Y, social_circle, nei_posion_angle
+        return Y, social_circle, f_direction
 
 
 class BetaStructure(BaseAgentStructure):
