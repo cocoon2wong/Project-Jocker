@@ -32,14 +32,14 @@ LOG_PATH = './temp_files/beta_toy_example/run.log'
 class BetaToyExample():
     def __init__(self, args: list[str]) -> None:
         self.t: codes.training.Structure = None
-        self.load_model(args)
         self.image: tk.PhotoImage = None
 
         self.inputs: list[tf.Tensor] = None
         self.outputs: list[tf.Tensor] = None
-
         self.input_and_gt: list[list[tf.Tensor]] = None
 
+        self.load_model(args)
+        
     def init_model(self):
         self.t.model = self.t.create_model()
         self.t.agent_manager.set_types(self.t.model.input_types,
