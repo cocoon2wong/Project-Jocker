@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-21 20:36:21
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-10 15:12:42
+@LastEditTime: 2023-07-18 16:32:36
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -231,8 +231,11 @@ class Visualization(BaseManager):
 
                 # TODO: draw agent-wise outputs on images
 
-            if save_as_images:
+            if f is not None:
                 cv2.imwrite(save_name + f'_{frame}.jpg', f)
+            else:
+                plt.savefig(save_name + f'_{frame}.jpg')
+                plt.close()
             return
 
         f_pred = vis_func(f_empty, pred=pred, draw_dis=draw_dis)
@@ -366,6 +369,9 @@ class Visualization(BaseManager):
                            **kwargs):
 
         if obs is not None:
+            if obs.ndim == 2:
+                obs = obs[np.newaxis]
+
             for p in np.transpose(obs, [1, 0, 2]):
                 plt.scatter(p.T[0], p.T[1], c='#287AFB')
 
@@ -375,10 +381,16 @@ class Visualization(BaseManager):
                 plt.scatter(p.T[0], p.T[1], c='#CA15A9')
 
         if gt is not None:
+            if gt.ndim == 2:
+                gt = gt[np.newaxis]
+
             for p in np.transpose(gt, [1, 0, 2]):
                 plt.scatter(p.T[0], p.T[1], c='#4CEDA7')
 
         if pred is not None:
+            if pred.ndim == 2:
+                pred = pred[np.newaxis]
+
             for p in np.transpose(pred, [1, 0, 2]):
                 plt.scatter(p.T[0], p.T[1], c='#F5E25F')
 
