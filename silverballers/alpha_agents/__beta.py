@@ -31,9 +31,10 @@ class BetaModel(BaseAgentModel):
 
         # Layers
         tlayer, itlayer = layers.get_transform_layers(self.args.T)
+        tslayer, _ = layers.get_transform_layers(self.args.Ts)
 
         # Transform layers
-        self.ts = tlayer((self.args.obs_frames, 2))
+        self.ts = tslayer((self.args.obs_frames, 2))
         self.t1 = tlayer((self.args.obs_frames, self.dim))
         self.it1 = itlayer((self.n_key, self.dim))
 

@@ -67,7 +67,7 @@ class BaseSilverballersArgs(Args):
         - `haar`: haar wavelet transform
         - `db2`: DB2 wavelet transform
         """
-        return self._arg('T', 'fft', argtype=STATIC)
+        return self._arg('T', 'fft', argtype=STATIC, short_name='T')
 
     @property
     def feature_dim(self) -> int:

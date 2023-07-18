@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2023-06-07 11:08:13
-@LastEditors: Conghao Wong
-@LastEditTime: 2023-07-17 16:07:02
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-07-18 14:49:57
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -50,3 +50,15 @@ class AgentArgs(BaseSilverballersArgs):
         (Default to the `relative speed`)
         """
         return self._arg('rel_speed', 1, argtype=STATIC)
+
+    @property
+    def Ts(self) -> str:
+        """
+        The transformation on SocialCircle.
+        It could be:
+        - `none`: no transformations
+        - `fft`: fast Fourier transform
+        - `haar`: haar wavelet transform
+        - `db2`: DB2 wavelet transform
+        """
+        return self._arg('Ts', 'fft', argtype=STATIC, short_name='Ts')
