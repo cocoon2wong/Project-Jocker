@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-27 20:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-11 10:38:52
+@LastEditTime: 2023-08-08 16:30:23
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,7 +11,7 @@
 from codes.args import Args
 from codes.constant import INTERPOLATION_TYPES
 
-from . import agents, alpha_agents, handlers
+from . import agents, alpha_agents, handlers, socialcircle
 from .__args import SilverballersArgs
 from .__baseSilverballers import BaseSilverballers
 from .__MiniV import MinimalV, MinimalVModel
@@ -28,18 +28,22 @@ class SilverballersMKII(BaseSilverballers):
         # Assign the model type of the first-stage subnetwork
         min_args_a = Args(is_temporary=True)._load_from_json(a_model_path)
         agent_model_type = get_model_type(min_args_a.model)
+        agent_structure_type = get_structure(min_args_a.model)
 
         # Assign the model type of the second-stage subnetwork
         interp_model = INTERPOLATION_TYPES.get_type(b_model_path)
         if interp_model is None:
             min_args_b = Args(is_temporary=True)._load_from_json(b_model_path)
-            handler_model_type = get_model_type(min_args_b.model)
-        else:
-            handler_model_type = get_model_type(interp_model)
+            interp_model = min_args_b.model
+
+        handler_model_type = get_model_type(interp_model)
+        handler_structure_type = get_structure(interp_model)
 
         super().__init__(terminal_args,
                          agent_model_type=agent_model_type,
-                         handler_model_type=handler_model_type)
+                         handler_model_type=handler_model_type,
+                         agent_structure_type=agent_structure_type,
+                         handler_structure_type=handler_structure_type)
 
 
 __SILVERBALLERS_DICT = dict(
@@ -72,6 +76,7 @@ __SILVERBALLERS_DICT = dict(
     alpha=[alpha_agents.AlphaStructure,
            alpha_agents.AlphaModel],
     beta=[alpha_agents.BetaStructure, alpha_agents.BetaModel],
+    evsc=[socialcircle.EVSCStructure, socialcircle.EVSCModel],
 
     # Silverballers Structures
     MKII=[SilverballersMKII, None],

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-14 10:23:27
+@LastEditTime: 2023-08-08 16:41:13
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -160,11 +160,19 @@ class BaseSilverballers(BaseSubnetworkStructure):
 
     def __init__(self, terminal_args: list[str],
                  agent_model_type: type[BaseAgentModel],
-                 handler_model_type: type[BaseHandlerModel]):
+                 handler_model_type: type[BaseHandlerModel],
+                 agent_structure_type: type[BaseAgentStructure] = None,
+                 handler_structure_type: type[BaseHandlerStructure] = None):
 
         # Assign types of all subnetworks
         self.agent_model_type = agent_model_type
         self.handler_model_type = handler_model_type
+
+        if agent_structure_type:
+            self.AGENT_STRUCTURE_TYPE = agent_structure_type
+
+        if handler_structure_type:
+            self.HANDLER_STRUCTURE_TYPE = handler_structure_type
 
         # Init log-related functions
         BaseObject.__init__(self)
