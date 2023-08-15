@@ -76,6 +76,9 @@ __SILVERBALLERS_DICT = dict(
     alpha=[alpha_agents.AlphaStructure,
            alpha_agents.AlphaModel],
     beta=[alpha_agents.BetaStructure, alpha_agents.BetaModel],
+
+    # SocialCircle models
+    vsc=[socialcircle.VSCStructure, socialcircle.VSCModel],
     evsc=[socialcircle.EVSCStructure, socialcircle.EVSCModel],
 
     # Silverballers Structures
