@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:19:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-08 16:42:10
+@LastEditTime: 2023-08-15 19:14:54
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -22,7 +22,7 @@ class SocialCircleArgs(AgentArgs):
         as the speed factor in the SocialCircle (only for Beta Model).
         (Default to the `relative speed`)
         """
-        return self._arg('rel_speed', 1, argtype=STATIC)
+        return self._arg('rel_speed', 0, argtype=STATIC)
 
     @property
     def Ts(self) -> str:
@@ -34,7 +34,7 @@ class SocialCircleArgs(AgentArgs):
         - `haar`: haar wavelet transform
         - `db2`: DB2 wavelet transform
         """
-        return self._arg('Ts', 'fft', argtype=STATIC, short_name='Ts')
+        return self._arg('Ts', 'none', argtype=STATIC, short_name='Ts')
 
     @property
     def partitions(self) -> int:
