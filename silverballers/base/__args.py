@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:41:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-26 10:39:44
+@LastEditTime: 2023-08-16 10:03:42
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -27,14 +27,6 @@ class BaseSilverballersArgs(Args):
         The number of style channels in `Agent` model.
         """
         return self._arg('Kc', 20, argtype=STATIC)
-
-    @property
-    def down_sampling_rate(self) -> float:
-        """
-        Down sampling rate to sample trajectories from
-        all N = K*Kc trajectories.
-        """
-        return self._arg('down_sampling_rate', 1.0, argtype=TEMPORARY)
 
     @property
     def key_points(self) -> str:

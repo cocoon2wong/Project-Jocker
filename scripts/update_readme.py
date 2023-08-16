@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-08-05 15:26:57
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-07 16:45:25
+@LastEditTime: 2023-08-16 17:08:44
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -15,9 +15,6 @@ import sys
 sys.path.insert(0, os.path.abspath('.'))
 
 from codes.args import Args
-from silverballers import SilverballersArgs
-from silverballers.agents import AgentArgs
-from silverballers.handlers import HandlerArgs
 
 FLAG = '<!-- DO NOT CHANGE THIS LINE -->'
 TARGET_FILE = './README.md'
@@ -58,20 +55,23 @@ def read_comments(args: Args) -> list[str]:
     return results
 
 
-def get_doc(args: list[Args], titles: list[str]) -> list[str]:
+def get_doc(args: list[Args], titles: list[str],
+            father_indices: list[int]) -> list[str]:
 
     new_lines = []
-    all_args = []
+    all_args = [[] for _ in range(len(args))]
 
-    for arg, title in zip(args, titles):
+    for index, (arg, title, father) in enumerate(zip(args, titles, father_indices)):
         new_lines += [f'\n### {title}\n\n']
         c = read_comments(arg)
         c.sort()
 
         for new_line in c:
             name = new_line.split('`')[1]
-            if name not in all_args:
-                all_args.append(name)
+            all_args[index].append(name)
+            if father is None:
+                father = 0
+            if (name not in all_args[father]) or (index == father):
                 new_lines.append(new_line)
 
     return new_lines
@@ -95,39 +95,37 @@ def update_readme(new_lines: list[str], md_file: str):
         f.writelines(all_lines)
 
 
-def print_help_info(value: str):
+def print_help_info(value: str = None):
 
-    from codes.args import Args
-    from scripts.update_readme import get_doc
+    from silverballers import SilverballersArgs
+    from silverballers.agents import AgentArgs
+    from silverballers.handlers import HandlerArgs
+    from silverballers.socialcircle import SocialCircleArgs
 
     files = [Args(is_temporary=True),
-             SilverballersArgs(is_temporary=True),
              AgentArgs(is_temporary=True),
-             HandlerArgs(is_temporary=True)]
+             HandlerArgs(is_temporary=True),
+             SilverballersArgs(is_temporary=True),
+             SocialCircleArgs(is_temporary=True)]
 
-    titles = ['Basic args',
-              'Silverballers args',
-              'First-stage silverballers args',
-              'Second-stage silverballers args']
+    titles = ['Basic Args',
+              'First-stage Silverballers Args',
+              'Second-stage Silverballers Args',
+              'Silverballers Args',
+              'SocialCircle Args']
 
-    doc_lines = get_doc(files, titles)
-    if value == 'all_args':
+    father_indices = [None, 0, 0, 1, 1]
+
+    doc_lines = get_doc(files, titles, father_indices)
+    if value is None:
+        pass
+    elif value == 'all_args':
         [print(doc) for doc in doc_lines]
     else:
         doc_lines = [doc for doc in doc_lines if doc[5:].startswith(value)]
         [print(doc) for doc in doc_lines]
+    return doc_lines
 
 
 if __name__ == '__main__':
-    files = [Args(is_temporary=True),
-             SilverballersArgs(is_temporary=True),
-             AgentArgs(is_temporary=True),
-             HandlerArgs(is_temporary=True)]
-
-    titles = ['Basic args',
-              'Silverballers args',
-              'First-stage silverballers args',
-              'Second-stage silverballers args']
-
-    doc = get_doc(files, titles)
-    update_readme(doc, TARGET_FILE)
+    update_readme(print_help_info(), TARGET_FILE)

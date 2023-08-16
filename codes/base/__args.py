@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-19 21:46:27
+@LastEditTime: 2023-08-16 17:06:01
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -325,11 +325,11 @@ class Args(ArgsManager):
     @property
     def draw_exclude_type(self) -> str:
         """
-        Draw visualized results of agents except user-assigned types.
+        Draw visualized results of agents except for user-assigned types.
         If the assigned types are `"Biker_Cart"` and the `draw_results`
         or `draw_videos` is not `"null"`, it will draw results of all
         types of agents except "Biker" and "Cart".
-        It supports partial match and it is case-sensitive.
+        It supports partial match, and it is case-sensitive.
         """
         return self._arg('draw_exclude_type', 'null', argtype=TEMPORARY, short_name='det')
 
@@ -358,7 +358,7 @@ class Args(ArgsManager):
     @property
     def draw_distribution(self) -> int:
         """
-        Controls if draw distributions of predictions instead of points.
+        Controls whether to draw distributions of predictions instead of points.
         If `draw_distribution == 0`, it will draw results as normal coordinates;
         If `draw_distribution == 1`, it will draw all results in the distribution
         way, and points from different time steps will be drawn with different colors.
@@ -393,7 +393,7 @@ class Args(ArgsManager):
     @property
     def K(self) -> int:
         """
-        Number of multiple generations when testing.
+        The number of multiple generations when testing.
         This arg only works for multiple-generation models.
         """
         return self._arg('K', 20, argtype=DYNAMIC)
@@ -409,7 +409,7 @@ class Args(ArgsManager):
     @property
     def use_seg_maps(self) -> int:
         """
-        Controls if uses the segmentation maps instead of the
+        Controls whether to use segmentation maps instead of the
         calculated trajectory maps.
         """
         return self._arg('use_seg_maps', 0, argtype=DYNAMIC)

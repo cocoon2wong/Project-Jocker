@@ -44,13 +44,13 @@ About the `argtype`:
   The program will parse these args from the terminal at each time.
 
 <!-- DO NOT CHANGE THIS LINE -->
-### Basic args
+### Basic Args
 
 - `--K_train`: type=`int`, argtype=`static`.
   The number of multiple generations when training. This arg only works for multiple-generation models. 
   The default value is `10`.
 - `--K`: type=`int`, argtype=`dynamic`.
-  Number of multiple generations when testing. This arg only works for multiple-generation models. 
+  The number of multiple generations when testing. This arg only works for multiple-generation models. 
   The default value is `20`.
 - `--anntype`: type=`str`, argtype=`static`.
   Model's predicted annotation type. Can be `'coordinate'` or `'boundingbox'`. 
@@ -58,14 +58,17 @@ About the `argtype`:
 - `--batch_size` (short for `-bs`): type=`int`, argtype=`dynamic`.
   Batch size when implementation. 
   The default value is `5000`.
+- `--compute_loss`: type=`int`, argtype=`temporary`.
+  Controls whether compute losses when testing. 
+  The default value is `0`.
 - `--dataset`: type=`str`, argtype=`static`.
   Name of the video dataset to train or evaluate. For example, `'ETH-UCY'` or `'SDD'`. NOTE: DO NOT set this argument manually. 
   The default value is `Unavailable`.
 - `--draw_distribution` (short for `-dd`): type=`int`, argtype=`temporary`.
-  Controls if draw distributions of predictions instead of points. If `draw_distribution == 0`, it will draw results as normal coordinates; If `draw_distribution == 1`, it will draw all results in the distribution way, and points from different time steps will be drawn with different colors. 
+  Controls whether to draw distributions of predictions instead of points. If `draw_distribution == 0`, it will draw results as normal coordinates; If `draw_distribution == 1`, it will draw all results in the distribution way, and points from different time steps will be drawn with different colors. 
   The default value is `0`.
 - `--draw_exclude_type` (short for `-det`): type=`str`, argtype=`temporary`.
-  Draw visualized results of agents except user-assigned types. If the assigned types are `"Biker_Cart"` and the `draw_results` or `draw_videos` is not `"null"`, it will draw results of all types of agents except "Biker" and "Cart". It supports partial match and it is case-sensitive. 
+  Draw visualized results of agents except for user-assigned types. If the assigned types are `"Biker_Cart"` and the `draw_results` or `draw_videos` is not `"null"`, it will draw results of all types of agents except "Biker" and "Cart". It supports partial match, and it is case-sensitive. 
   The default value is `null`.
 - `--draw_extra_outputs`: type=`int`, argtype=`temporary`.
   Choose whether to draw (put text) extra model outputs on the visualized images. 
@@ -112,6 +115,9 @@ About the `argtype`:
 - `--lr` (short for `-lr`): type=`float`, argtype=`static`.
   Learning rate. 
   The default value is `0.001`.
+- `--max_agents`: type=`int`, argtype=`static`.
+  Max number of agents to predict in one frame. It only works when `model_type == 'frame-based'`. 
+  The default value is `50`.
 - `--model_name`: type=`str`, argtype=`static`.
   Customized model name. 
   The default value is `model`.
@@ -151,9 +157,9 @@ About the `argtype`:
 - `--start_test_percent`: type=`float`, argtype=`static`.
   Set when (at which epoch) to start validation during training. The range of this arg should be `0 <= x <= 1`. Validation may start at epoch `args.epochs * args.start_test_percent`. 
   The default value is `0.0`.
-- `--step`: type=`int`, argtype=`dynamic`.
+- `--step`: type=`float`, argtype=`dynamic`.
   Frame interval for sampling training data. 
-  The default value is `1`.
+  The default value is `1.0`.
 - `--test_mode`: type=`str`, argtype=`temporary`.
   Test settings. It can be `'one'`, `'all'`, or `'mix'`. When setting it to `one`, it will test the model on the `args.force_split` only; When setting it to `all`, it will test on each of the test datasets in `args.split`; When setting it to `mix`, it will test on all test datasets in `args.split` together. 
   The default value is `mix`.
@@ -164,29 +170,68 @@ About the `argtype`:
   Choose whether to update (overwrite) the saved arg files or not. 
   The default value is `0`.
 - `--use_seg_maps`: type=`int`, argtype=`dynamic`.
-  Controls if uses the segmentation maps instead of the calculated trajectory maps. 
+  Controls whether to use segmentation maps instead of the calculated trajectory maps. 
   The default value is `0`.
 - `--verbose` (short for `-v`): type=`int`, argtype=`temporary`.
   Controls if print verbose logs and outputs to the terminal. 
   The default value is `0`.
 
-### Silverballers args
+### First-stage Silverballers Args
 
 - `--Kc`: type=`int`, argtype=`static`.
   The number of style channels in `Agent` model. 
   The default value is `20`.
-- `--T`: type=`str`, argtype=`static`.
+- `--T` (short for `-T`): type=`str`, argtype=`static`.
   Type of transformations used when encoding or decoding trajectories. It could be: - `none`: no transformations - `fft`: fast Fourier transform - `fft2d`: 2D fast Fourier transform - `haar`: haar wavelet transform - `db2`: DB2 wavelet transform 
   The default value is `fft`.
-- `--down_sampling_rate`: type=`float`, argtype=`temporary`.
-  Down sampling rate to sample trajectories from all N = K*Kc trajectories. 
-  The default value is `1.0`.
+- `--depth`: type=`int`, argtype=`static`.
+  Depth of the random noise vector. 
+  The default value is `16`.
+- `--deterministic`: type=`int`, argtype=`static`.
+  Controls if predict trajectories in the deterministic way. 
+  The default value is `0`.
 - `--feature_dim`: type=`int`, argtype=`static`.
   Feature dimensions that are used in most layers. 
   The default value is `128`.
 - `--key_points`: type=`str`, argtype=`static`.
   A list of key time steps to be predicted in the agent model. For example, `'0_6_11'`. 
   The default value is `0_6_11`.
+- `--loss`: type=`str`, argtype=`dynamic`.
+  Loss used to train agent models. Canbe `'avgkey'` or `'keyl2'` (default). 
+  The default value is `keyl2`.
+- `--preprocess`: type=`str`, argtype=`static`.
+  Controls whether to run any pre-process before the model inference. It accepts a 3-bit-like string value (like `'111'`): - The first bit: `MOVE` trajectories to (0, 0); - The second bit: re-`SCALE` trajectories; - The third bit: `ROTATE` trajectories. 
+  The default value is `100`.
+
+### Second-stage Silverballers Args
+
+- `--Kc`: type=`int`, argtype=`static`.
+  The number of style channels in `Agent` model. 
+  The default value is `20`.
+- `--T` (short for `-T`): type=`str`, argtype=`static`.
+  Type of transformations used when encoding or decoding trajectories. It could be: - `none`: no transformations - `fft`: fast Fourier transform - `fft2d`: 2D fast Fourier transform - `haar`: haar wavelet transform - `db2`: DB2 wavelet transform 
+  The default value is `fft`.
+- `--feature_dim`: type=`int`, argtype=`static`.
+  Feature dimensions that are used in most layers. 
+  The default value is `128`.
+- `--key_points`: type=`str`, argtype=`static`.
+  A list of key time steps to be predicted in the agent model. For example, `'0_6_11'`. 
+  The default value is `0_6_11`.
+- `--points`: type=`int`, argtype=`static`.
+  The number of keypoints accepted in the handler model. 
+  The default value is `1`.
+- `--preprocess`: type=`str`, argtype=`static`.
+  Controls whether to run any pre-process before the model inference. It accepts a 3-bit-like string value (like `'111'`): - The first bit: `MOVE` trajectories to (0, 0); - The second bit: re-`SCALE` trajectories; - The third bit: `ROTATE` trajectories. 
+  The default value is `100`.
+
+### Silverballers Args
+
+- `--channel` (short for `-c`): type=`int`, argtype=`temporary`.
+  Specify the k-th channel of the model output. If `channel == -1`, it outputs all channels' predictions. 
+  The default value is `-1`.
+- `--down_sampling_rate`: type=`float`, argtype=`temporary`.
+  Down sampling rate to sample trajectories from all N = K*Kc trajectories. 
+  The default value is `1.0`.
 - `--loada` (short for `-la`): type=`str`, argtype=`temporary`.
   Path to load the first-stage agent model. 
   The default value is `null`.
@@ -196,25 +241,16 @@ About the `argtype`:
 - `--pick_trajectories` (short for `-p`): type=`float`, argtype=`temporary`.
   Calculates the sum of the context map values of the predicted trajectories and picks the top n (percentage) best predictions. This parameter is only valid when the model's input contains `MAPS` and `MAP_PARAS`. 
   The default value is `1.0`.
-- `--preprocess`: type=`str`, argtype=`static`.
-  Controls whether to run any pre-process before the model inference. It accepts a 3-bit-like string value (like `'111'`): - The first bit: `MOVE` trajectories to (0, 0); - The second bit: re-`SCALE` trajectories; - The third bit: `ROTATE` trajectories. 
-  The default value is `111`.
 
-### First-stage silverballers args
+### SocialCircle Args
 
-- `--depth`: type=`int`, argtype=`static`.
-  Depth of the random noise vector. 
-  The default value is `16`.
-- `--deterministic`: type=`int`, argtype=`static`.
-  Controls if predict trajectories in the deterministic way. 
+- `--Ts` (short for `-Ts`): type=`str`, argtype=`static`.
+  The transformation on SocialCircle. It could be: - `none`: no transformations - `fft`: fast Fourier transform - `haar`: haar wavelet transform - `db2`: DB2 wavelet transform 
+  The default value is `none`.
+- `--partitions`: type=`int`, argtype=`static`.
+  Partitions in the SocialCircle. 
+  The default value is `8`.
+- `--rel_speed`: type=`int`, argtype=`static`.
+  Choose whether to use the relative speed or the absolute speed as the speed factor in the SocialCircle. (Default to the `absolute speed`) 
   The default value is `0`.
-- `--loss`: type=`str`, argtype=`temporary`.
-  Loss used to train agent models. Canbe `'avgkey'` or `'keyl2'`. 
-  The default value is `keyl2`.
-
-### Second-stage silverballers args
-
-- `--points`: type=`int`, argtype=`static`.
-  The number of keypoints accepted in the handler model. 
-  The default value is `1`.
 <!-- DO NOT CHANGE THIS LINE -->

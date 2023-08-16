@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:19:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-15 19:14:54
+@LastEditTime: 2023-08-16 09:49:33
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -18,9 +18,9 @@ class SocialCircleArgs(AgentArgs):
     @property
     def rel_speed(self) -> int:
         """
-        Choose wheather use the relative speed or the absolute speed
-        as the speed factor in the SocialCircle (only for Beta Model).
-        (Default to the `relative speed`)
+        Choose whether to use the relative speed or the absolute speed
+        as the speed factor in the SocialCircle.
+        (Default to the `absolute speed`)
         """
         return self._arg('rel_speed', 0, argtype=STATIC)
 

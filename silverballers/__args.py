@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-20 21:41:10
-@LastEditors: Beihao Xia
-@LastEditTime: 2023-06-28 16:20:27
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-08-16 14:39:20
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -33,6 +33,14 @@ class SilverballersArgs(BaseSilverballersArgs):
         Path to load the second-stage handler model.
         """
         return self._arg('loadb', 'null', argtype=TEMPORARY, short_name='lb')
+
+    @property
+    def down_sampling_rate(self) -> float:
+        """
+        Down sampling rate to sample trajectories from
+        all N = K*Kc trajectories.
+        """
+        return self._arg('down_sampling_rate', 1.0, argtype=TEMPORARY)
 
     @property
     def pick_trajectories(self) -> float:
