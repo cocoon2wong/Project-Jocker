@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-23 10:23:53
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-16 09:12:21
+@LastEditTime: 2023-08-16 17:19:23
 @Description: Second stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -165,10 +165,4 @@ class VB(BaseHandlerStructure):
     """
     Training structure for the second stage sub-network
     """
-
-    def __init__(self, terminal_args: list[str],
-                 manager: Structure = None,
-                 as_single_model: bool = True):
-
-        super().__init__(terminal_args, manager, as_single_model)
-        self.set_model_type(VBModel)
+    MODEL_TYPE = VBModel

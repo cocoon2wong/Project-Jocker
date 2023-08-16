@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-10-20 20:09:14
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-07 17:05:34
+@LastEditTime: 2023-08-16 17:19:08
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -97,13 +97,7 @@ class MSNBetaModel(BaseHandlerModel):
 
 
 class MSNBeta(BaseHandlerStructure):
-
-    def __init__(self, terminal_args: list[str],
-                 manager=None,
-                 as_single_model: bool = True):
-
-        super().__init__(terminal_args, manager, as_single_model)
-        self.set_model_type(MSNBetaModel)
+    MODEL_TYPE = MSNBetaModel
 
 
 def linear_prediction(end_points: tf.Tensor, number, return_zeros=None):

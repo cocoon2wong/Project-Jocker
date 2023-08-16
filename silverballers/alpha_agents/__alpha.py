@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-06-20 16:48:45
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-28 10:26:20
+@LastEditTime: 2023-08-16 17:18:32
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -264,7 +264,7 @@ class AlphaModel(BaseAgentModel):
 
 class AlphaStructure(BaseAgentStructure):
 
-    def __init__(self, terminal_args: list[str], manager: Structure = None, as_single_model: bool = True):
+    def __init__(self, terminal_args: list[str], manager: Structure = None):
         terminal_args += ['--model_type', 'frame-based']
-        super().__init__(terminal_args, manager, as_single_model)
+        super().__init__(terminal_args, manager)
         self.set_model_type(AlphaModel)

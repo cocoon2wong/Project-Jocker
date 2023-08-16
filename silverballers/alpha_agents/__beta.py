@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-10 15:21:12
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-17 16:06:46
+@LastEditTime: 2023-08-16 17:18:51
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -193,7 +193,7 @@ class BetaModel(BaseAgentModel):
 
 
 class BetaStructure(BaseAgentStructure):
-    def __init__(self, terminal_args: list[str], manager=None, as_single_model: bool = True):
+    def __init__(self, terminal_args: list[str], manager=None):
         terminal_args += ['--model_type', 'agent-based']
-        super().__init__(terminal_args, manager, as_single_model)
+        super().__init__(terminal_args, manager)
         self.set_model_type(BetaModel)
