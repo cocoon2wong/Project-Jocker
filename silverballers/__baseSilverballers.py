@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-08 16:41:13
+@LastEditTime: 2023-08-16 17:14:44
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -16,7 +16,6 @@ from codes.managers import AnnotationManager, Model, Structure
 
 from .__args import SilverballersArgs
 from .agents import AgentArgs, BaseAgentModel, BaseAgentStructure
-from .base import BaseSubnetworkStructure
 from .handlers import BaseHandlerModel, BaseHandlerStructure
 
 
@@ -139,7 +138,7 @@ class BaseSilverballersModel(Model):
         self.handler.print_info(**kwargs_old)
 
 
-class BaseSilverballers(BaseSubnetworkStructure):
+class BaseSilverballers(Structure):
     """
     BaseSilverballers
     ---
@@ -153,8 +152,6 @@ class BaseSilverballers(BaseSubnetworkStructure):
     - All members from the `Structure`.
     """
 
-    ARG_TYPE = SilverballersArgs
-    MODEL_TYPE = BaseSilverballersModel
     AGENT_STRUCTURE_TYPE = BaseAgentStructure
     HANDLER_STRUCTURE_TYPE = BaseHandlerStructure
 
@@ -167,7 +164,6 @@ class BaseSilverballers(BaseSubnetworkStructure):
         # Assign types of all subnetworks
         self.agent_model_type = agent_model_type
         self.handler_model_type = handler_model_type
-
         if agent_structure_type:
             self.AGENT_STRUCTURE_TYPE = agent_structure_type
 
@@ -217,7 +213,8 @@ class BaseSilverballers(BaseSubnetworkStructure):
                        '--interval', str(min_args_a.interval),
                        '--model_type', str(min_args_a.model_type)]
 
-        self.args = self.ARG_TYPE(terminal_args + extra_args)
+        self.args: SilverballersArgs = SilverballersArgs(
+            terminal_args + extra_args)
 
         if self.args.force_anntype != 'null':
             self.args._set('anntype', self.args.force_anntype)
@@ -233,31 +230,33 @@ class BaseSilverballers(BaseSubnetworkStructure):
         # config second-stage model
         if self.handler_model_type.is_interp_handler:
             handler_args = None
-            handler_path = None
         else:
             handler_args = terminal_args + ['--load', self.args.loadb]
-            handler_path = self.args.loadb
 
-        # assign substructures
-        self.agent = self.substructure(
-            self.AGENT_STRUCTURE_TYPE,
-            args=(terminal_args + ['--load', self.args.loada]),
-            model_type=self.agent_model_type,
-            load=self.args.loada)
+        # First-stage subnetwork
+        agent_args = self.AGENT_STRUCTURE_TYPE.ARG_TYPE(
+            terminal_args + ['--load', self.args.loada],
+            is_temporary=True)
+        self.agent = self.AGENT_STRUCTURE_TYPE(agent_args, manager=self)
+        self.agent.set_model_type(self.agent_model_type)
+        self.agent.model = self.agent.create_model()
+        self.agent.model.load_weights_from_logDir(self.args.loada)
 
-        self.handler = self.substructure(
-            self.HANDLER_STRUCTURE_TYPE,
-            args=handler_args,
-            model_type=self.handler_model_type,
-            create_args=dict(as_single_model=False),
-            load=handler_path,
-            key_points=self.agent.args.key_points)
+        # Second-stage subnetwork
+        handler_args = self.HANDLER_STRUCTURE_TYPE.ARG_TYPE(handler_args,
+                                                            is_temporary=True)
+        handler_args._set('key_points', self.agent.args.key_points)
+        self.handler = self.HANDLER_STRUCTURE_TYPE(handler_args, self)
+        self.handler.set_model_type(self.handler_model_type)
+        self.handler.model = self.handler.create_model(as_single_model=False)
+        if not self.handler_model_type.is_interp_handler:
+            self.handler.model.load_weights_from_logDir(self.args.loadb)
 
         # set labels
         self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
 
     def create_model(self, *args, **kwargs):
-        return self.MODEL_TYPE(
+        return BaseSilverballersModel(
             self.args,
             agentModel=self.agent.model,
             handlerModel=self.handler.model,

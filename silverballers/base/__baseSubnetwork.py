@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-06-06 16:45:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-20 09:19:27
+@LastEditTime: 2023-08-16 15:53:53
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -111,23 +111,18 @@ class BaseSubnetwork(Model):
 
 class BaseSubnetworkStructure(Structure):
 
-    SUBNETWORK_INDEX = 'Not Assigned'
     ARG_TYPE: type[BaseSilverballersArgs] = BaseSilverballersArgs
     MODEL_TYPE: type[BaseSubnetwork] = None
 
     def __init__(self, terminal_args: Union[list[str], Args],
-                 manager: Structure = None,
-                 as_single_model: bool = True):
+                 manager: Structure = None):
 
         name = 'Train Manager'
-        if not as_single_model:
-            name += f' (Stage-{self.SUBNETWORK_INDEX} Sub-network)'
-
         if issubclass(type(terminal_args), Args):
             init_args = terminal_args
+            name += ' (subnetwork)'
         else:
-            init_args = self.ARG_TYPE(terminal_args,
-                                      is_temporary=not as_single_model)
+            init_args = self.ARG_TYPE(terminal_args)
 
         super().__init__(args=init_args,
                          manager=manager,
@@ -143,36 +138,3 @@ class BaseSubnetworkStructure(Structure):
 
     def set_model_type(self, new_type: type[BaseSubnetwork]):
         self.MODEL_TYPE = new_type
-
-    def substructure(self, structure_type: type[Structure],
-                     args: list[str],
-                     model_type: type[BaseSubnetwork],
-                     create_args: dict = {},
-                     load: str = None,
-                     **kwargs):
-        """
-        Init a sub-structure (which contains its corresponding model).
-
-        :param structure: class name of the training structure
-        :param args: args to init the training structure
-        :param model: class name of the model
-        :param create_args: args to create the model, and they will be fed
-            to the `structure.create_model` method
-        :param load: path to load model weights
-        :param **kwargs: a series of force-args that will be assigned to
-            the structure's args
-        """
-
-        struct = structure_type(args, manager=self,
-                                as_single_model=False)
-
-        for key in kwargs.keys():
-            struct.args._set(key, kwargs[key])
-
-        struct.set_model_type(model_type)
-        struct.model = struct.create_model(**create_args)
-
-        if load:
-            struct.model.load_weights_from_logDir(load)
-
-        return struct

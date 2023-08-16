@@ -2,11 +2,13 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:55
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-25 10:39:04
+@LastEditTime: 2023-08-16 15:52:28
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
+
+from typing import Union
 
 from codes.constant import INPUT_TYPES
 from codes.managers import Structure
@@ -36,15 +38,13 @@ class BaseAgentModel(BaseSubnetwork):
 
 class BaseAgentStructure(BaseSubnetworkStructure):
 
-    SUBNETWORK_INDEX = '1'
     ARG_TYPE = AgentArgs
     MODEL_TYPE: type[BaseAgentModel] = None
 
-    def __init__(self, terminal_args: list[str],
-                 manager: Structure = None,
-                 as_single_model: bool = True):
+    def __init__(self, terminal_args: Union[list[str], AgentArgs],
+                 manager: Structure = None):
 
-        super().__init__(terminal_args, manager, as_single_model)
+        super().__init__(terminal_args, manager)
 
         # For type hinting
         self.args: AgentArgs

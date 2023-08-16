@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-20 09:19:32
+@LastEditTime: 2023-08-16 15:50:53
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -175,15 +175,13 @@ class BaseHandlerModel(BaseSubnetwork):
 
 class BaseHandlerStructure(BaseSubnetworkStructure):
 
-    SUBNETWORK_INDEX = '2'
     ARG_TYPE = HandlerArgs
     MODEL_TYPE: type[BaseHandlerModel] = None
 
     def __init__(self, terminal_args: list[str],
-                 manager: Structure = None,
-                 as_single_model: bool = True):
+                 manager: Structure = None):
 
-        super().__init__(terminal_args, manager, as_single_model)
+        super().__init__(terminal_args, manager)
 
         # For type hinting
         self.args: HandlerArgs
