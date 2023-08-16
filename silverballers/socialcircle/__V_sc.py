@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-15 19:08:05
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-15 19:46:21
+@LastEditTime: 2023-08-16 15:49:05
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -12,7 +12,6 @@ import tensorflow as tf
 
 from codes.basemodels import layers, transformer
 from codes.constant import INPUT_TYPES
-from codes.managers import Structure
 
 from .__args import SocialCircleArgs
 from .__base import BaseSocialCircleModel, BaseSocialCircleStructure
@@ -137,9 +136,4 @@ class VSCModel(BaseSocialCircleModel):
 
 
 class VSCStructure(BaseSocialCircleStructure):
-
-    def __init__(self, terminal_args: list[str], manager: Structure = None,
-                 as_single_model: bool = True):
-        terminal_args += ['--model_type', 'agent-based']
-        super().__init__(terminal_args, manager, as_single_model)
-        self.set_model_type(VSCModel)
+    MODEL_TYPE = VSCModel

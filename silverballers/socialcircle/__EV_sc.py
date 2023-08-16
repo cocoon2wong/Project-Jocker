@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:26:35
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-08 16:43:03
+@LastEditTime: 2023-08-16 15:49:25
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -150,9 +150,4 @@ class EVSCModel(BaseSocialCircleModel):
 
 
 class EVSCStructure(BaseSocialCircleStructure):
-
-    def __init__(self, terminal_args: list[str], manager=None,
-                 as_single_model: bool = True):
-        terminal_args += ['--model_type', 'agent-based']
-        super().__init__(terminal_args, manager, as_single_model)
-        self.set_model_type(EVSCModel)
+    MODEL_TYPE = EVSCModel
