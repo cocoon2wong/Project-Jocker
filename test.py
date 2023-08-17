@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-06-07 15:32:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-17 10:33:15
+@LastEditTime: 2023-08-17 15:17:23
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -68,6 +68,16 @@ class TestSocialCircle():
     def test_train_MSNSC(self):
         main(["main.py",
               "--model", "msnsc",
+              "--split", "sdd_debug",
+              "-bs", "300",
+              "-lr", "3e-4",
+              "--step", "4",
+              "--test_step", "1",
+              "--epochs", "2"])
+
+    def test_train_TransSC(self):
+        main(["main.py",
+              "--model", "transsc",
               "--split", "sdd_debug",
               "-bs", "300",
               "-lr", "3e-4",

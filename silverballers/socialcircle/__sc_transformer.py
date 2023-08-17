@@ -1,51 +1,45 @@
 """
-@Author: Beihao Xia
-@Date: 2023-03-20 16:15:25
+@Author: Conghao Wong
+@Date: 2023-08-15 20:30:51
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-17 15:17:55
+@LastEditTime: 2023-08-17 15:11:12
 @Description: file content
 @Github: https://cocoon2wong.github.io
-@Copyright 2023 Beihao Xia, All Rights Reserved.
+@Copyright 2023 Conghao Wong, All Rights Reserved.
 """
 
 import tensorflow as tf
 
-from codes.basemodels import Model, layers, transformer
+from codes.basemodels import layers, transformer
 from codes.constant import INPUT_TYPES
-from codes.training import Structure
+from codes.managers import Structure
 
-from .agents import AgentArgs
+from .__args import SocialCircleArgs
+from .__base import BaseSocialCircleModel, BaseSocialCircleStructure
+from .__layers import SocialCircleLayer
 
 
-class MinimalVModel(Model):
+class TransformerSCModel(BaseSocialCircleModel):
     """
-    The `minimal` vertical model.
+    A simple Transformer-based trajectory prediction model.
+    It takes the SocialCircle to model social interactions.
 
-    - considers nothing about interactions;
+    - considers nothing about other interactions;
     - no keypoints-interpolation two-stage subnetworks;
     - contains only the backbone;
     - considers nothing about agents' multimodality.
     """
 
-    def __init__(self, Args: AgentArgs,
-                 feature_dim: int = 128,
-                 id_depth: int = 16,
-                 structure=None,
-                 *args, **kwargs):
+    def __init__(self, Args: SocialCircleArgs, as_single_model: bool = True,
+                 structure=None, *args, **kwargs):
+        super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
-        super().__init__(Args, structure, *args, **kwargs)
+        # Assign model inputs
+        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
+                        INPUT_TYPES.NEIGHBOR_TRAJ)
 
         # Preprocess
         self.set_preprocess(move=0)
-
-        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ)
-
-        self.args = Args
-
-        # Parameters
-        self.d = feature_dim
-        self.d_id = id_depth
-        self.dim: int = self.structure.annmanager.dim
 
         # Layers
         self.Tlayer, self.ITlayer = layers.get_transform_layers(self.args.T)
@@ -54,11 +48,22 @@ class MinimalVModel(Model):
         self.t1 = self.Tlayer(Oshape=(self.args.obs_frames, self.dim))
         self.it1 = self.ITlayer(Oshape=(self.args.pred_frames, self.dim))
 
+        # Trajectory embedding
         if type(self.t1) == layers.transfroms.NoneTransformLayer:
             self.te = layers.TrajEncoding(
                 self.d//2, tf.nn.relu, transform_layer=None)
         else:
             self.te = layers.TrajEncoding(self.d//2, tf.nn.relu, self.t1)
+
+        # SocialCircle and fusion layers
+        tslayer, _ = layers.get_transform_layers(self.args.Ts)
+        self.ts = tslayer((self.args.obs_frames, 2))
+        self.sc = SocialCircleLayer(partitions=self.args.partitions,
+                                    max_partitions=self.args.obs_frames,
+                                    relative_velocity=self.args.rel_speed)
+        self.tse = layers.TrajEncoding(self.d//2, tf.nn.relu,
+                                       transform_layer=self.ts)
+        self.concat_fc = tf.keras.layers.Dense(self.d//2, tf.nn.tanh)
 
         self.Tsteps_en = self.t1.Tshape[0]
         self.Osteps_de = self.args.pred_frames
@@ -89,9 +94,18 @@ class MinimalVModel(Model):
 
         # unpack inputs
         trajs = inputs[0]
+        nei = inputs[1]
         bs = trajs.shape[0]
 
+        # Embed trajectories
         f = self.te(trajs)     # (batch, obs, d/2)
+
+        # Compute and encode the SocialCircle
+        social_circle, _ = self.sc(trajs, nei)
+        f_social = self.tse(social_circle)    # (batch, obs, d/2)
+
+        f_behavior = tf.concat([f, f_social], axis=-1)
+        f_behavior = self.concat_fc(f_behavior)
 
         # Sample random predictions
         all_predictions = []
@@ -103,7 +117,7 @@ class MinimalVModel(Model):
             ids = tf.random.normal([bs, self.Tsteps_en, self.d_id])
             id_features = self.ie(ids)
 
-            t_inputs = self.concat([f, id_features])
+            t_inputs = self.concat([f_behavior, id_features])
             t_features, _ = self.T(t_inputs, t_outputs, training)
 
             adj = tf.transpose(self.adj_fc(t_inputs), [0, 2, 1])
@@ -119,22 +133,12 @@ class MinimalVModel(Model):
         return tf.stack(all_predictions, axis=1)
 
 
-class MinimalV(Structure):
-    """
-    Training structure for the `minimal` vertical model.
-    """
+class TransformerSCStructure(BaseSocialCircleStructure):
+    MODEL_TYPE = TransformerSCModel
 
-    model_type = MinimalVModel
+    def __init__(self, terminal_args, manager: Structure = None):
+        super().__init__(terminal_args, manager)
 
-    def __init__(self, terminal_args: list[str]):
-        super().__init__(terminal_args)
-
-        self.args = AgentArgs(terminal_args)
-        self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
-
-    def create_model(self, *args, **kwargs):
-        return self.model_type(self.args,
-                               feature_dim=self.args.feature_dim,
-                               id_depth=self.args.depth,
-                               structure=self,
-                               *args, **kwargs)
+        # Force args
+        self.args._set('key_points', '_'.join(
+            [str(i) for i in range(self.args.pred_frames)]))
