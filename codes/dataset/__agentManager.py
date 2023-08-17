@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-08-03 10:50:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-10 14:57:49
+@LastEditTime: 2023-08-17 14:44:10
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -195,9 +195,10 @@ class AgentManager(BaseManager):
 
     def clean(self):
         """
-        Clean all agent objects in this manager.
+        Clean all loaded data and agent objects in this manager.
         """
         self.agents = []
+        self.ext_inputs = {}
         return self
 
     def make(self, clips: list[str], mode: str) -> tf.data.Dataset:
