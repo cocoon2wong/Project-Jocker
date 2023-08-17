@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-27 20:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-08 16:30:23
+@LastEditTime: 2023-08-17 10:24:26
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -78,6 +78,7 @@ __SILVERBALLERS_DICT = dict(
     beta=[alpha_agents.BetaStructure, alpha_agents.BetaModel],
 
     # SocialCircle models
+    msnsc=[socialcircle.MSNSCStructure, socialcircle.MSNSCModel],
     vsc=[socialcircle.VSCStructure, socialcircle.VSCModel],
     evsc=[socialcircle.EVSCStructure, socialcircle.EVSCModel],
 

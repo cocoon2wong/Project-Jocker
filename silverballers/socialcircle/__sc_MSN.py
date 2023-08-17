@@ -1,53 +1,44 @@
 """
 @Author: Conghao Wong
-@Date: 2022-09-13 21:18:29
+@Date: 2023-08-17 09:34:51
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-17 10:33:43
-@Description: file content
-@Github: https://github.com/cocoon2wong
-@Copyright 2022 Conghao Wong, All Rights Reserved.
+@LastEditTime: 2023-08-17 10:34:42
+@Description: MSNSocialCircleModel
+@Github: https://cocoon2wong.github.io
+@Copyright 2023 Conghao Wong, All Rights Reserved.
 """
 
 import tensorflow as tf
 
-from codes.basemodels import transformer
+from codes.basemodels import layers, transformer
 from codes.constant import INPUT_TYPES
+from codes.managers import Structure
 from codes.utils import POOLING_BEFORE_SAVING
 
-from .__args import AgentArgs
-from .__baseAgent import BaseAgentModel, BaseAgentStructure
+from ..agents.__MSNalpha import GraphConv_func, GraphConv_layer
+from .__args import SocialCircleArgs
+from .__base import BaseSocialCircleModel, BaseSocialCircleStructure
+from .__layers import SocialCircleLayer
 
 
-def GraphConv_layer(output_units, activation=None):
-    return tf.keras.layers.Dense(output_units, activation)
+class MSNSCModel(BaseSocialCircleModel):
 
-
-def GraphConv_func(features, A, output_units=64, activation=None, layer=None):
-    dot = tf.matmul(A, features)
-    if layer == None:
-        res = tf.keras.layers.Dense(output_units, activation)(dot)
-    else:
-        res = layer(dot)
-    return res
-
-
-class MSNAlphaModel(BaseAgentModel):
-
-    def __init__(self, Args: AgentArgs,
+    def __init__(self, Args: SocialCircleArgs,
                  as_single_model: bool = True,
-                 structure=None,
-                 *args, **kwargs):
-
+                 structure=None, *args, **kwargs):
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
-        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ, INPUT_TYPES.MAP)
+        # Assign model inputs and preprocess layers
+        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
+                        INPUT_TYPES.MAP,
+                        INPUT_TYPES.NEIGHBOR_TRAJ)
         self.set_preprocess(move=0)
 
         # Layers
         # context feature
         if not POOLING_BEFORE_SAVING:
-            self.average_pooling = tf.keras.layers.AveragePooling2D([5, 5],
-                                                                    input_shape=[100, 100, 1])
+            self.average_pooling = tf.keras.layers.AveragePooling2D(
+                [5, 5], input_shape=[100, 100, 1])
 
         self.flatten = tf.keras.layers.Flatten()
         self.context_dense1 = tf.keras.layers.Dense(self.args.obs_frames * 64,
@@ -55,6 +46,17 @@ class MSNAlphaModel(BaseAgentModel):
 
         # traj embedding
         self.pos_embedding = tf.keras.layers.Dense(64, tf.nn.tanh)
+
+        # SocialCircle and fusion layers
+        tslayer, _ = layers.get_transform_layers(self.args.Ts)
+        self.ts = tslayer((self.args.obs_frames, 2))
+        self.sc = SocialCircleLayer(partitions=self.args.partitions,
+                                    max_partitions=self.args.obs_frames,
+                                    relative_velocity=self.args.rel_speed)
+        self.tse = layers.TrajEncoding(64, tf.nn.relu,
+                                       transform_layer=self.ts)
+        self.concat_fc = tf.keras.layers.Dense(64, tf.nn.tanh)
+
         self.concat = tf.keras.layers.Concatenate()
 
         # trajectory transformer
@@ -78,9 +80,17 @@ class MSNAlphaModel(BaseAgentModel):
     def call(self, inputs: list[tf.Tensor], training=None, mask=None):
         positions = inputs[0]
         maps = inputs[1]
+        nei = inputs[2]
 
         # traj embedding, shape == (batch, obs, 64)
         positions_embedding = self.pos_embedding(positions)
+
+        # Compute and encode the SocialCircle
+        social_circle, _ = self.sc(positions, nei)
+        f_social = self.tse(social_circle)    # (batch, obs, 64)
+
+        f_behavior = tf.concat([positions_embedding, f_social], axis=-1)
+        f_behavior = self.concat_fc(f_behavior)
 
         # context feature, shape == (batch, obs, 64)
         if not POOLING_BEFORE_SAVING:
@@ -94,7 +104,7 @@ class MSNAlphaModel(BaseAgentModel):
                                      [-1, self.args.obs_frames, 64])
 
         # concat, shape == (batch, obs, 128)
-        concat_feature = self.concat([positions_embedding, context_feature])
+        concat_feature = self.concat([f_behavior, context_feature])
 
         # transformer
         t_inputs = concat_feature
@@ -119,10 +129,10 @@ class MSNAlphaModel(BaseAgentModel):
         return predictions[:, :, tf.newaxis, :]
 
 
-class MSNAlpha(BaseAgentStructure):
-    MODEL_TYPE = MSNAlphaModel
+class MSNSCStructure(BaseSocialCircleStructure):
+    MODEL_TYPE = MSNSCModel
 
-    def __init__(self, terminal_args: list[str], manager=None):
+    def __init__(self, terminal_args, manager: Structure = None):
         super().__init__(terminal_args, manager)
 
         # Force args
