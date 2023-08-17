@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-11 12:41:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-08 14:55:32
+@LastEditTime: 2023-08-17 09:52:16
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -220,11 +220,14 @@ class ArgsManager(BaseObject):
 
         return dic[name] if name in dic.keys() else None
 
-    def _set(self, name: str, value: Any):
+    def _set(self, name: str, value: Any, verbose=False):
         """
         Set argument manually.
         """
         self._args_manually[name] = value
+
+        if verbose:
+            self.log(f'Arg `{name}` has been set to `{value}`.')
 
     def _set_default(self, name: str, value: Any, overwrite=True):
         """
