@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-06-07 15:32:41
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-07 17:03:25
+@LastEditTime: 2023-08-17 10:11:14
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -11,13 +11,7 @@
 from main import main
 
 
-class TestClass():
-    def setup_class(self):
-        pass
-
-    def teardown_class(self):
-        pass
-
+class TestStructure():
     def test_CO(self):
         main(["main.py",
               "--model", "MKII",
@@ -57,3 +51,16 @@ class TestClass():
               "--loadb", "l",
               "--test_mode", "one",
               "--force_clip", "s_05_act_02",])
+
+
+class TestSocialCircle():
+    def test_train_EVSC(self):
+        main(["main.py",
+              "--model", "evsc",
+              "--split", "sdd_debug",
+              "-bs", "300",
+              "--key_points", "4_8_11",
+              "-lr", "3e-4",
+              "--step", "4",
+              "--test_step", "1",
+              "--epochs", "2"])

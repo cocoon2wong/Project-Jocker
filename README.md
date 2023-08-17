@@ -248,8 +248,8 @@ About the `argtype`:
   The transformation on SocialCircle. It could be: - `none`: no transformations - `fft`: fast Fourier transform - `haar`: haar wavelet transform - `db2`: DB2 wavelet transform 
   The default value is `none`.
 - `--partitions`: type=`int`, argtype=`static`.
-  Partitions in the SocialCircle. 
-  The default value is `8`.
+  Partitions in the SocialCircle. Set it to `-1` to adapt to different observation/prediction length settings. 
+  The default value is `-1`.
 - `--rel_speed`: type=`int`, argtype=`static`.
   Choose whether to use the relative speed or the absolute speed as the speed factor in the SocialCircle. (Default to the `absolute speed`) 
   The default value is `0`.
