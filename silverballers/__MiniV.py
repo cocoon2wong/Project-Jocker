@@ -2,7 +2,7 @@
 @Author: Beihao Xia
 @Date: 2023-03-20 16:15:25
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-17 15:17:55
+@LastEditTime: 2023-08-18 09:43:24
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Beihao Xia, All Rights Reserved.
@@ -124,16 +124,14 @@ class MinimalV(Structure):
     Training structure for the `minimal` vertical model.
     """
 
-    model_type = MinimalVModel
+    MODEL_TYPE = MinimalVModel
 
     def __init__(self, terminal_args: list[str]):
-        super().__init__(terminal_args)
-
-        self.args = AgentArgs(terminal_args)
+        super().__init__(AgentArgs(terminal_args))
         self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
 
     def create_model(self, *args, **kwargs):
-        return self.model_type(self.args,
+        return self.MODEL_TYPE(self.args,
                                feature_dim=self.args.feature_dim,
                                id_depth=self.args.depth,
                                structure=self,
