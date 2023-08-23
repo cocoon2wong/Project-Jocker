@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-23 15:05:44
+@LastEditTime: 2023-08-23 15:12:59
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -27,6 +27,8 @@ CLIP = 'zara1'
 TEMP_IMG_PATH = './temp_files/socialcircle_toy_example/fig.png'
 MODEL_PATH = 'weights/Silverbullet/SocialCircle_zara1'
 LOG_PATH = './temp_files/socialcircle_toy_example/run.log'
+
+dir_check(os.path.dirname(LOG_PATH))
 
 
 class BetaToyExample():
@@ -188,7 +190,7 @@ def run_prediction(t: BetaToyExample,
 if __name__ == '__main__':
 
     root = tk.Tk()
-    root.title('Toy Example of SocialCircle in Beta Model')
+    root.title('Toy Example of SocialCircle Models')
 
     # Left column
     l_args = {
