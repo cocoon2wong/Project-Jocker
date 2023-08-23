@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-17 21:00:34
+@LastEditTime: 2023-08-23 15:05:44
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -24,9 +24,9 @@ from codes.utils import dir_check, get_mask
 from main import main
 
 CLIP = 'zara1'
-TEMP_IMG_PATH = './temp_files/beta_toy_example/fig.png'
-MODEL_PATH = 'weights/Silverbullet/20230712-102506_beta_new_NEWEST_NEWESTbetazara1'
-LOG_PATH = './temp_files/beta_toy_example/run.log'
+TEMP_IMG_PATH = './temp_files/socialcircle_toy_example/fig.png'
+MODEL_PATH = 'weights/Silverbullet/SocialCircle_zara1'
+LOG_PATH = './temp_files/socialcircle_toy_example/run.log'
 
 
 class BetaToyExample():
@@ -119,14 +119,19 @@ class BetaToyExample():
         c_out = self.t.picker.get_center(out)
 
         plt.figure()
-        # draw observations
-        plt.plot(c_obs[:, 0], c_obs[:, 1], 'o', color='cornflowerblue')
 
         # draw neighbors
         nei_count = self.get_neighbor_count(inputs[1])
         _nei = c_nei[:nei_count, :, :] + c_obs[np.newaxis, -1, :]
+        plt.plot(_nei[:, -1, 0], _nei[:, -1, 1], 'o', 
+                 color='darkorange', markersize=13)
+
+        # draw neighbors' trajectories
         _nei = np.reshape(_nei, [-1, 2])
         plt.plot(_nei[:, 0], _nei[:, 1], 's', color='purple')
+
+        # draw observations
+        plt.plot(c_obs[:, 0], c_obs[:, 1], 's', color='cornflowerblue')
 
         # draw predictions
         for pred in c_out:
