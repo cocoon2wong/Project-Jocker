@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-23 15:12:59
+@LastEditTime: 2023-08-29 10:40:47
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -23,9 +23,12 @@ import codes
 from codes.utils import dir_check, get_mask
 from main import main
 
+DATASET = 'ETH-UCY'
+SPLIT = 'zara1'
 CLIP = 'zara1'
-TEMP_IMG_PATH = './temp_files/socialcircle_toy_example/fig.png'
 MODEL_PATH = 'weights/Silverbullet/SocialCircle_zara1'
+
+TEMP_IMG_PATH = './temp_files/socialcircle_toy_example/fig.png'
 LOG_PATH = './temp_files/socialcircle_toy_example/run.log'
 
 dir_check(os.path.dirname(LOG_PATH))
@@ -58,8 +61,8 @@ class BetaToyExample():
             self.init_model()
             self.t.log(
                 f'Model `{toy.t.args.loada}` and dataset files ({CLIP}) loaded.')
-        except:
-            pass
+        except Exception as e:
+            print(e)
 
     def run_on_agent(self, agent_index: int,
                      extra_neighbor_position=None):
@@ -285,7 +288,10 @@ if __name__ == '__main__':
     # Init model and training structure
     def args(path): return ['main.py', '--model', 'MKII',
                             '--loada', path,
-                            '--loadb', 'speed']
+                            '--loadb', 'speed',
+                            '--force_dataset', DATASET,
+                            '--force_split', SPLIT,
+                            '--force_clip', CLIP]
 
     codes.set_log_path(LOG_PATH)
     codes.set_log_stream_handler(TextboxHandler(logbar))
