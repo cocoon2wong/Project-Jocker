@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-15 20:30:51
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-29 09:04:27
+@LastEditTime: 2023-08-29 20:00:32
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -60,6 +60,9 @@ class TransformerSCModel(BaseSocialCircleModel):
         self.ts = tslayer((self.args.obs_frames, 2))
         self.sc = SocialCircleLayer(partitions=self.args.partitions,
                                     max_partitions=self.args.obs_frames,
+                                    use_velocity=self.args.use_velocity,
+                                    use_distance=self.args.use_distance,
+                                    use_direction=self.args.use_direction,
                                     relative_velocity=self.args.rel_speed,
                                     use_move_direction=self.args.use_move_direction)
         self.tse = layers.TrajEncoding(self.d//2, tf.nn.relu,

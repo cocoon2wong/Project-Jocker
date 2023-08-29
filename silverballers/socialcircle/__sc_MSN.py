@@ -52,6 +52,9 @@ class MSNSCModel(BaseSocialCircleModel):
         self.ts = tslayer((self.args.obs_frames, 2))
         self.sc = SocialCircleLayer(partitions=self.args.partitions,
                                     max_partitions=self.args.obs_frames,
+                                    use_velocity=self.args.use_velocity,
+                                    use_distance=self.args.use_distance,
+                                    use_direction=self.args.use_direction,
                                     relative_velocity=self.args.rel_speed,
                                     use_move_direction=self.args.use_move_direction)
         self.tse = layers.TrajEncoding(64, tf.nn.relu,

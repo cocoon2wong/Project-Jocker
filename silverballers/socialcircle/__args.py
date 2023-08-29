@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:19:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-29 09:05:52
+@LastEditTime: 2023-08-29 20:01:51
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -44,6 +44,27 @@ class SocialCircleArgs(AgentArgs):
         length settings.
         """
         return self._arg('partitions', -1, argtype=STATIC)
+
+    @property
+    def use_velocity(self) -> int:
+        """
+        Choose whether to use the velocity factor in the SocialCircle.
+        """
+        return self._arg('use_velocity', 1, argtype=STATIC)
+
+    @property
+    def use_distance(self) -> int:
+        """
+        Choose whether to use the distance factor in the SocialCircle.
+        """
+        return self._arg('use_distance', 1, argtype=STATIC)
+
+    @property
+    def use_direction(self) -> int:
+        """
+        Choose whether to use the direction factor in the SocialCircle.
+        """
+        return self._arg('use_direction', 1, argtype=STATIC)
 
     @property
     def use_move_direction(self) -> int:
