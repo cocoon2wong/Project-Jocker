@@ -1,9 +1,9 @@
 """
 @Author: Conghao Wong
-@Date: 2023-08-17 09:34:51
+@Date: 2023-08-21 19:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-17 10:34:42
-@Description: MSNSocialCircleModel
+@LastEditTime: 2023-08-29 09:04:08
+@Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
 """
@@ -52,7 +52,8 @@ class MSNSCModel(BaseSocialCircleModel):
         self.ts = tslayer((self.args.obs_frames, 2))
         self.sc = SocialCircleLayer(partitions=self.args.partitions,
                                     max_partitions=self.args.obs_frames,
-                                    relative_velocity=self.args.rel_speed)
+                                    relative_velocity=self.args.rel_speed,
+                                    use_move_direction=self.args.use_move_direction)
         self.tse = layers.TrajEncoding(64, tf.nn.relu,
                                        transform_layer=self.ts)
         self.concat_fc = tf.keras.layers.Dense(64, tf.nn.tanh)

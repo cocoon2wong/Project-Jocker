@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-15 19:08:05
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-16 15:49:05
+@LastEditTime: 2023-08-29 09:04:38
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -45,7 +45,8 @@ class VSCModel(BaseSocialCircleModel):
         self.ts = tslayer((self.args.obs_frames, 2))
         self.sc = SocialCircleLayer(partitions=self.args.partitions,
                                     max_partitions=self.args.obs_frames,
-                                    relative_velocity=self.args.rel_speed)
+                                    relative_velocity=self.args.rel_speed,
+                                    use_move_direction=self.args.use_move_direction)
         self.tse = layers.TrajEncoding(self.d//2, tf.nn.relu,
                                        transform_layer=self.ts)
         self.concat_fc = tf.keras.layers.Dense(self.d//2, tf.nn.tanh)

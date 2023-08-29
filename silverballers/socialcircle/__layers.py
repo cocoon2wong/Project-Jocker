@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 14:55:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-08 16:44:39
+@LastEditTime: 2023-08-29 09:06:15
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -18,7 +18,8 @@ class SocialCircleLayer(tf.keras.layers.Layer):
 
     def __init__(self, partitions: int,
                  max_partitions: int = None,
-                 relative_velocity=True,
+                 relative_velocity=False,
+                 use_move_direction=False,
                  mu=0.0001,
                  *args, **kwargs):
         """
@@ -26,6 +27,7 @@ class SocialCircleLayer(tf.keras.layers.Layer):
 
         :param partitions: The number of partitions in the circle.
         :param relative_velocity: Choose whether to use relative velocity or not.
+        :param use_move_direction: Choose whether to use the move direction factor.
         :param mu: The small number to prevent dividing zero when computing.
         """
         super().__init__(*args, **kwargs)
@@ -33,6 +35,7 @@ class SocialCircleLayer(tf.keras.layers.Layer):
         self.partitions = partitions
         self.max_partitions = max_partitions
         self.rel_velocity = relative_velocity
+        self.use_move_direction = use_move_direction
         self.mu = mu
 
     def call(self, trajs, nei_trajs, *args, **kwargs):
@@ -60,6 +63,15 @@ class SocialCircleLayer(tf.keras.layers.Layer):
                                y=nei_posion_vector[..., 1])
         f_direction = tf.math.mod(f_direction, 2*np.pi)
 
+        # Move direction factor
+        if self.use_move_direction:
+            obs_move_direction = tf.atan2(x=obs_vector[..., 0],
+                                          y=obs_vector[..., 1])
+            nei_move_direction = tf.atan2(x=nei_vector[..., 0],
+                                          y=nei_vector[..., 1])
+            delta_move_direction = nei_move_direction - obs_move_direction
+            f_move_direction = tf.math.mod(delta_move_direction, 2*np.pi)
+
         # Angles (the independent variable \theta)
         angle_indices = f_direction / (2*np.pi/self.partitions)
         angle_indices = tf.cast(angle_indices, tf.int32)
@@ -79,6 +91,10 @@ class SocialCircleLayer(tf.keras.layers.Layer):
             _distance = tf.reduce_sum(f_distance * _mask, axis=-1) / n
             _direction = tf.reduce_sum(f_direction * _mask, axis=-1) / n
             social_circle.append([_speed, _distance, _direction])
+
+            if self.use_move_direction:
+                _move_d = tf.reduce_sum(f_move_direction * _mask, axis=-1) / n
+                social_circle[-1].append(_move_d)
 
         # Shape of the final SocialCircle: (batch, p, 3)
         social_circle = tf.cast(social_circle, tf.float32)

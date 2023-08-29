@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:26:35
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-17 09:35:33
+@LastEditTime: 2023-08-28 17:29:43
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -45,7 +45,8 @@ class EVSCModel(BaseSocialCircleModel):
         # SocialCircle encoding
         self.sc = SocialCircleLayer(partitions=self.args.partitions,
                                     max_partitions=self.args.obs_frames,
-                                    relative_velocity=self.args.rel_speed)
+                                    relative_velocity=self.args.rel_speed,
+                                    use_move_direction=self.args.use_move_direction)
         self.tse = layers.TrajEncoding(self.d//2, tf.nn.relu,
                                        transform_layer=self.ts)
 
