@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 14:55:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-29 20:04:41
+@LastEditTime: 2023-08-30 16:04:53
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -58,10 +58,10 @@ class SocialCircleLayer(tf.keras.layers.Layer):
 
     def call(self, trajs, nei_trajs, *args, **kwargs):
         # Move vectors -> (batch, ..., 2)
+        # `nei_trajs` are relative values to target agents' last obs step
         obs_vector = trajs[..., -1:, :] - trajs[..., 0:1, :]
         nei_vector = nei_trajs[..., -1, :] - nei_trajs[..., 0, :]
-        nei_posion_vector = (nei_trajs[..., -1, :] -
-                             trajs[..., tf.newaxis, -1, :])
+        nei_posion_vector = nei_trajs[..., -1, :]
 
         # Velocity factor
         if self.use_velocity:

@@ -2,25 +2,25 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 10:38:49
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-21 09:37:23
+@LastEditTime: 2023-08-30 16:54:49
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-from typing import Union
-
 import numpy as np
 import tensorflow as tf
 
 from ...base import BaseObject
-from ...constant import ANN_TYPES
+from ...constant import ANN_TYPES, OUTPUT_TYPES
 from ...dataset import Annotation
 
 
 class BaseProcessLayer(tf.keras.layers.Layer, BaseObject):
 
     def __init__(self, anntype: str, ref,
+                 preprocess_input_types: list[str],
+                 postprocess_input_types: list[str],
                  *args, **kwargs):
 
         tf.keras.layers.Layer.__init__(self, *args, **kwargs)
@@ -28,45 +28,39 @@ class BaseProcessLayer(tf.keras.layers.Layer, BaseObject):
 
         self.ref = ref
         self.anntype = anntype
-        self.paras = None
 
+        self.preprocess_input_types = preprocess_input_types
+        self.postprocess_input_types = postprocess_input_types
+
+        self.paras = None
         self.need_mask = False
         self.mask_paras = None
 
         self.picker = Annotation(anntype) if anntype else None
         self.order = self.set_order(anntype) if anntype else None
 
-    def call(self, inputs: list[tf.Tensor],
+    def call(self, inputs: dict[str, tf.Tensor],
              preprocess: bool,
              update_paras=False,
-             training=None, *args, **kwargs):
+             training=None, *args, **kwargs) -> dict[str, tf.Tensor]:
         """
-        Run preprocess or postprocess on trajectories
-
-        :param inputs: a list (tuple) of Tensors, where `inputs[0]` are \
-            trajectories, whose shapes are `((batch,) (K,) steps, dim)`
-        :param preprocess: set to `True` to run preprocess, or set to `False` \
-            to run postprocess
-        :param update_paras: choose whether to update process parameters
+        Run preprocess or postprocess on the input dictionary.
         """
-
-        trajs = inputs[0]
         if preprocess:
-            trajs_processed = self.preprocess(
-                trajs, use_new_paras=update_paras)
-
+            outputs = self.preprocess(inputs, use_new_paras=update_paras)
         else:
-            trajs_processed = self.postprocess(trajs)
+            outputs = self.postprocess(inputs)
 
-        return update((trajs_processed,), inputs)
+        return outputs
 
-    def preprocess(self, trajs: tf.Tensor, use_new_paras=True) -> tf.Tensor:
+    def preprocess(self, inputs: dict[str, tf.Tensor],
+                   use_new_paras=True) -> dict[str, tf.Tensor]:
         raise NotImplementedError('Please rewrite this method')
 
-    def postprocess(self, trajs: tf.Tensor) -> tf.Tensor:
+    def postprocess(self, inputs: dict[str, tf.Tensor]) -> dict[str, tf.Tensor]:
         raise NotImplementedError('Please rewrite this method')
 
-    def update_paras(self, trajs: tf.Tensor) -> None:
+    def update_paras(self, inputs: dict[str, tf.Tensor]) -> None:
         raise NotImplementedError('Please rewrite this method')
 
     def set_order(self, anntype: str):
@@ -94,6 +88,15 @@ class ProcessModel(tf.keras.Model):
 
         self.players = layers
 
+        self.preprocess_input_types: list[str] = None
+        self.postprocess_input_types = [OUTPUT_TYPES.PREDICTED_TRAJ]
+
+    def set_preprocess_input_types(self, types: list[str]):
+        self.preprocess_input_types = types
+
+    def set_postprocess_input_types(self, types: list[str]):
+        self.postprocess_input_types = types
+
     def call(self, inputs: list[tf.Tensor],
              preprocess: bool,
              update_paras=True,
@@ -102,26 +105,35 @@ class ProcessModel(tf.keras.Model):
 
         if preprocess:
             layers = self.players
-
+            type_var_name = 'preprocess_input_types'
+            input_types = self.preprocess_input_types
         else:
             layers = self.players[::-1]
+            type_var_name = 'postprocess_input_types'
+            input_types = self.postprocess_input_types
+
+        if type(inputs) is tuple:
+            inputs = list(inputs)
 
         for p in layers:
-            inputs = p(inputs, preprocess,
-                       update_paras, training,
-                       *args, **kwargs)
+            # Prepare tensors to be processed
+            p_dict = {}
+            for _type in getattr(p, type_var_name):
+                if _type not in input_types:
+                    value = None
+                else:
+                    value = inputs[input_types.index(_type)]
+                p_dict[_type] = value
+
+            # Run process layers
+            p_outputs = p(p_dict, preprocess,
+                          update_paras, training,
+                          *args, **kwargs)
+
+            # Put back processed tensors
+            for _type, value in p_outputs.items():
+                if _type in input_types:
+                    index = input_types.index(_type)
+                    inputs[index] = value
+
         return inputs
-
-
-def update(new: Union[tuple, list],
-           old: Union[tuple, list]) -> tuple:
-
-    if type(old) == list:
-        old = tuple(old)
-    if type(new) == list:
-        new = tuple(new)
-
-    if len(new) < len(old):
-        return new + old[len(new):]
-    else:
-        return new

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 10:38:40
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-11-10 11:14:08
+@LastEditTime: 2023-08-30 16:15:33
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,6 +10,7 @@
 
 import tensorflow as tf
 
+from ...constant import INPUT_TYPES, OUTPUT_TYPES
 from .__base import BaseProcessLayer
 
 
@@ -22,38 +23,44 @@ class Move(BaseProcessLayer):
     def __init__(self, anntype: str = None, ref: int = -1,
                  *args, **kwargs):
 
-        super().__init__(anntype, ref, *args, **kwargs)
+        super().__init__(anntype, ref,
+                         preprocess_input_types=[INPUT_TYPES.OBSERVED_TRAJ],
+                         postprocess_input_types=[OUTPUT_TYPES.PREDICTED_TRAJ],
+                         *args, **kwargs)
 
-    def update_paras(self, trajs: tf.Tensor) -> None:
+    def update_paras(self, inputs: dict[str, tf.Tensor]) -> None:
+        trajs = inputs[INPUT_TYPES.OBSERVED_TRAJ]
         ref = tf.math.mod(self.ref, trajs.shape[-2])
         ref_point = tf.gather(trajs, [ref], axis=-2)
         self.paras = ref_point
 
-    def preprocess(self, trajs: tf.Tensor, use_new_paras=True) -> tf.Tensor:
+    def preprocess(self, inputs: dict[str, tf.Tensor],
+                   use_new_paras=True) -> dict[str, tf.Tensor]:
         """
         Move a specific point to (0, 0) according to the reference time step.
-
-        :param trajs: Trajectories, shape = `[(batch,) (K,) obs, dim]`.
-        :return trajs_moved: Moved trajectories.
         """
         if use_new_paras:
-            self.update_paras(trajs)
+            self.update_paras(inputs)
 
-        ref_points = self.paras
-        trajs_moved = self.move(trajs, ref_points)
-        return trajs_moved
+        ref_point = self.paras
+        outputs = {}
+        for _type, _input in inputs.items():
+            if _input is not None:
+                outputs[_type] = self.move(_input, ref_point)
 
-    def postprocess(self, trajs: tf.Tensor) -> tf.Tensor:
+        return outputs
+
+    def postprocess(self, inputs: dict[str, tf.Tensor]) -> dict[str, tf.Tensor]:
         """
         Move trajectories back to their original positions.
-
-        :param trajs: Trajectories moved to (0, 0) with a reference point, \
-            shape = `[(batch,) (K,) pred, dim]`.
-        :return trajs_moved: Moved trajectories.
         """
         ref_point = self.paras
-        trajs_moved = self.move(trajs, ref_point, inverse=True)
-        return trajs_moved
+        outputs = {}
+        for _type, _input in inputs.items():
+            if _input is not None:
+                outputs[_type] = self.move(_input, ref_point, inverse=True)
+
+        return outputs
 
     def move(self, trajs: tf.Tensor,
              ref_points: tf.Tensor,

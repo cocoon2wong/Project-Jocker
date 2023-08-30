@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-11-23 18:01:16
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-08 10:02:22
+@LastEditTime: 2023-08-30 17:00:45
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -38,6 +38,13 @@ class INPUT_TYPES():
     ALL_SPECTRUM = 'ALL_SPECTRUM'
 
 
+class OUTPUT_TYPES():
+    """
+    Type names of all kinds of model outputs.
+    """
+    PREDICTED_TRAJ = 'TRAJ_PREDICTED'
+
+
 class PROCESS_TYPES():
     """
     Names of all pre-process and post-process methods.
@@ -65,4 +72,3 @@ class INTERPOLATION_TYPES():
             if s.startswith(_s):
                 return _s
         return None
-    

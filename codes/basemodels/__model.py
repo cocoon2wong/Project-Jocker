@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-27 18:03:23
+@LastEditTime: 2023-08-30 16:40:39
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -75,17 +75,17 @@ class Model(tf.keras.Model, BaseManager):
         tf.keras.Model.__init__(self, *args, **kwargs)
         BaseManager.__init__(self, manager=structure, name=self.name)
 
-        # Model inputs
-        self.input_types: list[str] = []
-        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ)
-
-        # preprocess
+        # Preprocess layers
         self.processor: process.ProcessModel = None
         self._default_process_para = {PROCESS_TYPES.MOVE: Args.pmove,
                                       PROCESS_TYPES.SCALE: Args.pscale,
                                       PROCESS_TYPES.ROTATE: Args.protate}
 
         self.__unprocessed_inputs: list[tf.Tensor] = None
+
+        # Model inputs
+        self.input_types: list[str] = []
+        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ)
 
         # Inference times
         self.inference_times: list[float] = []
@@ -191,6 +191,8 @@ class Model(tf.keras.Model, BaseManager):
         :param input_names: Type = `str`, accept several keywords.
         """
         self.input_types = [item for item in args]
+        if self.processor is not None:
+            self.processor.set_preprocess_input_types(self.input_types)
 
     def set_preprocess(self, builtin: bool = True, **kwargs):
         """
@@ -252,6 +254,9 @@ class Model(tf.keras.Model, BaseManager):
                 update_paras=True,
                 training=None,
                 *args, **kwargs) -> list[tf.Tensor]:
+        """
+        Run all preprocess or postprocess layers on model inputs.
+        """
 
         if not type(inputs) in [list, tuple]:
             inputs = [inputs]

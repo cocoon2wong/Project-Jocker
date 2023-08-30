@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 10:40:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-16 09:25:11
+@LastEditTime: 2023-08-30 16:57:49
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,6 +10,7 @@
 
 import tensorflow as tf
 
+from ...constant import INPUT_TYPES, OUTPUT_TYPES
 from ...utils import SCALE_THRESHOLD
 from .__base import BaseProcessLayer
 
@@ -38,13 +39,17 @@ class Scale(BaseProcessLayer):
             self.auto_ref = False
             ref = int(ref)
 
-        super().__init__(anntype, ref, *args, **kwargs)
+        super().__init__(anntype, ref,
+                         preprocess_input_types=[INPUT_TYPES.OBSERVED_TRAJ],
+                         postprocess_input_types=[OUTPUT_TYPES.PREDICTED_TRAJ],
+                         *args, **kwargs)
 
         if self.picker.base_dim != 2:
             self.log(f'Rotate is not supported on {anntype}.',
                      level='error', raiseError=NotImplementedError)
 
-    def update_paras(self, trajs: tf.Tensor) -> None:
+    def update_paras(self, inputs: dict[str, tf.Tensor]) -> None:
+        trajs = inputs[INPUT_TYPES.OBSERVED_TRAJ]
         steps = trajs.shape[-2]
         vectors = (tf.gather(trajs, steps-1, axis=-2) -
                    tf.gather(trajs, 0, axis=-2))
@@ -70,39 +75,43 @@ class Scale(BaseProcessLayer):
 
         self.paras = (scales, ref_points)
 
-    def preprocess(self, trajs: tf.Tensor, use_new_paras=True) -> tf.Tensor:
+    def preprocess(self, inputs: dict[str, tf.Tensor],
+                   use_new_paras=True) -> dict[str, tf.Tensor]:
         """
         Scaling length of trajectories' direction vector into 1.
         The reference point when scaling is the `last` observation point.
-
-        :param trajs: Input trajectories, shape = `[(batch,) obs, 2]`.
-        :return trajs_scaled: Scaled trajectories.
         """
         if use_new_paras:
-            self.update_paras(trajs)
+            self.update_paras(inputs)
 
         (scales, ref_points) = self.paras
-        trajs_scaled = self.scale(trajs, scales,
-                                  inverse=False,
-                                  ref_points=ref_points,
-                                  autoref_index=trajs.shape[-2]-1)
-        return trajs_scaled
+        outputs = {}
+        for _type, _input in inputs.items():
+            if _input is not None:
+                outputs[_type] = self.scale(
+                    _input, scales,
+                    inverse=False,
+                    ref_points=ref_points,
+                    autoref_index=_input.shape[-2]-1)
 
-    def postprocess(self, trajs: tf.Tensor) -> tf.Tensor:
+        return outputs
+
+    def postprocess(self, inputs: dict[str, tf.Tensor]) -> dict[str, tf.Tensor]:
         """
         Scale trajectories back to their original.
         The reference point is the `first` prediction point.
-
-        :param trajs: Trajectories, shape = `[(batch,) (K,) pred, 2]`.
-        :param para_dict: A dict of used parameters, contains `scale: tf.Tensor`.
-        :return trajs_scaled: Scaled trajectories.
         """
         (scales, ref_points) = self.paras
-        trajs_scaled = self.scale(trajs, scales,
-                                  inverse=True,
-                                  ref_points=ref_points,
-                                  autoref_index=0)
-        return trajs_scaled
+        outputs = {}
+        for _type, _input in inputs.items():
+            if _input is not None:
+                outputs[_type] = self.scale(
+                    _input, scales,
+                    inverse=True,
+                    ref_points=ref_points,
+                    autoref_index=0)
+
+        return outputs
 
     def scale(self, trajs: tf.Tensor,
               scales: list[tf.Tensor],

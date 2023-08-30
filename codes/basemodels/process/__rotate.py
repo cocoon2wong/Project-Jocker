@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 11:15:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-26 10:53:04
+@LastEditTime: 2023-08-30 16:57:43
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,6 +10,7 @@
 
 import tensorflow as tf
 
+from ...constant import INPUT_TYPES, OUTPUT_TYPES
 from ...utils import ROTATE_BIAS, batch_matmul
 from .__base import BaseProcessLayer
 
@@ -23,12 +24,16 @@ class Rotate(BaseProcessLayer):
     def __init__(self, anntype: str, ref,
                  *args, **kwargs):
 
-        super().__init__(anntype, ref, *args, **kwargs)
+        super().__init__(anntype, ref,
+                         preprocess_input_types=[INPUT_TYPES.OBSERVED_TRAJ],
+                         postprocess_input_types=[OUTPUT_TYPES.PREDICTED_TRAJ],
+                         *args, **kwargs)
 
         if self.picker.base_dim != 2:
             raise NotImplementedError(f'Rotate is not supported on {anntype}.')
 
-    def update_paras(self, trajs: tf.Tensor) -> None:
+    def update_paras(self, inputs: dict[str, tf.Tensor]) -> None:
+        trajs = inputs[INPUT_TYPES.OBSERVED_TRAJ]
         steps = trajs.shape[-2]
         vectors = (tf.gather(trajs, steps-1, axis=-2) -
                    tf.gather(trajs, 0, axis=-2))
@@ -44,34 +49,31 @@ class Rotate(BaseProcessLayer):
 
         self.paras = angles
 
-    def preprocess(self, trajs: tf.Tensor, use_new_paras=True) -> tf.Tensor:
+    def preprocess(self, inputs: dict[str, tf.Tensor],
+                   use_new_paras=True) -> dict[str, tf.Tensor]:
         """
         Rotate trajectories to the reference angle.
-
-        :param trajs: observations, shape = `[(batch,) obs, dim]`
-        :return trajs_rotated: moved trajectories
         """
         if use_new_paras:
-            self.update_paras(trajs)
+            self.update_paras(inputs)
 
         angles = self.paras
-        trajs_rotated = self.rotate(trajs,
-                                    ref_angles=angles,
-                                    inverse=False)
-        return trajs_rotated
+        outputs = {}
+        for _type, _input in inputs.items():
+            if _input is not None:
+                outputs[_type] = self.rotate(_input, angles, inverse=False)
+        return outputs
 
-    def postprocess(self, trajs: tf.Tensor) -> tf.Tensor:
+    def postprocess(self, inputs: dict[str, tf.Tensor]) -> dict[str, tf.Tensor]:
         """
         Rotate trajectories back to their original angles.
-
-        :param trajs: Trajectories, shape = `[(batch, ) pred, dim]`.
-        :return trajs_rotated: Rotated trajectories.
         """
         angles = self.paras
-        trajs_rotated = self.rotate(trajs,
-                                    ref_angles=angles,
-                                    inverse=True)
-        return trajs_rotated
+        outputs = {}
+        for _type, _input in inputs.items():
+            if _input is not None:
+                outputs[_type] = self.rotate(_input, angles, inverse=True)
+        return outputs
 
     def rotate(self, trajs: tf.Tensor,
                ref_angles: list[tf.Tensor],
