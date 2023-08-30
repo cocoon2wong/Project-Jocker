@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-09-13 21:18:29
-@LastEditors: Conghao Wong
-@LastEditTime: 2023-08-17 10:33:43
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-08-30 10:07:49
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -41,7 +41,14 @@ class MSNAlphaModel(BaseAgentModel):
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
         self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ, INPUT_TYPES.MAP)
-        self.set_preprocess(move=0)
+
+        # Preprocess
+        preprocess = {}
+        for index, operation in enumerate(['move', 'scale', 'rotate']):
+            if self.args.preprocess[index] == '1':
+                preprocess[operation] = 'auto'
+        preprocess['move'] = 0
+        self.set_preprocess(**preprocess)
 
         # Layers
         # context feature

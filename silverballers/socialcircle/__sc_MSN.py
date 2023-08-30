@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2023-08-21 19:47:50
-@LastEditors: Conghao Wong
-@LastEditTime: 2023-08-29 09:04:08
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-08-30 10:09:19
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -32,7 +32,14 @@ class MSNSCModel(BaseSocialCircleModel):
         self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
                         INPUT_TYPES.MAP,
                         INPUT_TYPES.NEIGHBOR_TRAJ)
-        self.set_preprocess(move=0)
+
+        # Preprocess
+        preprocess = {}
+        for index, operation in enumerate(['move', 'scale', 'rotate']):
+            if self.args.preprocess[index] == '1':
+                preprocess[operation] = 'auto'
+        preprocess['move'] = 0
+        self.set_preprocess(**preprocess)
 
         # Layers
         # context feature
