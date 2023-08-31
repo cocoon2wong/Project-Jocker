@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-10-20 20:09:14
-@LastEditors: Conghao Wong
-@LastEditTime: 2023-08-16 17:19:08
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-08-31 11:24:35
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -11,6 +11,8 @@
 import tensorflow as tf
 
 from codes.basemodels import transformer
+from codes.basemodels.process import PROCESS_TYPES
+from codes.constant import INPUT_TYPES
 from codes.managers import Structure
 from codes.utils import POOLING_BEFORE_SAVING
 
@@ -27,7 +29,14 @@ class MSNBetaModel(BaseHandlerModel):
 
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
-        self.set_preprocess(move=0)
+        # Preprocess
+        self.set_preprocess(**{PROCESS_TYPES.MOVE: 0})
+
+        # GT in the inputs is only used when training
+        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
+                        INPUT_TYPES.MAP,
+                        INPUT_TYPES.MAP_PARAS,
+                        INPUT_TYPES.GROUNDTRUTH_TRAJ)
 
         # Force args
         self.args._set('key_points', '11')

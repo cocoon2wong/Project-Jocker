@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-21 19:47:50
 @LastEditors: Beihao Xia
-@LastEditTime: 2023-08-30 10:09:19
+@LastEditTime: 2023-08-31 11:02:30
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -11,6 +11,7 @@
 import tensorflow as tf
 
 from codes.basemodels import layers, transformer
+from codes.basemodels.process import PROCESS_TYPES
 from codes.constant import INPUT_TYPES
 from codes.managers import Structure
 from codes.utils import POOLING_BEFORE_SAVING
@@ -28,18 +29,20 @@ class MSNSCModel(BaseSocialCircleModel):
                  structure=None, *args, **kwargs):
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
+        # Preprocess
+        preprocess = []
+        for index, operation in enumerate(["NONE",
+                                           PROCESS_TYPES.SCALE,
+                                           PROCESS_TYPES.ROTATE]):
+            if self.args.preprocess[index] == '1':
+                preprocess.append(operation)
+
+        self.set_preprocess(*preprocess, **{PROCESS_TYPES.MOVE: 0})
+
         # Assign model inputs and preprocess layers
         self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
                         INPUT_TYPES.MAP,
                         INPUT_TYPES.NEIGHBOR_TRAJ)
-
-        # Preprocess
-        preprocess = {}
-        for index, operation in enumerate(['move', 'scale', 'rotate']):
-            if self.args.preprocess[index] == '1':
-                preprocess[operation] = 'auto'
-        preprocess['move'] = 0
-        self.set_preprocess(**preprocess)
 
         # Layers
         # context feature
