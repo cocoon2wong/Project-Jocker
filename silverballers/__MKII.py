@@ -11,7 +11,7 @@
 from codes.args import Args
 from codes.constant import INTERPOLATION_TYPES
 
-from . import agents, alpha_agents, handlers, socialcircle
+from . import agents, handlers, socialcircle
 from .__args import SilverballersArgs
 from .__baseSilverballers import BaseSilverballers
 from .__MiniV import MinimalV, MinimalVModel
@@ -69,13 +69,6 @@ __SILVERBALLERS_DICT = dict(
     agent47BCE=[agents.Agent47BCE, agents.Agent47BCEModel],
     agent47C=[agents.Agent47C, agents.Agent47CModel],
     agent47CE=[agents.Agent47CE, agents.Agent47CEModel],
-
-    # ALPHA series
-    s300g=[alpha_agents.Sieger300Ghost,
-           alpha_agents.Sieger300GhostModel],
-    alpha=[alpha_agents.AlphaStructure,
-           alpha_agents.AlphaModel],
-    beta=[alpha_agents.BetaStructure, alpha_agents.BetaModel],
 
     # SocialCircle models
     transsc=[socialcircle.TransformerSCStructure,
