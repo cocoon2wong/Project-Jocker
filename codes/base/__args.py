@@ -437,20 +437,6 @@ class Args(ArgsManager):
         return self._arg('pmove', -1, argtype=STATIC)
 
     @property
-    def pscale(self) -> str:
-        """
-        Index of the reference point when scaling trajectories.
-        """
-        return self._arg('pscale', 'autoref', argtype=STATIC)
-
-    @property
-    def protate(self) -> float:
-        """
-        Reference degree when rotating trajectories.
-        """
-        return self._arg('protate', 0.0, argtype=STATIC)
-
-    @property
     def update_saved_args(self) -> int:
         """
         Choose whether to update (overwrite) the saved arg files or not.
