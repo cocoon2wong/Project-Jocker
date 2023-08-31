@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2023-08-08 15:57:43
-@LastEditors: Conghao Wong
-@LastEditTime: 2023-08-16 14:59:34
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-08-31 17:02:00
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -24,9 +24,17 @@ class BaseSocialCircleModel(BaseAgentModel):
         self.args: SocialCircleArgs
 
     def print_info(self, **kwargs):
-        info = {'Transform type (SocialCircle)': self.args.Ts,
-                'Partitions in SocialCircle': self.args.partitions,
-                'Max partitions in SocialCircle': self.args.obs_frames}
+        factors = [item for item in ['velocity',
+                                     'distance',
+                                     'direction',
+                                     'move_direction']
+                   if getattr(self.args, f'use_{item}')]
+
+        info = {
+            # 'Transform type (SocialCircle)': self.args.Ts,
+            'Partitions in SocialCircle': self.args.partitions,
+            'Max partitions in SocialCircle': self.args.obs_frames,
+            'Factors used in SocialCircle': factors}
 
         kwargs.update(**info)
         return super().print_info(**kwargs)
