@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
-@LastEditors: Conghao Wong
-@LastEditTime: 2023-08-16 15:50:53
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-08-31 11:25:48
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -160,7 +160,7 @@ class BaseHandlerModel(BaseSubnetwork):
                 if (p := run_args.pick_trajectories) < 1.0:
                     pred_o = map_mgr.pick_trajectories(pred_o, scores, p)
 
-            return (pred_o, scores) + outputs_p[1:]
+            return [pred_o, scores] + outputs_p[1:]
 
         else:
             return outputs_p

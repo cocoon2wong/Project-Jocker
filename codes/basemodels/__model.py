@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
-@LastEditors: Conghao Wong
-@LastEditTime: 2023-08-31 10:34:55
+@LastEditors: Beihao Xia
+@LastEditTime: 2023-08-31 11:29:31
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -200,6 +200,9 @@ class Model(tf.keras.Model, BaseManager):
                             PROCESS_TYPES.ROTATE,
                             PROCESS_TYPES.SCALE)
         ```
+
+        *IMPORTANT NOTE:* You MUST call `self.set_inputs` after the
+        `set_preprocess` to initialize all process layers.
 
         Extra args:
         :param builtin: Controls whether preprocess methods applied
