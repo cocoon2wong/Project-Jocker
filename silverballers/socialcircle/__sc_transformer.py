@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-15 20:30:51
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-29 20:00:32
+@LastEditTime: 2023-08-30 21:02:10
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -11,7 +11,7 @@
 import tensorflow as tf
 
 from codes.basemodels import layers, transformer
-from codes.constant import INPUT_TYPES
+from codes.constant import INPUT_TYPES, PROCESS_TYPES
 from codes.managers import Structure
 
 from .__args import SocialCircleArgs
@@ -34,12 +34,12 @@ class TransformerSCModel(BaseSocialCircleModel):
                  structure=None, *args, **kwargs):
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
+        # Preprocess
+        self.set_preprocess(**{PROCESS_TYPES.MOVE: 0})
+
         # Assign model inputs
         self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
                         INPUT_TYPES.NEIGHBOR_TRAJ)
-
-        # Preprocess
-        self.set_preprocess(move=0)
 
         # Layers
         self.Tlayer, self.ITlayer = layers.get_transform_layers(self.args.T)

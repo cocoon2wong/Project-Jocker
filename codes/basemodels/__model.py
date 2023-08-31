@@ -2,14 +2,13 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-30 16:40:39
+@LastEditTime: 2023-08-31 10:34:55
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
 import os
-import re
 import time
 from typing import TypeVar
 
@@ -77,9 +76,7 @@ class Model(tf.keras.Model, BaseManager):
 
         # Preprocess layers
         self.processor: process.ProcessModel = None
-        self._default_process_para = {PROCESS_TYPES.MOVE: Args.pmove,
-                                      PROCESS_TYPES.SCALE: Args.pscale,
-                                      PROCESS_TYPES.ROTATE: Args.protate}
+        self._default_process_para = {PROCESS_TYPES.MOVE: Args.pmove}
 
         self.__unprocessed_inputs: list[tf.Tensor] = None
 
@@ -194,48 +191,53 @@ class Model(tf.keras.Model, BaseManager):
         if self.processor is not None:
             self.processor.set_preprocess_input_types(self.input_types)
 
-    def set_preprocess(self, builtin: bool = True, **kwargs):
+    def set_preprocess(self, *args, **kwargs):
         """
         Set pre-process methods used before training.
         For example, enable all three preprocess methods by
         ```python
-        self.set_preprocess(move=-1, scale='autoref', rotate=0)
+        self.set_preprocess(PROCESS_TYPES.MOVE,
+                            PROCESS_TYPES.ROTATE,
+                            PROCESS_TYPES.SCALE)
         ```
 
-        args: pre-process methods.
-            - Move positions on the observation step to (0, 0):
-                args in `['Move', ...]`
-
-            - Re-scale observations:
-                args in `['Scale', ...]`
-
-            - Rotate observations:
-                args in `['Rotate', ...]`
-
+        Extra args:
         :param builtin: Controls whether preprocess methods applied
             outside from the `call` method. If `builtin == True`, the
             preprocess layer will be called outside from the `call`.
         """
+        processors = []
+        for p in [PROCESS_TYPES.MOVE,
+                  PROCESS_TYPES.ROTATE,
+                  PROCESS_TYPES.SCALE]:
 
-        preprocess_dict: dict[str, tuple[str, type[process.BaseProcessLayer]]] = {
-            PROCESS_TYPES.MOVE: ('.*[Mm][Oo][Vv][Ee].*', process.Move),
-            PROCESS_TYPES.ROTATE: ('.*[Rr][Oo][Tt].*', process.Rotate),
-            PROCESS_TYPES.SCALE: ('.*[Ss][Cc][Aa].*', process.Scale),
-        }
+            p_args = [self.args.anntype]
+            p_kwargs = {}
 
-        process_list = []
-        for key, [pattern, processor] in preprocess_dict.items():
-            for given_key in kwargs.keys():
-                if re.match(pattern, given_key):
-                    if (value := kwargs[given_key]) is None:
-                        continue
+            if p in args:
+                if p in self._default_process_para.keys():
+                    p_args.append(self._default_process_para[p])
 
-                    elif value == 'auto':
-                        value = self._default_process_para[key]
+            elif p in kwargs.keys():
+                v = kwargs[p]
+                if type(v) is dict:
+                    p_kwargs = v
+                else:
+                    p_args.append(v)
 
-                    process_list.append(processor(self.args.anntype, value))
+            else:
+                continue
 
-        return self.set_preprocess_layers(builtin=builtin, layers=process_list)
+            processors.append(process.process_dict[p](
+                *p_args, **p_kwargs,
+            ))
+
+        if 'builtin' in kwargs.keys():
+            builtin = kwargs['builtin']
+        else:
+            builtin = True
+
+        return self.set_preprocess_layers(builtin=builtin, layers=processors)
 
     def set_preprocess_layers(self, builtin: bool = False,
                               layers: list[process.BaseProcessLayer] = None):

@@ -2,7 +2,7 @@
 @Author: Beihao Xia
 @Date: 2023-03-20 16:15:25
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-18 09:43:24
+@LastEditTime: 2023-08-31 10:41:16
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Beihao Xia, All Rights Reserved.
@@ -11,7 +11,7 @@
 import tensorflow as tf
 
 from codes.basemodels import Model, layers, transformer
-from codes.constant import INPUT_TYPES
+from codes.constant import INPUT_TYPES, PROCESS_TYPES
 from codes.training import Structure
 
 from .agents import AgentArgs
@@ -36,7 +36,7 @@ class MinimalVModel(Model):
         super().__init__(Args, structure, *args, **kwargs)
 
         # Preprocess
-        self.set_preprocess(move=0)
+        self.set_preprocess(**{PROCESS_TYPES.MOVE: 0})
 
         self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ)
 

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-06-06 16:45:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-16 15:53:53
+@LastEditTime: 2023-08-30 20:19:19
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -14,6 +14,7 @@ import tensorflow as tf
 
 from codes.args import Args
 from codes.basemodels import Model
+from codes.basemodels.process import PROCESS_TYPES
 from codes.managers import AgentManager, Model, Structure
 
 from .__args import BaseSilverballersArgs
@@ -34,12 +35,14 @@ class BaseSubnetwork(Model):
         self.as_single_model = as_single_model
 
         # Preprocess
-        preprocess = {}
-        for index, operation in enumerate(['move', 'scale', 'rotate']):
+        preprocess = []
+        for index, operation in enumerate([PROCESS_TYPES.MOVE,
+                                           PROCESS_TYPES.SCALE,
+                                           PROCESS_TYPES.ROTATE]):
             if self.args.preprocess[index] == '1':
-                preprocess[operation] = 'auto'
+                preprocess.append(operation)
 
-        self.set_preprocess(**preprocess)
+        self.set_preprocess(*preprocess)
 
         # Keypoints and their indices
         indices = [int(i) for i in self.args.key_points.split('_')]
