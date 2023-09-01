@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-09-01 09:26:36
+@LastEditTime: 2023-09-01 11:17:22
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,21 +10,26 @@
 
 import tensorflow as tf
 
+from codes.args import Args
 from codes.base import BaseObject
-from codes.constant import ANN_TYPES, INPUT_TYPES
+from codes.constant import ANN_TYPES, INPUT_TYPES, INTERPOLATION_TYPES
 from codes.managers import AnnotationManager, Model, Structure
 
+from .__MKII_utils import SILVERBALLERS_DICT
 from .agents import AgentArgs, BaseAgentModel, BaseAgentStructure
 from .base import SilverballersArgs
 from .handlers import BaseHandlerModel, BaseHandlerStructure
 
 
-class BaseSilverballersModel(Model):
+class SilverballersModel(Model):
     """
-    BaseSilverballersModel
+    SilverballersModel
     ---
     The two-stage silverballers model.
     NOTE: This model is typically used for testing, not training.
+    The SilverballersModel itself is not trainable. It only serves 
+    as a container that provides a running environment for different 
+    agent and handler sub-networks.
 
     Member Managers
     ---
@@ -138,9 +143,9 @@ class BaseSilverballersModel(Model):
         self.handler.print_info(**kwargs_old)
 
 
-class BaseSilverballers(Structure):
+class SilverballersMKII(Structure):
     """
-    BaseSilverballers
+    SilverballersMKII Structure
     ---
     Basic structure to run the `agent-handler` based silverballers model.
     NOTE: It is only used for TESTING silverballers models, not training.
@@ -155,17 +160,32 @@ class BaseSilverballers(Structure):
     AGENT_STRUCTURE_TYPE = BaseAgentStructure
     HANDLER_STRUCTURE_TYPE = BaseHandlerStructure
 
-    def __init__(self, terminal_args: list[str],
-                 agent_model_type: type[BaseAgentModel],
-                 handler_model_type: type[BaseHandlerModel],
-                 agent_structure_type: type[BaseAgentStructure] = None,
-                 handler_structure_type: type[BaseHandlerStructure] = None):
+    def __init__(self, terminal_args: list[str]):
+
+        min_args = SilverballersArgs(terminal_args, is_temporary=True)
+        a_model_path = min_args.loada
+        b_model_path = min_args.loadb
+
+        # Assign the model type of the first-stage subnetwork
+        min_args_a = Args(is_temporary=True)._load_from_json(a_model_path)
+        agent_model_type = SILVERBALLERS_DICT.get_model(min_args_a.model)
+        agent_struct_type = SILVERBALLERS_DICT.get_structure(min_args_a.model)
+
+        # Assign the model type of the second-stage subnetwork
+        interp_model = INTERPOLATION_TYPES.get_type(b_model_path)
+        if interp_model is None:
+            min_args_b = Args(is_temporary=True)._load_from_json(b_model_path)
+            interp_model = min_args_b.model
+
+        handler_model_type = SILVERBALLERS_DICT.get_model(interp_model)
+        handler_structure_type = SILVERBALLERS_DICT.get_structure(
+            interp_model)
 
         # Assign types of all subnetworks
         self.agent_model_type = agent_model_type
         self.handler_model_type = handler_model_type
-        if agent_structure_type:
-            self.AGENT_STRUCTURE_TYPE = agent_structure_type
+        if agent_struct_type:
+            self.AGENT_STRUCTURE_TYPE = agent_struct_type
 
         if handler_structure_type:
             self.HANDLER_STRUCTURE_TYPE = handler_structure_type
@@ -256,7 +276,7 @@ class BaseSilverballers(Structure):
         self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
 
     def create_model(self, *args, **kwargs):
-        return BaseSilverballersModel(
+        return SilverballersModel(
             self.args,
             agentModel=self.agent.model,
             handlerModel=self.handler.model,
@@ -267,3 +287,6 @@ class BaseSilverballers(Structure):
         super().print_test_results(loss_dict, **kwargs)
         self.log(f'Test with 1st sub-network `{self.args.loada}` ' +
                  f'and 2nd seb-network `{self.args.loadb}` done.')
+
+
+SILVERBALLERS_DICT.register(MKII=[SilverballersMKII, None])

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 15:28:14
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-07-12 17:41:35
+@LastEditTime: 2023-09-01 11:18:46
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -38,7 +38,7 @@ def main(args: list[str], run_train_or_test=True):
     if model == 'linear':
         s = C.models.Linear
     else:
-        s = silverballers.get_structure(model)
+        s = silverballers.SILVERBALLERS_DICT.get_structure(model)
 
     t = s(terminal_args=args)
 

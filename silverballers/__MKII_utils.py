@@ -2,110 +2,115 @@
 @Author: Conghao Wong
 @Date: 2022-07-27 20:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-09-01 11:14:19
+@LastEditTime: 2023-09-01 11:10:41
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-from codes.args import Args
-from codes.constant import INTERPOLATION_TYPES
-
 from . import agents, handlers, socialcircle
-from .__MKII_model import BaseSilverballers
 from .__MiniV import MinimalV, MinimalVModel
-from .base import SilverballersArgs
+from .base import BaseSubnetwork, BaseSubnetworkStructure
 
 
-class SilverballersMKII(BaseSilverballers):
+class SILVERBALLERS_DICT():
+    """
+    Silverballers Dictionary
+    ---
+    A class that manages all silverballers structures and models.
 
-    def __init__(self, terminal_args: list[str]):
+    ### Public Methods
 
-        min_args = SilverballersArgs(terminal_args, is_temporary=True)
-        a_model_path = min_args.loada
-        b_model_path = min_args.loadb
+    - Model register:
 
-        # Assign the model type of the first-stage subnetwork
-        min_args_a = Args(is_temporary=True)._load_from_json(a_model_path)
-        agent_model_type = get_model_type(min_args_a.model)
-        agent_structure_type = get_structure(min_args_a.model)
+        ```python
+        SILVERBALLERS_DICT.register(**kwargs)
+        ```
 
-        # Assign the model type of the second-stage subnetwork
-        interp_model = INTERPOLATION_TYPES.get_type(b_model_path)
-        if interp_model is None:
-            min_args_b = Args(is_temporary=True)._load_from_json(b_model_path)
-            interp_model = min_args_b.model
+    - Get model type (class name):
 
-        handler_model_type = get_model_type(interp_model)
-        handler_structure_type = get_structure(interp_model)
+        ```python
+        SILVERBALLERS_DICT.get_model(name)
+        ```
 
-        super().__init__(terminal_args,
-                         agent_model_type=agent_model_type,
-                         handler_model_type=handler_model_type,
-                         agent_structure_type=agent_structure_type,
-                         handler_structure_type=handler_structure_type)
+    - Get model's training structure type (class name):
 
+        ```python
+        SILVERBALLERS_DICT.get_structure(name)
+        ```
+    """
 
-__SILVERBALLERS_DICT = dict(
+    __S_DICT: dict[str, tuple[type[BaseSubnetworkStructure],
+                              type[BaseSubnetwork]]] = {}
+    __S_DICT.update(dict(
+        # MSN
+        msna=[agents.MSNAlpha, agents.MSNAlphaModel],
+        msnb=[handlers.MSNBeta, handlers.MSNBetaModel],
 
-    # Agent Structures and Models
+        # V^2-Net
+        va=[agents.VA, agents.VAModel],
+        agent=[agents.VA, agents.VAModel],
+        vb=[handlers.VB, handlers.VBModel],
 
-    # MSN
-    msna=[agents.MSNAlpha, agents.MSNAlphaModel],
-    msnb=[handlers.MSNBeta, handlers.MSNBetaModel],
+        # E-V^2-Net
+        eva=[agents.Agent47C, agents.Agent47CModel],
 
-    # V^2-Net
-    va=[agents.VA, agents.VAModel],
-    agent=[agents.VA, agents.VAModel],
-    vb=[handlers.VB, handlers.VBModel],
+        # agent47 series
+        agent47B=[agents.Agent47B, agents.Agent47BModel],
+        agent47BE=[agents.Agent47BE, agents.Agent47BEModel],
+        agent47BCBE=[agents.Agent47BCBE, agents.Agent47BCBEModel],
+        agent47BCE=[agents.Agent47BCE, agents.Agent47BCEModel],
+        agent47C=[agents.Agent47C, agents.Agent47CModel],
+        agent47CE=[agents.Agent47CE, agents.Agent47CEModel],
 
-    # E-V^2-Net
-    eva=[agents.Agent47C, agents.Agent47CModel],
+        # SocialCircle models
+        transsc=[socialcircle.TransformerSCStructure,
+                 socialcircle.TransformerSCModel],
+        msnsc=[socialcircle.MSNSCStructure, socialcircle.MSNSCModel],
+        vsc=[socialcircle.VSCStructure, socialcircle.VSCModel],
+        evsc=[socialcircle.EVSCStructure, socialcircle.EVSCModel],
 
-    # agent47 series
-    agent47B=[agents.Agent47B, agents.Agent47BModel],
-    agent47BE=[agents.Agent47BE, agents.Agent47BEModel],
-    agent47BCBE=[agents.Agent47BCBE, agents.Agent47BCBEModel],
-    agent47BCE=[agents.Agent47BCE, agents.Agent47BCEModel],
-    agent47C=[agents.Agent47C, agents.Agent47CModel],
-    agent47CE=[agents.Agent47CE, agents.Agent47CEModel],
+        # Other models
+        mv=[MinimalV, MinimalVModel],
+    ))
 
-    # SocialCircle models
-    transsc=[socialcircle.TransformerSCStructure,
-             socialcircle.TransformerSCModel],
-    msnsc=[socialcircle.MSNSCStructure, socialcircle.MSNSCModel],
-    vsc=[socialcircle.VSCStructure, socialcircle.VSCModel],
-    evsc=[socialcircle.EVSCStructure, socialcircle.EVSCModel],
+    # Interpolation Handlers
+    __S_DICT.update(handlers.interp.INTERPOLATION_HANDLER_DICT)
 
-    # Silverballers Structures
-    MKII=[SilverballersMKII, None],
-    mv=[MinimalV, MinimalVModel],
-)
+    @classmethod
+    def register(cls, **kwargs):
+        """
+        Register new silverballers models.
+        Arg format:
+        `MODEL_NAME = [STRUCTURE_TYPE, MODEL_TYPE]`
 
-# Interpolation Handlers
-__SILVERBALLERS_DICT.update({
-    INTERPOLATION_TYPES.LINEAR: [None, handlers.interp.LinearHandlerModel],
-    INTERPOLATION_TYPES.LINEAR_SPEED: [None, handlers.interp.LinearSpeedHandlerModel],
-    INTERPOLATION_TYPES.LINEAR_ACC: [None, handlers.interp.LinearAccHandlerModel],
-    INTERPOLATION_TYPES.NEWTON: [None, handlers.interp.NewtonHandlerModel],
-})
+        For example, you can register vertical models by
+        ```python
+        SILVERBALLERS_DICT.register(va=[VA, VAModel],
+                                    vb=[VB, VBModel])
+        ```
+        """
+        for k, v in kwargs.items():
+            cls.__S_DICT[k] = v
 
+    @classmethod
+    def get_structure(cls, name: str) -> type[BaseSubnetworkStructure]:
+        """
+        Get structure type of the given model.
+        """
+        return cls.__get(name)[0]
 
-def get_structure(model_name: str):
-    return __get(model_name)[0]
+    @classmethod
+    def get_model(cls, name: str) -> type[BaseSubnetwork]:
+        """
+        Get model type of the given model.
+        """
+        return cls.__get(name)[1]
 
+    @classmethod
+    def __get(cls, name: str):
+        if not name in cls.__S_DICT.keys():
+            raise NotImplementedError(
+                f'Model type `{name}` is not supported.')
 
-def get_model_type(model_name: str, experimental=False):
-    if experimental:
-        index = 2
-    else:
-        index = 1
-    return __get(model_name)[index]
-
-
-def __get(model_name: str):
-    if not model_name in __SILVERBALLERS_DICT.keys():
-        raise NotImplementedError(
-            f'model type `{model_name}` is not supported.')
-
-    return __SILVERBALLERS_DICT[model_name]
+        return cls.__S_DICT[name]
