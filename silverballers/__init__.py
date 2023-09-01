@@ -9,5 +9,5 @@
 """
 
 from . import agents, handlers
-from .__MKII import get_model_type, get_structure
+from .__MKII_utils import get_model_type, get_structure
 from .base import SilverballersArgs
