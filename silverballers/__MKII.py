@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-27 20:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-17 15:18:21
+@LastEditTime: 2023-09-01 09:27:02
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -12,9 +12,9 @@ from codes.args import Args
 from codes.constant import INTERPOLATION_TYPES
 
 from . import agents, handlers, socialcircle
-from .__args import SilverballersArgs
 from .__baseSilverballers import BaseSilverballers
 from .__MiniV import MinimalV, MinimalVModel
+from .base import SilverballersArgs
 
 
 class SilverballersMKII(BaseSilverballers):

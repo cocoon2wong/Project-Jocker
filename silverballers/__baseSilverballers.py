@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:58:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-16 17:14:44
+@LastEditTime: 2023-09-01 09:26:36
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -14,8 +14,8 @@ from codes.base import BaseObject
 from codes.constant import ANN_TYPES, INPUT_TYPES
 from codes.managers import AnnotationManager, Model, Structure
 
-from .__args import SilverballersArgs
 from .agents import AgentArgs, BaseAgentModel, BaseAgentStructure
+from .base import SilverballersArgs
 from .handlers import BaseHandlerModel, BaseHandlerStructure
 
 

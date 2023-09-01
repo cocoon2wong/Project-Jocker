@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:41:10
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-16 10:03:42
+@LastEditTime: 2023-09-01 09:19:53
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -91,6 +91,14 @@ class SilverballersArgs(BaseSilverballersArgs):
         return self._arg('loadb', 'null', argtype=TEMPORARY, short_name='lb')
 
     @property
+    def down_sampling_rate(self) -> float:
+        """
+        Down sampling rate to sample trajectories from
+        all N = K*Kc trajectories.
+        """
+        return self._arg('down_sampling_rate', 1.0, argtype=TEMPORARY)
+
+    @property
     def pick_trajectories(self) -> float:
         """
         Calculates the sum of the context map values of the predicted trajectories
@@ -98,3 +106,11 @@ class SilverballersArgs(BaseSilverballersArgs):
         valid when the model's input contains `MAPS` and `MAP_PARAS`.
         """
         return self._arg('pick_trajectories', 1.0, argtype=TEMPORARY, short_name='p')
+
+    @property
+    def channel(self) -> int:
+        """
+        Specify the k-th channel of the model output.
+        If `channel == -1`, it outputs all channels' predictions.
+        """
+        return self._arg('channel', -1, argtype=TEMPORARY, short_name='c')

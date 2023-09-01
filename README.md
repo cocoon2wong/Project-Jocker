@@ -136,12 +136,6 @@ About the `argtype`:
 - `--pred_frames` (short for `-pred`): type=`int`, argtype=`static`.
   Prediction frames. 
   The default value is `12`.
-- `--protate`: type=`float`, argtype=`static`.
-  Reference degree when rotating trajectories. 
-  The default value is `0.0`.
-- `--pscale`: type=`str`, argtype=`static`.
-  Index of the reference point when scaling trajectories. 
-  The default value is `autoref`.
 - `--restore_args`: type=`str`, argtype=`temporary`.
   Path to restore the reference args before training. It will not restore any args if `args.restore_args == 'null'`. 
   The default value is `null`.
@@ -253,4 +247,16 @@ About the `argtype`:
 - `--rel_speed`: type=`int`, argtype=`static`.
   Choose whether to use the relative speed or the absolute speed as the speed factor in the SocialCircle. (Default to the `absolute speed`) 
   The default value is `0`.
+- `--use_direction`: type=`int`, argtype=`static`.
+  Choose whether to use the direction factor in the SocialCircle. 
+  The default value is `1`.
+- `--use_distance`: type=`int`, argtype=`static`.
+  Choose whether to use the distance factor in the SocialCircle. 
+  The default value is `1`.
+- `--use_move_direction`: type=`int`, argtype=`static`.
+  Choose whether to use the move direction factor in the SocialCircle. 
+  The default value is `0`.
+- `--use_velocity`: type=`int`, argtype=`static`.
+  Choose whether to use the velocity factor in the SocialCircle. 
+  The default value is `1`.
 <!-- DO NOT CHANGE THIS LINE -->

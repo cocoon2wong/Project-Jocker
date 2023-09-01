@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
-@LastEditors: Beihao Xia
-@LastEditTime: 2023-08-31 11:25:48
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-09-01 09:23:12
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -17,8 +17,7 @@ from codes.managers import (AgentManager, MapParasManager, SecondaryBar,
 from codes.training import loss
 from codes.utils import POOLING_BEFORE_SAVING
 
-from ..__args import SilverballersArgs
-from ..base import BaseSubnetwork, BaseSubnetworkStructure
+from ..base import BaseSubnetwork, BaseSubnetworkStructure, SilverballersArgs
 from ..loss import avgKey
 from .__args import HandlerArgs
 
