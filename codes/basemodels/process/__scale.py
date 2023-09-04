@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-01 10:40:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-31 10:38:06
+@LastEditTime: 2023-09-04 15:48:29
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -56,8 +56,9 @@ class Scale(BaseProcessLayer):
         scales = scales[:, tf.newaxis, tf.newaxis]
 
         # Ignore trajectories with small movements
-        mask = tf.cast(scales <= SCALE_THRESHOLD, tf.float32)
-        scales = mask * 1.0 + (1.0 - mask) * scales
+        # mask = tf.cast(scales <= SCALE_THRESHOLD, tf.float32)
+        # scales = mask * 1.0 + (1.0 - mask) * scales
+        scales = tf.maximum(scales, SCALE_THRESHOLD)
 
         self._scales = scales
 
