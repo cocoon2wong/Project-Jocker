@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-22 09:35:52
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-09-01 09:23:12
+@LastEditTime: 2023-09-06 15:54:08
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -106,10 +106,10 @@ class BaseHandlerModel(BaseSubnetwork):
 
         keypoints = [inputs[-1]]
 
-        inputs_p = self.process(inputs, preprocess=True, training=training)
-        keypoints_p = self.process(keypoints, preprocess=True,
-                                   update_paras=False,
-                                   training=training)
+        inputs_p = self.processor(inputs, preprocess=True, training=training)
+        keypoints_p = self.processor(keypoints, preprocess=True,
+                                     update_paras=False,
+                                     training=training)
 
         # only when training the single model
         if self.as_single_model:
@@ -138,7 +138,8 @@ class BaseHandlerModel(BaseSubnetwork):
                 keypoints_index=tf.cast(self.key_indices_future, tf.float32),
                 training=None)
 
-        outputs_p = self.process(outputs, preprocess=False, training=training)
+        outputs_p = self.processor(outputs, preprocess=False,
+                                   training=training)
         pred_o = outputs_p[0]
 
         # Calculate scores

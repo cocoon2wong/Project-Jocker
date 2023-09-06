@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-06-20 16:14:03
-@LastEditors: Beihao Xia
-@LastEditTime: 2023-08-31 11:29:31
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-09-06 15:50:51
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -17,8 +17,8 @@ import tensorflow as tf
 
 from ..args import Args
 from ..base import BaseManager
-from ..constant import INPUT_TYPES, PROCESS_TYPES
-from ..utils import CHECKPOINT_FILENAME, WEIGHTS_FORMAT, get_mask
+from ..constant import INPUT_TYPES
+from ..utils import CHECKPOINT_FILENAME, WEIGHTS_FORMAT
 from . import process
 
 T = TypeVar('T')
@@ -74,11 +74,8 @@ class Model(tf.keras.Model, BaseManager):
         tf.keras.Model.__init__(self, *args, **kwargs)
         BaseManager.__init__(self, manager=structure, name=self.name)
 
-        # Preprocess layers
-        self.processor: process.ProcessModel = None
-        self._default_process_para = {PROCESS_TYPES.MOVE: Args.pmove}
-
-        self.__unprocessed_inputs: list[tf.Tensor] = None
+        # Pre/post-process model and settings
+        self.processor = process.ProcessModel(self.args)
 
         # Model inputs
         self.input_types: list[str] = []
@@ -98,15 +95,6 @@ class Model(tf.keras.Model, BaseManager):
     @structure.setter
     def structure(self, value: T) -> T:
         self.manager = value
-
-    @property
-    def original_model_inputs(self) -> list[tf.Tensor]:
-        """
-        A list of original model inputs without applying any
-        preprocess methods.
-        It is only accessible during the `forward` call.
-        """
-        return self.__unprocessed_inputs
 
     @property
     def average_inference_time(self) -> int:
@@ -151,15 +139,14 @@ class Model(tf.keras.Model, BaseManager):
         :return outputs_p: Model's output. type=`list[tf.Tensor]`.
         """
         # Preprocess
-        self.__unprocessed_inputs = inputs
-        mask = get_mask(tf.reduce_sum(inputs[0], axis=[-1, -2], keepdims=True))
-        inputs_p = self.process(inputs, preprocess=True, training=training)
+        inputs_p = self.processor(inputs, preprocess=True, training=training)
 
         # Model inference
         time_start = time.time()
-        outputs = self(inputs_p, training=training, mask=mask)
+        outputs = self(inputs_p, training=training)
         time_end = time.time()
 
+        # Compute time costs
         l = MAX_INFERENCE_TIME_STORGED
         if len(self.inference_times) > l:
             self.inference_times = self.inference_times[l//2:]
@@ -168,9 +155,7 @@ class Model(tf.keras.Model, BaseManager):
         self.inference_times.append(time_cost)
 
         # Postprocess
-        outputs_p = self.process(outputs, preprocess=False, training=training)
-        self.__unprocessed_inputs = None
-        return outputs_p
+        return self.processor(outputs, preprocess=False, training=training)
 
     def set_inputs(self, *args):
         """
@@ -188,8 +173,7 @@ class Model(tf.keras.Model, BaseManager):
         :param input_names: Type = `str`, accept several keywords.
         """
         self.input_types = [item for item in args]
-        if self.processor is not None:
-            self.processor.set_preprocess_input_types(self.input_types)
+        self.processor.set_preprocess_input_types(self.input_types)
 
     def set_preprocess(self, *args, **kwargs):
         """
@@ -209,70 +193,7 @@ class Model(tf.keras.Model, BaseManager):
             outside from the `call` method. If `builtin == True`, the
             preprocess layer will be called outside from the `call`.
         """
-        processors = []
-        for p in [PROCESS_TYPES.MOVE,
-                  PROCESS_TYPES.ROTATE,
-                  PROCESS_TYPES.SCALE]:
-
-            p_args = [self.args.anntype]
-            p_kwargs = {}
-
-            if p in args:
-                if p in self._default_process_para.keys():
-                    p_args.append(self._default_process_para[p])
-
-            elif p in kwargs.keys():
-                v = kwargs[p]
-                if type(v) is dict:
-                    p_kwargs = v
-                else:
-                    p_args.append(v)
-
-            else:
-                continue
-
-            processors.append(process.process_dict[p](
-                *p_args, **p_kwargs,
-            ))
-
-        if 'builtin' in kwargs.keys():
-            builtin = kwargs['builtin']
-        else:
-            builtin = True
-
-        return self.set_preprocess_layers(builtin=builtin, layers=processors)
-
-    def set_preprocess_layers(self, builtin: bool = False,
-                              layers: list[process.BaseProcessLayer] = None):
-        """
-        Set pre/post-process layers manually.
-
-        :param layers: A list of pre/post-process layer objects.
-        """
-        layer = process.ProcessModel(layers)
-        if builtin:
-            self.processor = layer
-        return layer
-
-    def process(self, inputs: list[tf.Tensor],
-                preprocess: bool,
-                update_paras=True,
-                training=None,
-                *args, **kwargs) -> list[tf.Tensor]:
-        """
-        Run all preprocess or postprocess layers on model inputs.
-        """
-
-        if not type(inputs) in [list, tuple]:
-            inputs = [inputs]
-
-        if self.processor is None:
-            return inputs
-
-        inputs = self.processor(inputs, preprocess,
-                                update_paras, training,
-                                *args, **kwargs)
-        return inputs
+        return self.processor.set_process(*args, **kwargs)
 
     def load_weights_from_logDir(self, weights_dir: str):
         all_files = os.listdir(weights_dir)

@@ -9,12 +9,8 @@
 """
 
 from ...constant import PROCESS_TYPES
-from .__base import BaseProcessLayer, ProcessModel
+from .__base import BaseProcessLayer
 from .__move import Move
+from .__processModel import PROCESS_DICT, ProcessModel
 from .__rotate import Rotate
 from .__scale import Scale
-
-process_dict: dict[str, type[BaseProcessLayer]] = {
-    PROCESS_TYPES.MOVE: Move,
-    PROCESS_TYPES.SCALE: Scale,
-    PROCESS_TYPES.ROTATE: Rotate}
