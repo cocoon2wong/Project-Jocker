@@ -2,19 +2,20 @@
 @Author: Conghao Wong
 @Date: 2021-08-05 15:26:57
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-16 17:08:44
+@LastEditTime: 2023-09-06 20:36:18
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
+from qpid.args import Args
+import qpid
 import os
 import re
 import sys
 
 sys.path.insert(0, os.path.abspath('.'))
 
-from codes.args import Args
 
 FLAG = '<!-- DO NOT CHANGE THIS LINE -->'
 TARGET_FILE = './README.md'
@@ -95,37 +96,5 @@ def update_readme(new_lines: list[str], md_file: str):
         f.writelines(all_lines)
 
 
-def print_help_info(value: str = None):
-
-    from silverballers import SilverballersArgs
-    from silverballers.agents import AgentArgs
-    from silverballers.handlers import HandlerArgs
-    from silverballers.socialcircle import SocialCircleArgs
-
-    files = [Args(is_temporary=True),
-             AgentArgs(is_temporary=True),
-             HandlerArgs(is_temporary=True),
-             SilverballersArgs(is_temporary=True),
-             SocialCircleArgs(is_temporary=True)]
-
-    titles = ['Basic Args',
-              'First-stage Silverballers Args',
-              'Second-stage Silverballers Args',
-              'Silverballers Args',
-              'SocialCircle Args']
-
-    father_indices = [None, 0, 0, 1, 1]
-
-    doc_lines = get_doc(files, titles, father_indices)
-    if value is None:
-        pass
-    elif value == 'all_args':
-        [print(doc) for doc in doc_lines]
-    else:
-        doc_lines = [doc for doc in doc_lines if doc[5:].startswith(value)]
-        [print(doc) for doc in doc_lines]
-    return doc_lines
-
-
 if __name__ == '__main__':
-    update_readme(print_help_info(), TARGET_FILE)
+    update_readme(qpid.print_help_info(), TARGET_FILE)
