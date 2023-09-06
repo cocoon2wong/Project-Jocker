@@ -2,7 +2,7 @@
 @Author: Beihao Xia
 @Date: 2023-03-20 16:15:25
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-31 10:41:16
+@LastEditTime: 2023-09-06 20:41:14
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Beihao Xia, All Rights Reserved.
@@ -10,11 +10,10 @@
 
 import tensorflow as tf
 
-from codes.basemodels import Model, layers, transformer
-from codes.constant import INPUT_TYPES, PROCESS_TYPES
-from codes.training import Structure
-
-from .agents import AgentArgs
+from qpid.constant import INPUT_TYPES, PROCESS_TYPES
+from qpid.model import Model, layers, transformer
+from qpid.silverballers import AgentArgs
+from qpid.training import Structure
 
 
 class MinimalVModel(Model):

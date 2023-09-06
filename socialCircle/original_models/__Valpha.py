@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-05 16:00:26
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-07 17:12:07
+@LastEditTime: 2023-09-06 20:44:05
 @Description: First stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,10 +10,8 @@
 
 import tensorflow as tf
 
-from codes.basemodels import layers, transformer
-
-from .__args import AgentArgs
-from .__baseAgent import BaseAgentModel, BaseAgentStructure
+from qpid.model import layers, transformer
+from qpid.silverballers import AgentArgs, BaseAgentModel, BaseAgentStructure
 
 
 class VAModel(BaseAgentModel):

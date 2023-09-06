@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
-@Date: 2023-08-15 20:30:51
+@Date: 2023-08-15 19:08:05
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-30 21:02:10
+@LastEditTime: 2023-09-06 20:54:22
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -10,32 +10,19 @@
 
 import tensorflow as tf
 
-from codes.basemodels import layers, transformer
-from codes.constant import INPUT_TYPES, PROCESS_TYPES
-from codes.managers import Structure
+from qpid.constant import INPUT_TYPES
+from qpid.model import layers, transformer
 
 from .__args import SocialCircleArgs
 from .__base import BaseSocialCircleModel, BaseSocialCircleStructure
 from .__layers import SocialCircleLayer
 
 
-class TransformerSCModel(BaseSocialCircleModel):
-    """
-    A simple Transformer-based trajectory prediction model.
-    It takes the SocialCircle to model social interactions.
-
-    - considers nothing about other interactions;
-    - no keypoints-interpolation two-stage subnetworks;
-    - contains only the backbone;
-    - considers nothing about agents' multimodality.
-    """
+class VSCModel(BaseSocialCircleModel):
 
     def __init__(self, Args: SocialCircleArgs, as_single_model: bool = True,
                  structure=None, *args, **kwargs):
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
-
-        # Preprocess
-        self.set_preprocess(**{PROCESS_TYPES.MOVE: 0})
 
         # Assign model inputs
         self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
@@ -45,15 +32,13 @@ class TransformerSCModel(BaseSocialCircleModel):
         self.Tlayer, self.ITlayer = layers.get_transform_layers(self.args.T)
 
         # Transform layers
-        self.t1 = self.Tlayer(Oshape=(self.args.obs_frames, self.dim))
-        self.it1 = self.ITlayer(Oshape=(self.args.pred_frames, self.dim))
+        self.t1 = self.Tlayer((self.args.obs_frames, self.dim))
+        self.it1 = self.ITlayer((self.n_key, self.dim))
 
-        # Trajectory embedding
-        if type(self.t1) == layers.transfroms.NoneTransformLayer:
-            self.te = layers.TrajEncoding(
-                self.d//2, tf.nn.relu, transform_layer=None)
-        else:
-            self.te = layers.TrajEncoding(self.d//2, tf.nn.relu, self.t1)
+        # Trajectory encoding
+        self.te = layers.TrajEncoding(self.d//2,
+                                      tf.nn.tanh,
+                                      transform_layer=self.t1)
 
         # SocialCircle and fusion layers
         tslayer, _ = layers.get_transform_layers(self.args.Ts)
@@ -69,10 +54,17 @@ class TransformerSCModel(BaseSocialCircleModel):
                                        transform_layer=self.ts)
         self.concat_fc = tf.keras.layers.Dense(self.d//2, tf.nn.tanh)
 
+        # Noise encoding layers
+        self.ie = layers.TrajEncoding(self.d//2,
+                                      activation=tf.nn.tanh)
+
+        self.concat = tf.keras.layers.Concatenate(axis=-1)
+
+        # steps and shapes after applying transforms
         self.Tsteps_en = self.t1.Tshape[0]
-        self.Osteps_de = self.args.pred_frames
         self.Tsteps_de, self.Tchannels_de = self.it1.Tshape
 
+        # Transformer is used as a feature extractor
         self.T = transformer.Transformer(num_layers=4,
                                          d_model=self.d,
                                          num_heads=8,
@@ -83,66 +75,69 @@ class TransformerSCModel(BaseSocialCircleModel):
                                          pe_target=self.Tsteps_en,
                                          include_top=False)
 
-        self.adj_fc = tf.keras.layers.Dense(self.Tsteps_de, tf.nn.tanh)
+        # Trainable adj matrix and gcn layer
+        # See our previous work "MSN: Multi-Style Network for Trajectory Prediction" for detail
+        # It is used to generate multiple predictions within one model implementation
+        self.adj_fc = tf.keras.layers.Dense(self.args.Kc, tf.nn.tanh)
         self.gcn = layers.GraphConv(units=self.d)
 
-        # Random id encoding
-        self.ie = layers.TrajEncoding(self.d//2, tf.nn.tanh)
-        self.concat = tf.keras.layers.Concatenate(axis=-1)
+        # Decoder layers
+        self.decoder_fc1 = tf.keras.layers.Dense(self.d, tf.nn.tanh)
+        self.decoder_fc2 = tf.keras.layers.Dense(
+            self.Tsteps_de * self.Tchannels_de)
+        self.decoder_reshape = tf.keras.layers.Reshape(
+            [self.args.Kc, self.Tsteps_de, self.Tchannels_de])
 
-        # Decoder layers (with spectrums)
-        self.decoder_fc1 = tf.keras.layers.Dense(2*self.d, tf.nn.tanh)
-        self.decoder_fc2 = tf.keras.layers.Dense(self.Tchannels_de)
-
-    def call(self, inputs, training=None, mask=None, *args, **kwargs):
+    def call(self, inputs: list[tf.Tensor],
+             training=None, mask=None):
 
         # unpack inputs
-        trajs = inputs[0]
+        trajs = inputs[0]   # (batch, obs, 2)
         nei = inputs[1]
         bs = trajs.shape[0]
 
-        # Embed trajectories
-        f = self.te(trajs)     # (batch, obs, d/2)
+        # feature embedding and encoding -> (batch, obs, d)
+        spec_features = self.te(trajs)
 
         # Compute and encode the SocialCircle
-        social_circle, _ = self.sc(trajs, nei)
-        f_social = self.tse(social_circle)    # (batch, obs, d/2)
+        c_obs = self.picker.get_center(trajs)[..., :2]
+        c_nei = self.picker.get_center(nei)[..., :2]
+        social_circle, _ = self.sc(c_obs, c_nei)
+        f_social = self.tse(social_circle)    # (batch, steps, d/2)
 
-        f_behavior = tf.concat([f, f_social], axis=-1)
+        f_behavior = tf.concat([spec_features, f_social], axis=-1)
         f_behavior = self.concat_fc(f_behavior)
 
-        # Sample random predictions
         all_predictions = []
-        rep_time = 1
-        t_outputs = self.t1(trajs)
-
+        rep_time = self.args.K_train if training else self.args.K
         for _ in range(rep_time):
-
+            # assign random ids and embedding -> (batch, obs, d)
             ids = tf.random.normal([bs, self.Tsteps_en, self.d_id])
             id_features = self.ie(ids)
 
+            # transformer inputs
             t_inputs = self.concat([f_behavior, id_features])
-            t_features, _ = self.T(t_inputs, t_outputs, training)
+            t_outputs = self.t1(trajs)
 
+            # transformer -> (batch, obs, d)
+            behavior_features, _ = self.T(inputs=t_inputs,
+                                          targets=t_outputs,
+                                          training=training)
+
+            # features -> (batch, Kc, d)
             adj = tf.transpose(self.adj_fc(t_inputs), [0, 2, 1])
-            t_features = self.gcn(t_features, adj)
+            m_features = self.gcn(behavior_features, adj)
 
-            y = self.decoder_fc1(t_features)
+            # predicted keypoints -> (batch, Kc, key, 2)
+            y = self.decoder_fc1(m_features)
             y = self.decoder_fc2(y)
+            y = self.decoder_reshape(y)
 
             y = self.it1(y)
-
             all_predictions.append(y)
 
-        return tf.stack(all_predictions, axis=1)
+        return tf.concat(all_predictions, axis=1)
 
 
-class TransformerSCStructure(BaseSocialCircleStructure):
-    MODEL_TYPE = TransformerSCModel
-
-    def __init__(self, terminal_args, manager: Structure = None):
-        super().__init__(terminal_args, manager)
-
-        # Force args
-        self.args._set('key_points', '_'.join(
-            [str(i) for i in range(self.args.pred_frames)]))
+class VSCStructure(BaseSocialCircleStructure):
+    MODEL_TYPE = VSCModel

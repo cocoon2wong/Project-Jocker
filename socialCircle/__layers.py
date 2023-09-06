@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 14:55:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-30 16:04:53
+@LastEditTime: 2023-09-06 19:44:57
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -11,7 +11,7 @@
 import numpy as np
 import tensorflow as tf
 
-from codes.utils import get_mask
+from qpid.utils import get_mask
 
 
 class SocialCircleLayer(tf.keras.layers.Layer):

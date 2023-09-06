@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:38
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-06-15 15:45:37
+@LastEditTime: 2023-09-06 20:40:14
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,11 +10,8 @@
 
 import tensorflow as tf
 
-from codes.basemodels import layers, transformer
-
-from ..__layers import OuterLayer
-from .__args import AgentArgs
-from .__baseAgent import BaseAgentModel, BaseAgentStructure
+from qpid.model import layers, transformer
+from qpid.silverballers import AgentArgs, BaseAgentModel, BaseAgentStructure
 
 
 class Agent47CModel(BaseAgentModel):
@@ -42,7 +39,7 @@ class Agent47CModel(BaseAgentModel):
         self.Tsteps_de, self.Tchannels_de = self.it1.Tshape
 
         # Bilinear structure (outer product + pooling + fc)
-        self.outer = OuterLayer(self.d//2, self.d//2, reshape=False)
+        self.outer = layers.OuterLayer(self.d//2, self.d//2, reshape=False)
         self.pooling = layers.MaxPooling2D(pool_size=(2, 2),
                                            data_format='channels_first')
         self.flatten = layers.Flatten(axes_num=2)

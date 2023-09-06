@@ -2,15 +2,14 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:19:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-29 20:01:51
+@LastEditTime: 2023-09-06 20:53:41
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
 """
 
-from codes.args import DYNAMIC, STATIC, TEMPORARY
-
-from ..agents import AgentArgs
+from qpid.args import DYNAMIC, STATIC, TEMPORARY
+from qpid.silverballers import AgentArgs
 
 
 class SocialCircleArgs(AgentArgs):

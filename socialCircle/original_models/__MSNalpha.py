@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-09-13 21:18:29
-@LastEditors: Beihao Xia
-@LastEditTime: 2023-08-31 11:26:34
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-09-06 20:42:09
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,13 +10,10 @@
 
 import tensorflow as tf
 
-from codes.basemodels import transformer
-from codes.basemodels.process import PROCESS_TYPES
-from codes.constant import INPUT_TYPES
-from codes.utils import POOLING_BEFORE_SAVING
-
-from .__args import AgentArgs
-from .__baseAgent import BaseAgentModel, BaseAgentStructure
+from qpid.constant import INPUT_TYPES, PROCESS_TYPES
+from qpid.model import transformer
+from qpid.silverballers import AgentArgs, BaseAgentModel, BaseAgentStructure
+from qpid.utils import POOLING_BEFORE_SAVING
 
 
 def GraphConv_layer(output_units, activation=None):

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:26:35
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-29 20:05:53
+@LastEditTime: 2023-09-06 20:54:44
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -10,10 +10,9 @@
 
 import tensorflow as tf
 
-from codes.basemodels import layers, transformer
-from codes.constant import INPUT_TYPES
+from qpid.constant import INPUT_TYPES
+from qpid.model import layers, transformer
 
-from ..__layers import OuterLayer
 from .__args import SocialCircleArgs
 from .__base import BaseSocialCircleModel, BaseSocialCircleStructure
 from .__layers import SocialCircleLayer
@@ -59,7 +58,7 @@ class EVSCModel(BaseSocialCircleModel):
 
         # Bilinear structure (outer product + pooling + fc)
         # For trajectories
-        self.outer = OuterLayer(self.d//2, self.d//2)
+        self.outer = layers.OuterLayer(self.d//2, self.d//2)
         self.pooling = layers.MaxPooling2D(
             (2, 2), data_format='channels_first')
         self.flatten = layers.Flatten(axes_num=2)

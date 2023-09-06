@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2023-08-21 19:47:50
-@LastEditors: Beihao Xia
-@LastEditTime: 2023-08-31 11:02:30
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-09-06 20:25:05
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -10,16 +10,27 @@
 
 import tensorflow as tf
 
-from codes.basemodels import layers, transformer
-from codes.basemodels.process import PROCESS_TYPES
-from codes.constant import INPUT_TYPES
-from codes.managers import Structure
-from codes.utils import POOLING_BEFORE_SAVING
+from qpid.constant import INPUT_TYPES, PROCESS_TYPES
+from qpid.model import layers, transformer
+from qpid.training import Structure
+from qpid.utils import POOLING_BEFORE_SAVING
 
-from ..agents.__MSNalpha import GraphConv_func, GraphConv_layer
 from .__args import SocialCircleArgs
 from .__base import BaseSocialCircleModel, BaseSocialCircleStructure
 from .__layers import SocialCircleLayer
+
+
+def GraphConv_layer(output_units, activation=None):
+    return tf.keras.layers.Dense(output_units, activation)
+
+
+def GraphConv_func(features, A, output_units=64, activation=None, layer=None):
+    dot = tf.matmul(A, features)
+    if layer == None:
+        res = tf.keras.layers.Dense(output_units, activation)(dot)
+    else:
+        res = layer(dot)
+    return res
 
 
 class MSNSCModel(BaseSocialCircleModel):

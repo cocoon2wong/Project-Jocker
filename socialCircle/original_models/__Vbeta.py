@@ -10,13 +10,12 @@
 
 import tensorflow as tf
 
-from codes.basemodels import layers
-from codes.basemodels.transformer import Transformer
-from codes.constant import ANN_TYPES
-from codes.managers import Structure
-
-from .__args import HandlerArgs
-from .__baseHandler import BaseHandlerModel, BaseHandlerStructure
+from qpid.constant import ANN_TYPES
+from qpid.model import layers
+from qpid.model.transformer import Transformer
+from qpid.silverballers import (BaseHandlerModel, BaseHandlerStructure,
+                                HandlerArgs)
+from qpid.training import Structure
 
 
 class VBModel(BaseHandlerModel):

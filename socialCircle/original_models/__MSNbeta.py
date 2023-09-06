@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2022-10-20 20:09:14
-@LastEditors: Beihao Xia
-@LastEditTime: 2023-08-31 11:24:35
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-09-06 20:43:10
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,14 +10,12 @@
 
 import tensorflow as tf
 
-from codes.basemodels import transformer
-from codes.basemodels.process import PROCESS_TYPES
-from codes.constant import INPUT_TYPES
-from codes.managers import Structure
-from codes.utils import POOLING_BEFORE_SAVING
-
-from .__args import HandlerArgs
-from .__baseHandler import BaseHandlerModel, BaseHandlerStructure
+from qpid.constant import INPUT_TYPES, PROCESS_TYPES
+from qpid.model import transformer
+from qpid.silverballers import (BaseHandlerModel, BaseHandlerStructure,
+                                HandlerArgs)
+from qpid.training import Structure
+from qpid.utils import POOLING_BEFORE_SAVING
 
 
 class MSNBetaModel(BaseHandlerModel):

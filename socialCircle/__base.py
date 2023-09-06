@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2023-08-08 15:57:43
-@LastEditors: Beihao Xia
-@LastEditTime: 2023-08-31 17:02:00
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-09-06 19:44:31
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -10,9 +10,9 @@
 
 from typing import Union
 
-from codes.managers import Structure
+from qpid.silverballers import BaseAgentModel, BaseAgentStructure
+from qpid.training import Structure
 
-from ..agents import BaseAgentModel, BaseAgentStructure
 from .__args import SocialCircleArgs
 
 
