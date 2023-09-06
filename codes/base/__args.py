@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 10:53:48
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-16 17:06:01
+@LastEditTime: 2023-09-06 15:49:42
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -432,9 +432,18 @@ class Args(ArgsManager):
     @property
     def pmove(self) -> int:
         """
+        (Pre/post-process Arg)
         Index of the reference point when moving trajectories.
         """
         return self._arg('pmove', -1, argtype=STATIC)
+
+    @property
+    def only_process_trajectory(self) -> int:
+        """
+        (Pre/post-process Arg)
+        Controls whether to process non-trajectory model inputs or not.
+        """
+        return self._arg('only_process_trajectory', 0, argtype=STATIC)
 
     @property
     def update_saved_args(self) -> int:

@@ -130,8 +130,11 @@ About the `argtype`:
 - `--obs_frames` (short for `-obs`): type=`int`, argtype=`static`.
   Observation frames for prediction. 
   The default value is `8`.
+- `--only_process_trajectory`: type=`int`, argtype=`static`.
+  (Pre/post-process Arg) Controls whether to process non-trajectory model inputs or not. 
+  The default value is `0`.
 - `--pmove`: type=`int`, argtype=`static`.
-  Index of the reference point when moving trajectories. 
+  (Pre/post-process Arg) Index of the reference point when moving trajectories. 
   The default value is `-1`.
 - `--pred_frames` (short for `-pred`): type=`int`, argtype=`static`.
   Prediction frames. 
