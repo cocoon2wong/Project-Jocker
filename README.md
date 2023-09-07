@@ -2,19 +2,23 @@
  * @Author: Conghao Wong
  * @Date: 2022-07-07 21:43:30
  * @LastEditors: Conghao Wong
- * @LastEditTime: 2023-03-28 16:51:14
+ * @LastEditTime: 2023-09-07 09:21:22
  * @Description: file content
  * @Github: https://github.com/cocoon2wong
  * Copyright 2022 Conghao Wong, All Rights Reserved.
 -->
 
-# Project-Jocker
+# Development Branch of SocialCircle
 
-## Branch `BB` Notes ⚠️
+⚠️ Contents in this branch are still under development and are not the final version.
 
-Please note that the contents in this branch are still under development and are not the final version.
+## Usage
 
-![BB](./figures/bb.jpeg)
+Before training or testing, initialize the `qpid` package (along with other submodules):
+
+```bash
+git submodule update --init --recursive
+```
 
 ## Contact us
 
