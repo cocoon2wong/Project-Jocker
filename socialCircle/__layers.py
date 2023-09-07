@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 14:55:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-09-06 19:44:57
+@LastEditTime: 2023-09-07 17:00:35
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -136,3 +136,63 @@ class SocialCircleLayer(tf.keras.layers.Layer):
             social_circle = tf.pad(social_circle, paddings)
 
         return social_circle, f_direction
+
+
+class DynamicSocialCircleLayer(SocialCircleLayer):
+
+    def call(self, trajs, nei_trajs, *args, **kwargs):
+
+        obs_vectors = trajs - trajs[..., :1, :]     # (batch, obs, 2)
+        obs_vectors = obs_vectors[:, tf.newaxis]    # (batch, 1, obs, 2)
+        nei_vectors = nei_trajs - nei_trajs[..., :1, :]  # (batch, n, obs, 2)
+        nei_pos_vectors = nei_trajs     # (batch, n, obs, 2)
+
+        if self.use_velocity:
+            f_v = tf.linalg.norm(nei_vectors, axis=-1)  # (batch, n, obs)
+
+        if self.use_distance:
+            f_d = tf.linalg.norm(nei_pos_vectors, axis=-1)  # (batch, n, obs)
+
+        f_r = tf.atan2(x=nei_pos_vectors[..., 0], y=nei_pos_vectors[..., 1])
+        f_r = tf.math.mod(f_r, 2*np.pi)
+
+        # Angles (the independent variable \theta)
+        angle_indices = f_r / (2*np.pi/self.partitions)
+        angle_indices = tf.cast(angle_indices, tf.int32)
+
+        # Mask neighbors
+        nei_mask = get_mask(tf.reduce_sum(nei_trajs, axis=[-1, -2]), tf.int32)
+        nei_mask = nei_mask[..., tf.newaxis]
+        angle_indices = angle_indices * nei_mask + -1 * (1 - nei_mask)
+
+        # Compute the SocialCircle
+        social_circle = []
+        for ang in range(self.partitions):
+            _mask = tf.cast(angle_indices == ang, tf.float32)
+            _mask_count = tf.reduce_sum(_mask, axis=1)
+
+            n = _mask_count + 0.0001
+            social_circle.append([])
+
+            if self.use_velocity:
+                _velocity = tf.reduce_sum(f_v * _mask, axis=1) / n
+                social_circle[-1].append(_velocity)
+
+            if self.use_distance:
+                _distance = tf.reduce_sum(f_d * _mask, axis=1) / n
+                social_circle[-1].append(_distance)
+
+            if self.use_direction:
+                _direction = tf.reduce_sum(f_r * _mask, axis=1) / n
+                social_circle[-1].append(_direction)
+
+        # Shape of the final SocialCircle: (batch, obs, p, 3)
+        social_circle = tf.cast(social_circle, tf.float32)
+        social_circle = tf.transpose(social_circle, [2, 0, 3, 1])
+
+        if (((m := self.max_partitions) is not None) and
+                (m > (n := self.partitions))):
+            paddings = tf.constant([[0, 0], [0, m - n], [0, 0], [0, 0]])
+            social_circle = tf.pad(social_circle, paddings)
+
+        return social_circle, f_r
