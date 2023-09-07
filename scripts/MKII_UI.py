@@ -94,7 +94,7 @@ if __name__ == '__main__':
     logbox.pack()
 
     sys.path.insert(0, os.path.abspath('.'))
-    import codes
-    codes.set_log_stream_handler(TextboxHandler(logbox))
+    import qpid
+    qpid.set_log_stream_handler(TextboxHandler(logbox))
 
     root.mainloop()

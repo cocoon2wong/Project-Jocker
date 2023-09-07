@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-08-29 10:40:47
+@LastEditTime: 2023-09-07 09:06:53
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -19,8 +19,8 @@ from matplotlib import pyplot as plt
 from utils import TK_BORDER_WIDTH, TK_TITLE_STYLE, TextboxHandler
 
 sys.path.insert(0, os.path.abspath('.'))
-import codes
-from codes.utils import dir_check, get_mask
+import qpid
+from qpid.utils import dir_check, get_mask
 from main import main
 
 DATASET = 'ETH-UCY'
@@ -36,7 +36,7 @@ dir_check(os.path.dirname(LOG_PATH))
 
 class BetaToyExample():
     def __init__(self, args: list[str]) -> None:
-        self.t: codes.training.Structure = None
+        self.t: qpid.training.Structure = None
         self.image: tk.PhotoImage = None
 
         self.inputs: list[tf.Tensor] = None
@@ -54,7 +54,7 @@ class BetaToyExample():
             self.input_and_gt = \
                 list(self.t.agent_manager.make(CLIP, 'test'))
 
-    def load_model(self, args: list[str]) -> codes.training.Structure:
+    def load_model(self, args: list[str]) -> qpid.training.Structure:
         try:
             t = main(args, run_train_or_test=False)
             self.t = t
@@ -293,8 +293,8 @@ if __name__ == '__main__':
                             '--force_split', SPLIT,
                             '--force_clip', CLIP]
 
-    codes.set_log_path(LOG_PATH)
-    codes.set_log_stream_handler(TextboxHandler(logbar))
+    qpid.set_log_path(LOG_PATH)
+    qpid.set_log_stream_handler(TextboxHandler(logbar))
     toy = BetaToyExample(args(MODEL_PATH))
 
     # Button Frame

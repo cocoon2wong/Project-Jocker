@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-04-16 16:02:45
 @LastEditors: Conghao Wong
-@LastEditTime: 2022-10-18 14:58:49
+@LastEditTime: 2023-09-07 09:03:10
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -14,8 +14,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath('.'))
 
-import codes
-import silverballers
+import qpid
 
 
 def get_menmber(package):
@@ -86,9 +85,8 @@ def update_readme_file(file_path, new_lines, start: str, end: str):
         print('File update success.')
 
 
-lines_codes = print_all_members(codes)
-lines_sb = print_all_members(silverballers)
+lines_codes = print_all_members(qpid)
 
-update_readme_file('./classRef.md', lines_codes + lines_sb,
+update_readme_file('./classRef.md', lines_codes,
                    start='<!-- GRAPH BEGINS HERE -->',
                    end='<!-- GRAPH ENDS HERE -->')
