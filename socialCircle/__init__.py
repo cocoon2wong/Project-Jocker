@@ -18,6 +18,7 @@ from .__sc_MSN import MSNSCModel, MSNSCStructure
 from .__sc_transformer import TransformerSCModel, TransformerSCStructure
 from .__sc_V import VSCModel, VSCStructure
 
+__qpid.args.add_arg_alias('--sc', ['--model', 'MKII', '-lb', 'speed', '-la'])
 __qpid.update_args_dic({SocialCircleArgs: ['SocialCircle Args', 1]})
 __qpid.silverballers.register(evsc=[EVSCStructure, EVSCModel],
                               vsc=[VSCStructure, VSCModel],
