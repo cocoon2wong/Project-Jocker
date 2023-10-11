@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-11 13:51:58
+@LastEditTime: 2023-10-11 15:25:13
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -11,6 +11,7 @@
 import os
 import sys
 import tkinter as tk
+from copy import copy
 from tkinter import filedialog
 
 import numpy as np
@@ -20,8 +21,8 @@ from utils import TK_BORDER_WIDTH, TK_TITLE_STYLE, TextboxHandler
 
 sys.path.insert(0, os.path.abspath('.'))
 import qpid
-from qpid.utils import dir_check, get_mask, move_to_device
 from main import main
+from qpid.utils import dir_check, get_mask, move_to_device
 
 DATASET = 'ETH-UCY'
 SPLIT = 'zara1'
@@ -85,7 +86,7 @@ class BetaToyExample():
         obs = inputs[0]
         nei = inputs[1]
 
-        nei = nei.numpy()
+        nei = copy(nei.numpy())
         steps = nei.shape[-2]
 
         xp = np.array([0, steps-1])
@@ -105,11 +106,15 @@ class BetaToyExample():
             self.outputs = self.t.model.implement(inputs, training=False)
         self.outputs = move_to_device(self.outputs, self.t.device_cpu)
 
-    def get_neighbor_count(self, neighbor_obs: torch.Tensor):
+    def get_neighbor_count(self, neighbor_obs: torch.tensor):
         '''
         Input's shape should be `(1, max_agents, obs, dim)`.
         '''
         nei = neighbor_obs[0]
+
+        if issubclass(type(nei), np.ndarray):
+            nei = torch.from_numpy(nei)
+
         nei_mask = get_mask(torch.sum(nei, dim=[-1, -2]))
         return int(torch.sum(nei_mask))
 
