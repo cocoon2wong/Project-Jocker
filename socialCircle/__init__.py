@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:52:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-09 17:45:52
+@LastEditTime: 2023-10-10 16:43:36
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -26,9 +26,3 @@ __qpid.silverballers.register(evsc=[EVSCStructure, EVSCModel],
                               transsc=[TransformerSCStructure,
                                        TransformerSCModel])
 __qpid._log_mod_loaded(__package__)
-
-# Experimental Models
-from . import __dsc_EV
-
-__qpid.silverballers.register(evdsc=[__dsc_EV.EVSCStructure,
-                                     __dsc_EV.EVSCModel])
