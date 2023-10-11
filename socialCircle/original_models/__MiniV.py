@@ -2,13 +2,13 @@
 @Author: Beihao Xia
 @Date: 2023-03-20 16:15:25
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-09-06 20:41:14
+@LastEditTime: 2023-10-11 18:53:08
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Beihao Xia, All Rights Reserved.
 """
 
-import tensorflow as tf
+import torch
 
 from qpid.constant import INPUT_TYPES, PROCESS_TYPES
 from qpid.model import Model, layers, transformer
@@ -37,85 +37,96 @@ class MinimalVModel(Model):
         # Preprocess
         self.set_preprocess(**{PROCESS_TYPES.MOVE: 0})
 
+        # Assign model inputs
         self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ)
 
-        self.args = Args
-
         # Parameters
+        self.args: AgentArgs
         self.d = feature_dim
         self.d_id = id_depth
         self.dim: int = self.structure.annmanager.dim
 
         # Layers
-        self.Tlayer, self.ITlayer = layers.get_transform_layers(self.args.T)
+        tlayer, itlayer = layers.get_transform_layers(self.args.T)
 
         # Transform layers
-        self.t1 = self.Tlayer(Oshape=(self.args.obs_frames, self.dim))
-        self.it1 = self.ITlayer(Oshape=(self.args.pred_frames, self.dim))
+        self.t1 = tlayer((self.args.obs_frames, self.dim))
+        self.it1 = itlayer((self.args.pred_frames, self.dim))
 
+        # Trajectory embedding
         if type(self.t1) == layers.transfroms.NoneTransformLayer:
-            self.te = layers.TrajEncoding(
-                self.d//2, tf.nn.relu, transform_layer=None)
+            self.te = layers.TrajEncoding(self.dim, self.d//2,
+                                          torch.nn.Tanh)
         else:
-            self.te = layers.TrajEncoding(self.d//2, tf.nn.relu, self.t1)
+            self.te = layers.TrajEncoding(self.dim, self.d//2,
+                                          torch.nn.Tanh, self.t1)
 
-        self.Tsteps_en = self.t1.Tshape[0]
-        self.Osteps_de = self.args.pred_frames
+        # Steps and shapes after applying transforms
+        self.Tsteps_en, self.Tchannels_en = self.t1.Tshape
         self.Tsteps_de, self.Tchannels_de = self.it1.Tshape
 
-        self.T = transformer.Transformer(num_layers=4,
-                                         d_model=self.d,
-                                         num_heads=8,
-                                         dff=512,
-                                         input_vocab_size=None,
-                                         target_vocab_size=None,
-                                         pe_input=self.Tsteps_en,
-                                         pe_target=self.Tsteps_en,
-                                         include_top=False)
+        # Transformer is used as a feature extractor
+        self.T = transformer.Transformer(
+            num_layers=4,
+            d_model=self.d,
+            num_heads=8,
+            dff=512,
+            input_vocab_size=self.Tchannels_en,
+            target_vocab_size=self.Tchannels_de,
+            pe_input=self.Tsteps_en,
+            pe_target=self.Tsteps_en,
+            include_top=False
+        )
 
-        self.adj_fc = tf.keras.layers.Dense(self.Tsteps_de, tf.nn.tanh)
-        self.gcn = layers.GraphConv(units=self.d)
+        self.ms_fc = layers.Dense(self.d, self.Tsteps_de, torch.nn.Tanh)
+        self.ms_conv = layers.GraphConv(self.d, self.d)
 
-        # Random id encoding
-        self.ie = layers.TrajEncoding(self.d//2, tf.nn.tanh)
-        self.concat = tf.keras.layers.Concatenate(axis=-1)
+        # Noise encoding
+        self.ie = layers.TrajEncoding(self.d_id, self.d//2, torch.nn.Tanh)
 
-        # Decoder layers (with spectrums)
-        self.decoder_fc1 = tf.keras.layers.Dense(2*self.d, tf.nn.tanh)
-        self.decoder_fc2 = tf.keras.layers.Dense(self.Tchannels_de)
+        # Decoder layers
+        self.decoder_fc1 = layers.Dense(self.d, 2*self.d, torch.nn.Tanh)
+        self.decoder_fc2 = layers.Dense(2*self.d, self.Tchannels_de)
 
-    def call(self, inputs, training=None, mask=None, *args, **kwargs):
+    def forward(self, inputs, training=None, *args, **kwargs):
+        # Unpack inputs
+        obs = inputs[0]
 
-        # unpack inputs
-        trajs = inputs[0]
-        bs = trajs.shape[0]
+        # Feature embedding and encoding -> (batch, obs, d/2)
+        f_traj = self.te(obs)
 
-        f = self.te(trajs)     # (batch, obs, d/2)
-
-        # Sample random predictions
+        # Sampling random noise vectors
         all_predictions = []
-        rep_time = 1
-        t_outputs = self.t1(trajs)
+        repeats = 1
 
-        for _ in range(rep_time):
+        traj_targets = self.t1(obs)
 
-            ids = tf.random.normal([bs, self.Tsteps_en, self.d_id])
-            id_features = self.ie(ids)
+        for _ in range(repeats):
+            # Assign random ids and embedding -> (batch, steps, d/2)
+            z = torch.normal(mean=0, std=1,
+                             size=list(f_traj.shape[:-1]) + [self.d_id])
+            f_z = self.ie(z.to(obs.device))
 
-            t_inputs = self.concat([f, id_features])
-            t_features, _ = self.T(t_inputs, t_outputs, training)
+            # Transformer inputs -> (batch, steps, d)
+            f_final = torch.concat([f_traj, f_z], dim=-1)
 
-            adj = tf.transpose(self.adj_fc(t_inputs), [0, 2, 1])
-            t_features = self.gcn(t_features, adj)
+            # Transformer outputs' shape is (batch, steps, d)
+            f_tran, _ = self.T(inputs=f_final,
+                               targets=traj_targets,
+                               training=training)
 
-            y = self.decoder_fc1(t_features)
+            # Generations -> (batch, pred_steps, d)
+            adj = self.ms_fc(f_final)
+            adj = torch.transpose(adj, -1, -2)
+            f_multi = self.ms_conv(f_tran, adj)     # (batch, pred_steps, d)
+
+            y = self.decoder_fc1(f_multi)
             y = self.decoder_fc2(y)
 
             y = self.it1(y)
-
             all_predictions.append(y)
 
-        return tf.stack(all_predictions, axis=1)
+        return torch.concat(all_predictions, dim=-3)   # (batch, 1, pred, dim)
 
 
 class MinimalV(Structure):
@@ -123,15 +134,13 @@ class MinimalV(Structure):
     Training structure for the `minimal` vertical model.
     """
 
-    MODEL_TYPE = MinimalVModel
-
     def __init__(self, terminal_args: list[str]):
         super().__init__(AgentArgs(terminal_args))
         self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
 
     def create_model(self, *args, **kwargs):
-        return self.MODEL_TYPE(self.args,
-                               feature_dim=self.args.feature_dim,
-                               id_depth=self.args.depth,
-                               structure=self,
-                               *args, **kwargs)
+        return MinimalVModel(self.args,
+                             feature_dim=self.args.feature_dim,
+                             id_depth=self.args.depth,
+                             structure=self,
+                             *args, **kwargs)

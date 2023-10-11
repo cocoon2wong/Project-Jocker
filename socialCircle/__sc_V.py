@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-15 19:08:05
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-11 14:27:41
+@LastEditTime: 2023-10-11 18:58:22
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -58,12 +58,9 @@ class VSCModel(BaseSocialCircleModel):
         # Concat and fuse SC
         self.concat_fc = layers.Dense(self.d, self.d//2, torch.nn.Tanh)
 
-        # steps and shapes after applying transforms
+        # Steps and shapes after applying transforms
         self.Tsteps_en, self.Tchannels_en = self.t1.Tshape
         self.Tsteps_de, self.Tchannels_de = self.it1.Tshape
-
-        # Noise encoding
-        self.ie = layers.TrajEncoding(self.d_id, self.d//2, torch.nn.Tanh)
 
         # Transformer is used as a feature extractor
         self.T = transformer.Transformer(
@@ -83,6 +80,9 @@ class VSCModel(BaseSocialCircleModel):
         # It is used to generate multiple predictions within one model implementation
         self.ms_fc = layers.Dense(self.d, self.args.Kc, torch.nn.Tanh)
         self.ms_conv = layers.GraphConv(self.d, self.d)
+
+        # Noise encoding
+        self.ie = layers.TrajEncoding(self.d_id, self.d//2, torch.nn.Tanh)
 
         # Decoder layers
         self.decoder_fc1 = layers.Dense(self.d, self.d, torch.nn.Tanh)
@@ -117,12 +117,12 @@ class VSCModel(BaseSocialCircleModel):
         traj_targets = self.t1(obs)
 
         for _ in range(repeats):
-            # Assign random ids and embedding -> (batch, obs, d)
+            # Assign random ids and embedding -> (batch, steps, d/2)
             z = torch.normal(mean=0, std=1,
                              size=list(f_behavior.shape[:-1]) + [self.d_id])
             f_z = self.ie(z.to(obs.device))
 
-            # (batch, steps, 2*d)
+            # Transformer inputs -> (batch, steps, d)
             f_final = torch.concat([f_behavior, f_z], dim=-1)
 
             # Transformer outputs' shape is (batch, steps, d)

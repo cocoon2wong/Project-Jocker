@@ -2,13 +2,13 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:38
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-09-06 20:40:14
+@LastEditTime: 2023-10-11 18:19:15
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-import tensorflow as tf
+import torch
 
 from qpid.model import layers, transformer
 from qpid.silverballers import AgentArgs, BaseAgentModel, BaseAgentStructure
@@ -18,60 +18,61 @@ class Agent47CModel(BaseAgentModel):
 
     def __init__(self, Args: AgentArgs,
                  as_single_model: bool = True,
-                 structure=None,
-                 *args, **kwargs):
+                 structure=None, *args, **kwargs):
 
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
         # Layers
-        self.Tlayer, self.ITlayer = layers.get_transform_layers(self.args.T)
+        tlayer, itlayer = layers.get_transform_layers(self.args.T)
 
         # Transform layers
-        self.t1 = self.Tlayer(Oshape=(self.args.obs_frames, self.dim))
-        self.it1 = self.ITlayer(Oshape=(self.n_key, self.dim))
+        self.t1 = tlayer((self.args.obs_frames, self.dim))
+        self.it1 = itlayer((self.n_key, self.dim))
 
         # Trajectory encoding
-        self.te = layers.TrajEncoding(self.d//2, tf.nn.relu,
+        self.te = layers.TrajEncoding(self.dim, self.d//2,
+                                      torch.nn.ReLU,
                                       transform_layer=self.t1)
 
-        # steps and shapes after applying transforms
-        self.Tsteps_en = self.te.Tlayer.Tshape[0] if self.te.Tlayer else self.args.obs_frames
+        # Shapes
+        self.Tsteps_en, self.Tchannels_en = self.t1.Tshape
         self.Tsteps_de, self.Tchannels_de = self.it1.Tshape
 
         # Bilinear structure (outer product + pooling + fc)
-        self.outer = layers.OuterLayer(self.d//2, self.d//2, reshape=False)
-        self.pooling = layers.MaxPooling2D(pool_size=(2, 2),
-                                           data_format='channels_first')
+        # For trajectories
+        self.outer = layers.OuterLayer(self.d//2, self.d//2)
+        self.pooling = layers.MaxPooling2D((2, 2))
         self.flatten = layers.Flatten(axes_num=2)
-        self.outer_fc = tf.keras.layers.Dense(self.d//2, tf.nn.tanh)
+        self.outer_fc = layers.Dense((self.d//4)**2, self.d//2, torch.nn.Tanh)
 
-        # Random id encoding
-        self.ie = layers.TrajEncoding(self.d//2, tf.nn.tanh)
-        self.concat = tf.keras.layers.Concatenate(axis=-1)
+        # Noise encoding
+        self.ie = layers.TrajEncoding(self.d_id, self.d//2, torch.nn.Tanh)
 
         # Transformer is used as a feature extractor
-        self.T = transformer.Transformer(num_layers=4,
-                                         d_model=self.d,
-                                         num_heads=8,
-                                         dff=512,
-                                         input_vocab_size=None,
-                                         target_vocab_size=None,
-                                         pe_input=self.Tsteps_en,
-                                         pe_target=self.Tsteps_en,
-                                         include_top=False)
+        self.T = transformer.Transformer(
+            num_layers=4,
+            d_model=self.d,
+            num_heads=8,
+            dff=512,
+            input_vocab_size=self.Tchannels_en,
+            target_vocab_size=self.Tchannels_de,
+            pe_input=self.Tsteps_en,
+            pe_target=self.Tsteps_en,
+            include_top=False
+        )
 
         # Trainable adj matrix and gcn layer
-        # It is used to generate multi-style predictions
-        self.adj_fc = tf.keras.layers.Dense(self.args.Kc, tf.nn.tanh)
-        self.gcn = layers.GraphConv(units=self.d)
+        # See our previous work "MSN: Multi-Style Network for Trajectory Prediction" for detail
+        # It is used to generate multiple predictions within one model implementation
+        self.ms_fc = layers.Dense(self.d, self.args.Kc, torch.nn.Tanh)
+        self.ms_conv = layers.GraphConv(self.d, self.d)
 
-        # Decoder layers (with spectrums)
-        self.decoder_fc1 = tf.keras.layers.Dense(self.d, tf.nn.tanh)
-        self.decoder_fc2 = tf.keras.layers.Dense(
-            self.Tsteps_de * self.Tchannels_de)
+        # Decoder layers
+        self.decoder_fc1 = layers.Dense(self.d, self.d, torch.nn.Tanh)
+        self.decoder_fc2 = layers.Dense(self.d,
+                                        self.Tsteps_de * self.Tchannels_de)
 
-    def call(self, inputs: list[tf.Tensor],
-             training=None, mask=None):
+    def forward(self, inputs, training=None, *args, **kwargs):
         """
         Run the first stage `agent47C` model.
 
@@ -84,70 +85,62 @@ class Agent47CModel(BaseAgentModel):
             shape = `(..., Kc, N_key, dim)`
         """
 
-        # unpack inputs
-        trajs = inputs[0]   # (..., obs, dim)
+        # Unpack inputs
+        obs = inputs[0]     # (batch, obs, dim)
 
-        # feature embedding and encoding -> (..., Tsteps, d/2)
-        # uses bilinear structure to encode features
-        f = self.te(trajs)                  # (..., Tsteps, d/2)
-        f = self.outer(f, f)                # (..., Tsteps, d/2, d/2)
-        f = self.pooling(f)                 # (..., Tsteps, d/4, d/4)
-        f = self.flatten(f)                 # (..., Tsteps, d*d/16)
-        spec_features = self.outer_fc(f)    # (..., Tsteps, d/2)
+        # Trajectory embedding and encoding
+        f = self.te(obs)
+        f = self.outer(f, f)
+        f = self.pooling(f)
+        f = self.flatten(f)
+        f_traj = self.outer_fc(f)       # (batch, steps, d/2)
 
-        # Sample random predictions
+        # Sampling random noise vectors
         all_predictions = []
-        rep_time = self.args.K_train if training else self.args.K
+        repeats = self.args.K_train if training else self.args.K
 
-        t_outputs = self.t1(trajs)  # (..., Tsteps, Tchannels)
+        traj_targets = self.t1(obs)
 
-        for _ in range(rep_time):
+        for _ in range(repeats):
             if not self.args.deterministic:
-                # assign random ids and embedding -> (..., Tsteps, d)
-                ids = tf.random.normal(
-                    list(tf.shape(trajs)[:-2]) + [self.Tsteps_en, self.d_id])
-                id_features = self.ie(ids)
+                # Assign random ids and embedding -> (batch, steps, d)
+                z = torch.normal(mean=0, std=1,
+                                 size=list(f_traj.shape[:-1]) + [self.d_id])
+                f_z = self.ie(z)
 
-                # transformer inputs
-                # shapes are (..., Tsteps, d)
-                t_inputs = self.concat([spec_features, id_features])
+                # (batch, steps, 2*d)
+                f_final = torch.concat([f_traj, f_z], dim=-1)
 
             else:
-                t_inputs = spec_features
+                f_final = f_traj
 
-            # transformer -> (..., Tsteps, d)
-            behavior_features, _ = self.T(inputs=t_inputs,
-                                          targets=t_outputs,
-                                          training=training)
+            # Transformer outputs' shape is (batch, steps, d)
+            f_tran, _ = self.T(inputs=f_final,
+                               targets=traj_targets,
+                               training=training)
 
-            # multi-style features -> (..., Kc, d)
-            adj = self.adj_fc(t_inputs)
-            i = list(tf.range(adj.ndim))
-            adj = tf.transpose(adj, i[:-2] + [i[-1], i[-2]])
-            m_features = self.gcn(behavior_features, adj)
+            # Multiple generations -> (batch, Kc, d)
+            adj = self.ms_fc(f_final)               # (batch, steps, Kc)
+            adj = torch.transpose(adj, -1, -2)
+            f_multi = self.ms_conv(f_tran, adj)     # (batch, Kc, d)
 
-            # predicted keypoints -> (..., Kc, Tsteps_Key, Tchannels)
-            y = self.decoder_fc1(m_features)
+            # Forecast keypoints -> (..., Kc, Tsteps_Key, Tchannels)
+            y = self.decoder_fc1(f_multi)
             y = self.decoder_fc2(y)
-            y = tf.reshape(y, list(tf.shape(y)[:-1]) +
-                           [self.Tsteps_de, self.Tchannels_de])
+            y = torch.reshape(y, list(y.shape[:-1]) +
+                              [self.Tsteps_de, self.Tchannels_de])
 
             y = self.it1(y)
             all_predictions.append(y)
 
-        return tf.concat(all_predictions, axis=-3)
+        return torch.concat(all_predictions, dim=-3)   # (batch, K, n_key, dim)
 
 
 class Agent47C(BaseAgentStructure):
-
     """
     Training structure for the `Agent47C` model.
     Note that it is only used to train the single model.
     Please use the `Silverballers` structure if you want to test any
     agent-handler based silverballers models.
     """
-
-    def __init__(self, terminal_args: list[str], manager=None):
-        super().__init__(terminal_args, manager)
-
-        self.set_model_type(new_type=Agent47CModel)
+    MODEL_TYPE = Agent47CModel

@@ -2,13 +2,13 @@
 @Author: Conghao Wong
 @Date: 2023-08-15 20:30:51
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-09-06 20:54:54
+@LastEditTime: 2023-10-11 19:02:40
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
 """
 
-import tensorflow as tf
+import torch
 
 from qpid.constant import INPUT_TYPES, PROCESS_TYPES
 from qpid.model import layers, transformer
@@ -42,22 +42,22 @@ class TransformerSCModel(BaseSocialCircleModel):
                         INPUT_TYPES.NEIGHBOR_TRAJ)
 
         # Layers
-        self.Tlayer, self.ITlayer = layers.get_transform_layers(self.args.T)
+        tlayer, itlayer = layers.get_transform_layers(self.args.T)
 
         # Transform layers
-        self.t1 = self.Tlayer(Oshape=(self.args.obs_frames, self.dim))
-        self.it1 = self.ITlayer(Oshape=(self.args.pred_frames, self.dim))
+        self.t1 = tlayer((self.args.obs_frames, self.dim))
+        self.it1 = itlayer((self.args.pred_frames, self.dim))
 
         # Trajectory embedding
         if type(self.t1) == layers.transfroms.NoneTransformLayer:
-            self.te = layers.TrajEncoding(
-                self.d//2, tf.nn.relu, transform_layer=None)
+            self.te = layers.TrajEncoding(self.dim, self.d//2,
+                                          torch.nn.Tanh)
         else:
-            self.te = layers.TrajEncoding(self.d//2, tf.nn.relu, self.t1)
+            self.te = layers.TrajEncoding(self.dim, self.d//2,
+                                          torch.nn.Tanh, self.t1)
 
-        # SocialCircle and fusion layers
+        # SocialCircle encoding
         tslayer, _ = layers.get_transform_layers(self.args.Ts)
-        self.ts = tslayer((self.args.obs_frames, 2))
         self.sc = SocialCircleLayer(partitions=self.args.partitions,
                                     max_partitions=self.args.obs_frames,
                                     use_velocity=self.args.use_velocity,
@@ -65,76 +65,93 @@ class TransformerSCModel(BaseSocialCircleModel):
                                     use_direction=self.args.use_direction,
                                     relative_velocity=self.args.rel_speed,
                                     use_move_direction=self.args.use_move_direction)
-        self.tse = layers.TrajEncoding(self.d//2, tf.nn.relu,
+        self.ts = tslayer((self.args.obs_frames, self.sc.dim))
+        self.tse = layers.TrajEncoding(self.sc.dim, self.d//2, torch.nn.ReLU,
                                        transform_layer=self.ts)
-        self.concat_fc = tf.keras.layers.Dense(self.d//2, tf.nn.tanh)
 
-        self.Tsteps_en = self.t1.Tshape[0]
-        self.Osteps_de = self.args.pred_frames
+        # Concat and fuse SC
+        self.concat_fc = layers.Dense(self.d, self.d//2, torch.nn.Tanh)
+
+        # Steps and shapes after applying transforms
+        self.Tsteps_en, self.Tchannels_en = self.t1.Tshape
         self.Tsteps_de, self.Tchannels_de = self.it1.Tshape
 
-        self.T = transformer.Transformer(num_layers=4,
-                                         d_model=self.d,
-                                         num_heads=8,
-                                         dff=512,
-                                         input_vocab_size=None,
-                                         target_vocab_size=None,
-                                         pe_input=self.Tsteps_en,
-                                         pe_target=self.Tsteps_en,
-                                         include_top=False)
+        # Transformer is used as a feature extractor
+        self.T = transformer.Transformer(
+            num_layers=4,
+            d_model=self.d,
+            num_heads=8,
+            dff=512,
+            input_vocab_size=self.Tchannels_en,
+            target_vocab_size=self.Tchannels_de,
+            pe_input=self.Tsteps_en,
+            pe_target=self.Tsteps_en,
+            include_top=False
+        )
 
-        self.adj_fc = tf.keras.layers.Dense(self.Tsteps_de, tf.nn.tanh)
-        self.gcn = layers.GraphConv(units=self.d)
+        self.ms_fc = layers.Dense(self.d, self.Tsteps_de, torch.nn.Tanh)
+        self.ms_conv = layers.GraphConv(self.d, self.d)
 
-        # Random id encoding
-        self.ie = layers.TrajEncoding(self.d//2, tf.nn.tanh)
-        self.concat = tf.keras.layers.Concatenate(axis=-1)
+        # Noise encoding
+        self.ie = layers.TrajEncoding(self.d_id, self.d//2, torch.nn.Tanh)
 
-        # Decoder layers (with spectrums)
-        self.decoder_fc1 = tf.keras.layers.Dense(2*self.d, tf.nn.tanh)
-        self.decoder_fc2 = tf.keras.layers.Dense(self.Tchannels_de)
+        # Decoder layers
+        self.decoder_fc1 = layers.Dense(self.d, 2*self.d, torch.nn.Tanh)
+        self.decoder_fc2 = layers.Dense(2*self.d, self.Tchannels_de)
 
-    def call(self, inputs, training=None, mask=None, *args, **kwargs):
-
-        # unpack inputs
-        trajs = inputs[0]
+    def forward(self, inputs, training=None, *args, **kwargs):
+        # Unpack inputs
+        obs = inputs[0]
         nei = inputs[1]
-        bs = trajs.shape[0]
 
-        # Embed trajectories
-        f = self.te(trajs)     # (batch, obs, d/2)
+        # Start computing the SocialCircle
+        # SocialCircle will be computed on each agent's center point
+        c_obs = self.picker.get_center(obs)[..., :2]
+        c_nei = self.picker.get_center(nei)[..., :2]
 
         # Compute and encode the SocialCircle
-        social_circle, _ = self.sc(trajs, nei)
-        f_social = self.tse(social_circle)    # (batch, obs, d/2)
+        social_circle, f_direction = self.sc(c_obs, c_nei)
+        f_social = self.tse(social_circle)    # (batch, steps, d/2)
 
-        f_behavior = tf.concat([f, f_social], axis=-1)
+        # feature embedding and encoding -> (batch, obs, d)
+        f_traj = self.te(obs)
+
+        # Feature fusion
+        f_behavior = torch.concat([f_traj, f_social], dim=-1)
         f_behavior = self.concat_fc(f_behavior)
 
-        # Sample random predictions
+        # Sampling random noise vectors
         all_predictions = []
-        rep_time = 1
-        t_outputs = self.t1(trajs)
+        repeats = 1
 
-        for _ in range(rep_time):
+        traj_targets = self.t1(obs)
 
-            ids = tf.random.normal([bs, self.Tsteps_en, self.d_id])
-            id_features = self.ie(ids)
+        for _ in range(repeats):
+            # Assign random ids and embedding -> (batch, steps, d/2)
+            z = torch.normal(mean=0, std=1,
+                             size=list(f_behavior.shape[:-1]) + [self.d_id])
+            f_z = self.ie(z.to(obs.device))
 
-            t_inputs = self.concat([f_behavior, id_features])
-            t_features, _ = self.T(t_inputs, t_outputs, training)
+            # Transformer inputs -> (batch, steps, d)
+            f_final = torch.concat([f_behavior, f_z], dim=-1)
 
-            adj = tf.transpose(self.adj_fc(t_inputs), [0, 2, 1])
-            t_features = self.gcn(t_features, adj)
+            # Transformer outputs' shape is (batch, steps, d)
+            f_tran, _ = self.T(inputs=f_final,
+                               targets=traj_targets,
+                               training=training)
 
-            y = self.decoder_fc1(t_features)
+            # Generations -> (batch, pred_steps, d)
+            adj = self.ms_fc(f_final)
+            adj = torch.transpose(adj, -1, -2)
+            f_multi = self.ms_conv(f_tran, adj)     # (batch, pred_steps, d)
+
+            y = self.decoder_fc1(f_multi)
             y = self.decoder_fc2(y)
 
             y = self.it1(y)
-
             all_predictions.append(y)
 
-        return tf.stack(all_predictions, axis=1)
+        return torch.concat(all_predictions, dim=-3)   # (batch, 1, pred, dim)
 
 
 class TransformerSCStructure(BaseSocialCircleStructure):

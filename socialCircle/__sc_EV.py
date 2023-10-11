@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:26:35
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-11 14:28:01
+@LastEditTime: 2023-10-11 18:10:36
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -65,8 +65,7 @@ class EVSCModel(BaseSocialCircleModel):
         # Bilinear structure (outer product + pooling + fc)
         # For trajectories
         self.outer = layers.OuterLayer(self.d//2, self.d//2)
-        self.pooling = layers.MaxPooling2D(
-            (2, 2), data_format='channels_first')
+        self.pooling = layers.MaxPooling2D((2, 2))
         self.flatten = layers.Flatten(axes_num=2)
         self.outer_fc = layers.Dense((self.d//4)**2, self.d//2, torch.nn.Tanh)
 
@@ -129,7 +128,7 @@ class EVSCModel(BaseSocialCircleModel):
         traj_targets = self.t1(obs)
 
         for _ in range(repeats):
-            # Assign random ids and embedding -> (batch, obs, d)
+            # Assign random ids and embedding -> (batch, steps, d)
             z = torch.normal(mean=0, std=1,
                              size=list(f_behavior.shape[:-1]) + [self.d_id])
             f_z = self.ie(z.to(obs.device))

@@ -2,13 +2,13 @@
 @Author: Conghao Wong
 @Date: 2022-07-05 16:00:26
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-09-06 20:44:05
+@LastEditTime: 2023-10-11 19:02:10
 @Description: First stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
 """
 
-import tensorflow as tf
+import torch
 
 from qpid.model import layers, transformer
 from qpid.silverballers import AgentArgs, BaseAgentModel, BaseAgentStructure
@@ -29,102 +29,99 @@ class VAModel(BaseAgentModel):
 
     def __init__(self, Args: AgentArgs,
                  as_single_model: bool = True,
-                 structure=None,
-                 *args, **kwargs):
+                 structure=None, *args, **kwargs):
 
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
         # Layers
-        self.Tlayer, self.ITlayer = layers.get_transform_layers(self.args.T)
+        tlayer, itlayer = layers.get_transform_layers(self.args.T)
 
         # Transform layers
-        self.t1 = self.Tlayer((self.args.obs_frames, self.dim))
-        self.it1 = self.ITlayer((self.n_key, self.dim))
+        self.t1 = tlayer((self.args.obs_frames, self.dim))
+        self.it1 = itlayer((self.n_key, self.dim))
 
         # Trajectory encoding
-        self.te = layers.TrajEncoding(self.d//2,
-                                      tf.nn.tanh,
+        self.te = layers.TrajEncoding(self.dim, self.d//2,
+                                      torch.nn.Tanh,
                                       transform_layer=self.t1)
 
-        self.ie = layers.TrajEncoding(self.d//2,
-                                      activation=tf.nn.tanh)
-
-        self.concat = tf.keras.layers.Concatenate(axis=-1)
-
         # steps and shapes after applying transforms
-        self.Tsteps_en = self.t1.Tshape[0]
+        self.Tsteps_en, self.Tchannels_en = self.t1.Tshape
         self.Tsteps_de, self.Tchannels_de = self.it1.Tshape
 
+        # Noise encoding
+        self.ie = layers.TrajEncoding(self.d_id, self.d//2, torch.nn.Tanh)
+
         # Transformer is used as a feature extractor
-        self.T = transformer.Transformer(num_layers=4,
-                                         d_model=self.d,
-                                         num_heads=8,
-                                         dff=512,
-                                         input_vocab_size=None,
-                                         target_vocab_size=None,
-                                         pe_input=self.Tsteps_en,
-                                         pe_target=self.Tsteps_en,
-                                         include_top=False)
+        self.T = transformer.Transformer(
+            num_layers=4,
+            d_model=self.d,
+            num_heads=8,
+            dff=512,
+            input_vocab_size=self.Tchannels_en,
+            target_vocab_size=self.Tchannels_de,
+            pe_input=self.Tsteps_en,
+            pe_target=self.Tsteps_en,
+            include_top=False
+        )
 
         # Trainable adj matrix and gcn layer
         # See our previous work "MSN: Multi-Style Network for Trajectory Prediction" for detail
         # It is used to generate multiple predictions within one model implementation
-        self.adj_fc = tf.keras.layers.Dense(self.args.Kc, tf.nn.tanh)
-        self.gcn = layers.GraphConv(units=self.d)
+        self.ms_fc = layers.Dense(self.d, self.args.Kc, torch.nn.Tanh)
+        self.ms_conv = layers.GraphConv(self.d, self.d)
 
         # Decoder layers
-        self.decoder_fc1 = tf.keras.layers.Dense(self.d, tf.nn.tanh)
-        self.decoder_fc2 = tf.keras.layers.Dense(
-            self.Tsteps_de * self.Tchannels_de)
-        self.decoder_reshape = tf.keras.layers.Reshape(
-            [self.args.Kc, self.Tsteps_de, self.Tchannels_de])
+        self.decoder_fc1 = layers.Dense(self.d, self.d, torch.nn.Tanh)
+        self.decoder_fc2 = layers.Dense(self.d,
+                                        self.Tsteps_de * self.Tchannels_de)
 
-    def call(self, inputs: list[tf.Tensor],
-             training=None, mask=None):
+    def forward(self, inputs, training=None, *args, **kwargs):
+        # Unpack inputs
+        obs = inputs[0]     # (batch, obs, dim)
 
-        # unpack inputs
-        trajs = inputs[0]   # (batch, obs, 2)
-        bs = trajs.shape[0]
+        # Feature embedding and encoding -> (batch, obs, d/2)
+        f_traj = self.te(obs)
 
-        # feature embedding and encoding -> (batch, obs, d)
-        spec_features = self.te(trajs)
-
+        # Sampling random noise vectors
         all_predictions = []
-        rep_time = self.args.K_train if training else self.args.K
-        for _ in range(rep_time):
-            # assign random ids and embedding -> (batch, obs, d)
-            ids = tf.random.normal([bs, self.Tsteps_en, self.d_id])
-            id_features = self.ie(ids)
+        repeats = self.args.K_train if training else self.args.K
 
-            # transformer inputs
-            t_inputs = self.concat([spec_features, id_features])
-            t_outputs = self.t1(trajs)
+        traj_targets = self.t1(obs)
 
-            # transformer -> (batch, obs, d)
-            behavior_features, _ = self.T(inputs=t_inputs,
-                                          targets=t_outputs,
-                                          training=training)
+        for _ in range(repeats):
+            # Assign random ids and embedding -> (batch, steps, d/2)
+            z = torch.normal(mean=0, std=1,
+                             size=list(f_traj.shape[:-1]) + [self.d_id])
+            f_z = self.ie(z.to(obs.device))
 
-            # features -> (batch, Kc, d)
-            adj = tf.transpose(self.adj_fc(t_inputs), [0, 2, 1])
-            m_features = self.gcn(behavior_features, adj)
+            # Transformer inputs -> (batch, steps, d)
+            f_final = torch.concat([f_traj, f_z], dim=-1)
 
-            # predicted keypoints -> (batch, Kc, key, 2)
-            y = self.decoder_fc1(m_features)
+            # Transformer outputs' shape is (batch, steps, d)
+            f_tran, _ = self.T(inputs=f_final,
+                               targets=traj_targets,
+                               training=training)
+
+            # Multiple generations -> (batch, Kc, d)
+            adj = self.ms_fc(f_final)               # (batch, steps, Kc)
+            adj = torch.transpose(adj, -1, -2)
+            f_multi = self.ms_conv(f_tran, adj)     # (batch, Kc, d)
+
+            # Forecast keypoints -> (..., Kc, Tsteps_Key, Tchannels)
+            y = self.decoder_fc1(f_multi)
             y = self.decoder_fc2(y)
-            y = self.decoder_reshape(y)
+            y = torch.reshape(y, list(y.shape[:-1]) +
+                              [self.Tsteps_de, self.Tchannels_de])
 
             y = self.it1(y)
             all_predictions.append(y)
 
-        return tf.concat(all_predictions, axis=1)
+        return torch.concat(all_predictions, dim=-3)   # (batch, K, n_key, dim)
 
 
 class VA(BaseAgentStructure):
     """
     Training structure for the first stage sub-network
     """
-
-    def __init__(self, terminal_args: list[str], manager=None):
-        super().__init__(terminal_args, manager)
-        self.set_model_type(new_type=VAModel)
+    MODEL_TYPE = VAModel
