@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-09-06 20:45:28
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-11 18:02:34
+@LastEditTime: 2023-10-11 19:07:03
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -10,10 +10,10 @@
 
 import qpid as __qpid
 
-from .__agent47C import Agent47C, Agent47CModel
-from .__MiniV import MinimalV, MinimalVModel
 from .__MSNalpha import MSNAlpha, MSNAlphaModel
-from .__Valpha import VA, VAModel
+from .ev import Agent47C, Agent47CModel
+from .trans import MinimalV, MinimalVModel
+from .v import VA, VAModel
 
 __qpid.silverballers.register(
     # MSN
@@ -30,5 +30,6 @@ __qpid.silverballers.register(
     agent47C=[Agent47C, Agent47CModel],
 
     # Other models
+    trans=[MinimalV, MinimalVModel],
     mv=[MinimalV, MinimalVModel],
 )
