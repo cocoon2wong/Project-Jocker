@@ -119,6 +119,9 @@ About the `argtype`:
 - `--lr` (short for `-lr`): type=`float`, argtype=`static`.
   Learning rate. 
   The default value is `0.001`.
+- `--macos`: type=`int`, argtype=`temporary`.
+  (Experimental) Choose whether enable the `MPS (Metal Performance Shaders)` on Apple platforms (instead of running on CPUs). 
+  The default value is `0`.
 - `--max_agents`: type=`int`, argtype=`static`.
   Max number of agents to predict in one frame. It only works when `model_type == 'frame-based'`. 
   The default value is `50`.
