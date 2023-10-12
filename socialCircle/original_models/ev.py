@@ -72,7 +72,7 @@ class Agent47CModel(BaseAgentModel):
         self.decoder_fc2 = layers.Dense(self.d,
                                         self.Tsteps_de * self.Tchannels_de)
 
-    def forward(self, inputs, training=None, *args, **kwargs):
+    def forward(self, inputs: list[torch.Tensor], training=None, *args, **kwargs):
         """
         Run the first stage `agent47C` model.
 

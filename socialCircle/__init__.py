@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:52:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-11 19:07:41
+@LastEditTime: 2023-10-12 15:42:46
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -13,8 +13,8 @@ import qpid as __qpid
 from . import original_models
 from .__args import SocialCircleArgs
 from .__layers import SocialCircleLayer
-from .__sc_MSN import MSNSCModel, MSNSCStructure
 from .ev_sc import EVSCModel, EVSCStructure
+from .msn_sc import MSNSCModel, MSNSCStructure
 from .trans_sc import TransformerSCModel, TransformerSCStructure
 from .v_sc import VSCModel, VSCStructure
 

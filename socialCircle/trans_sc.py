@@ -99,7 +99,7 @@ class TransformerSCModel(BaseSocialCircleModel):
         self.decoder_fc1 = layers.Dense(self.d, 2*self.d, torch.nn.Tanh)
         self.decoder_fc2 = layers.Dense(2*self.d, self.Tchannels_de)
 
-    def forward(self, inputs, training=None, *args, **kwargs):
+    def forward(self, inputs: list[torch.Tensor], training=None, *args, **kwargs):
         # Unpack inputs
         obs = inputs[0]
         nei = inputs[1]
