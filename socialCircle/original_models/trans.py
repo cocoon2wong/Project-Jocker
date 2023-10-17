@@ -2,7 +2,7 @@
 @Author: Beihao Xia
 @Date: 2023-03-20 16:15:25
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-11 18:53:08
+@LastEditTime: 2023-10-17 09:37:42
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Beihao Xia, All Rights Reserved.
@@ -42,9 +42,10 @@ class MinimalVModel(Model):
 
         # Parameters
         self.args: AgentArgs
+        self.structure: Structure
         self.d = feature_dim
         self.d_id = id_depth
-        self.dim: int = self.structure.annmanager.dim
+        self.dim: int = self.structure.ann_manager.dim
 
         # Layers
         tlayer, itlayer = layers.get_transform_layers(self.args.T)

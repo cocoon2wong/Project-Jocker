@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-21 19:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-12 10:22:46
+@LastEditTime: 2023-10-17 18:54:15
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -12,19 +12,22 @@ import torch
 
 from qpid.constant import INPUT_TYPES, PROCESS_TYPES
 from qpid.model import layers, transformer
-from qpid.training import Structure
-from qpid.utils import MAP_HALF_SIZE, POOLING_BEFORE_SAVING
+from qpid.silverballers import AgentArgs, BaseAgentStructure
 
-from .__args import SocialCircleArgs
 from .__base import BaseSocialCircleModel, BaseSocialCircleStructure
 from .__layers import SocialCircleLayer
 
 
 class MSNSCModel(BaseSocialCircleModel):
 
-    def __init__(self, Args: SocialCircleArgs,
-                 as_single_model: bool = True,
-                 structure=None, *args, **kwargs):
+    def __init__(self, Args: AgentArgs, as_single_model: bool = True,
+                 structure: BaseAgentStructure = None, *args, **kwargs):
+
+        from qpid.mods.contextMaps.settings import (MAP_HALF_SIZE,
+                                                    POOLING_BEFORE_SAVING)
+
+        self.MAP_HALF_SIZE = MAP_HALF_SIZE
+        self.POOLING_BEFORE_SAVING = POOLING_BEFORE_SAVING
 
         # Force args
         Args._set('key_points', str(Args.pred_frames - 1))
@@ -62,14 +65,14 @@ class MSNSCModel(BaseSocialCircleModel):
         self.pos_embedding = layers.Dense(2, 64, torch.nn.Tanh)
 
         # SocialCircle encoding
-        tslayer, _ = layers.get_transform_layers(self.args.Ts)
-        self.sc = SocialCircleLayer(partitions=self.args.partitions,
+        tslayer, _ = layers.get_transform_layers(self.sc_args.Ts)
+        self.sc = SocialCircleLayer(partitions=self.sc_args.partitions,
                                     max_partitions=self.args.obs_frames,
-                                    use_velocity=self.args.use_velocity,
-                                    use_distance=self.args.use_distance,
-                                    use_direction=self.args.use_direction,
-                                    relative_velocity=self.args.rel_speed,
-                                    use_move_direction=self.args.use_move_direction)
+                                    use_velocity=self.sc_args.use_velocity,
+                                    use_distance=self.sc_args.use_distance,
+                                    use_direction=self.sc_args.use_direction,
+                                    relative_velocity=self.sc_args.rel_speed,
+                                    use_move_direction=self.sc_args.use_move_direction)
         self.ts = tslayer((self.args.obs_frames, self.sc.dim))
         self.tse = layers.TrajEncoding(self.sc.dim, 64, torch.nn.ReLU,
                                        transform_layer=self.ts)
@@ -119,7 +122,7 @@ class MSNSCModel(BaseSocialCircleModel):
         # Encoding context maps into context features
         # Shape of maps is (batch, 100, 100)
         # context feature, shape == (batch, obs, 64)
-        if not POOLING_BEFORE_SAVING:
+        if not self.POOLING_BEFORE_SAVING:
             average_pooling = self.average_pooling(maps[:, None])
         else:
             average_pooling = maps

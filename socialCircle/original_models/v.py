@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-05 16:00:26
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-12 15:28:17
+@LastEditTime: 2023-10-17 18:59:01
 @Description: First stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -142,6 +142,8 @@ class VBModel(BaseHandlerModel):
 
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
+        from qpid.mods.contextMaps import ContextEncoding
+
         self.accept_batchK_inputs = True
 
         if self.args.model_type == 'frame-based':
@@ -169,9 +171,9 @@ class VBModel(BaseHandlerModel):
                                       torch.nn.Tanh,
                                       transform_layer=self.t_layer)
 
-        self.ce = layers.ContextEncoding(units=self.d//2,
-                                         output_channels=input_Tsteps,
-                                         activation=torch.nn.Tanh)
+        self.ce = ContextEncoding(units=self.d//2,
+                                  output_channels=input_Tsteps,
+                                  activation=torch.nn.Tanh)
 
         self.transformer = Transformer(num_layers=4,
                                        d_model=self.d,

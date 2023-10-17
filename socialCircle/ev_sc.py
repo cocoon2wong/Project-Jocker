@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:26:35
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-11 19:05:51
+@LastEditTime: 2023-10-17 18:51:47
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -12,17 +12,16 @@ import torch
 
 from qpid.constant import INPUT_TYPES
 from qpid.model import layers, transformer
+from qpid.silverballers import AgentArgs, BaseAgentStructure
 
-from .__args import SocialCircleArgs
 from .__base import BaseSocialCircleModel, BaseSocialCircleStructure
 from .__layers import SocialCircleLayer
 
 
 class EVSCModel(BaseSocialCircleModel):
 
-    def __init__(self, Args: SocialCircleArgs,
-                 as_single_model: bool = True,
-                 structure=None, *args, **kwargs):
+    def __init__(self, Args: AgentArgs, as_single_model: bool = True,
+                 structure: BaseAgentStructure = None, *args, **kwargs):
 
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
@@ -43,14 +42,14 @@ class EVSCModel(BaseSocialCircleModel):
                                       transform_layer=self.t1)
 
         # SocialCircle encoding
-        tslayer, _ = layers.get_transform_layers(self.args.Ts)
-        self.sc = SocialCircleLayer(partitions=self.args.partitions,
+        tslayer, _ = layers.get_transform_layers(self.sc_args.Ts)
+        self.sc = SocialCircleLayer(partitions=self.sc_args.partitions,
                                     max_partitions=self.args.obs_frames,
-                                    use_velocity=self.args.use_velocity,
-                                    use_distance=self.args.use_distance,
-                                    use_direction=self.args.use_direction,
-                                    relative_velocity=self.args.rel_speed,
-                                    use_move_direction=self.args.use_move_direction)
+                                    use_velocity=self.sc_args.use_velocity,
+                                    use_distance=self.sc_args.use_distance,
+                                    use_direction=self.sc_args.use_direction,
+                                    relative_velocity=self.sc_args.rel_speed,
+                                    use_move_direction=self.sc_args.use_move_direction)
         self.ts = tslayer((self.args.obs_frames, self.sc.dim))
         self.tse = layers.TrajEncoding(self.sc.dim, self.d//2, torch.nn.ReLU,
                                        transform_layer=self.ts)

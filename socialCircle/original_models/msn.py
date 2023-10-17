@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-09-13 21:18:29
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-12 15:44:27
+@LastEditTime: 2023-10-17 18:57:46
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -15,7 +15,6 @@ from qpid.model import layers, transformer
 from qpid.silverballers import (AgentArgs, BaseAgentModel, BaseAgentStructure,
                                 BaseHandlerModel, BaseHandlerStructure,
                                 HandlerArgs)
-from qpid.utils import MAP_HALF_SIZE, POOLING_BEFORE_SAVING
 
 
 class MSNAlphaModel(BaseAgentModel):
@@ -25,6 +24,12 @@ class MSNAlphaModel(BaseAgentModel):
                  structure=None, *args, **kwargs):
 
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
+
+        from qpid.mods.contextMaps.settings import (MAP_HALF_SIZE,
+                                                    POOLING_BEFORE_SAVING)
+
+        self.MAP_HALF_SIZE = MAP_HALF_SIZE
+        self.POOLING_BEFORE_SAVING = POOLING_BEFORE_SAVING
 
         # Preprocess
         preprocess = []
@@ -85,7 +90,7 @@ class MSNAlphaModel(BaseAgentModel):
         # Encoding context maps into context features
         # Shape of maps is (batch, 100, 100)
         # context feature, shape == (batch, obs, 64)
-        if not POOLING_BEFORE_SAVING:
+        if not self.POOLING_BEFORE_SAVING:
             average_pooling = self.average_pooling(maps[:, None])
         else:
             average_pooling = maps
@@ -129,6 +134,12 @@ class MSNBetaModel(BaseHandlerModel):
                  as_single_model: bool = True,
                  structure=None, *args, **kwargs):
 
+        from qpid.mods.contextMaps.settings import (MAP_HALF_SIZE,
+                                                    POOLING_BEFORE_SAVING)
+
+        self.MAP_HALF_SIZE = MAP_HALF_SIZE
+        self.POOLING_BEFORE_SAVING = POOLING_BEFORE_SAVING
+
         # Force args
         Args._set('key_points', str(Args.pred_frames - 1))
         Args._set('T', 'none')
@@ -157,7 +168,7 @@ class MSNBetaModel(BaseHandlerModel):
 
         # Layers
         # context feature
-        if not POOLING_BEFORE_SAVING:
+        if not self.POOLING_BEFORE_SAVING:
             self.average_pooling = layers.MaxPooling2D((5, 5))
 
         self.flatten = layers.Flatten(2)
@@ -203,7 +214,7 @@ class MSNBetaModel(BaseHandlerModel):
         # Encoding context maps into context features
         # Shape of maps is (batch, 100, 100)
         # context feature, shape == (batch, obs+1, 64)
-        if not POOLING_BEFORE_SAVING:
+        if not self.POOLING_BEFORE_SAVING:
             average_pooling = self.average_pooling(maps[:, None])
         else:
             average_pooling = maps

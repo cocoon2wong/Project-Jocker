@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 14:55:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-11 14:29:30
+@LastEditTime: 2023-10-17 18:48:22
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -141,7 +141,7 @@ class SocialCircleLayer(torch.nn.Module):
 
         if (((m := self.max_partitions) is not None) and
                 (m > (n := self.partitions))):
-            paddings = torch.tensor([0, 0, 0, m - n, 0, 0])
+            paddings = [0, 0, 0, m - n, 0, 0]
             social_circle = torch.nn.functional.pad(social_circle, paddings)
 
         return social_circle, f_direction

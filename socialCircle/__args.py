@@ -2,17 +2,17 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:19:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-09-06 20:53:41
+@LastEditTime: 2023-10-17 18:44:27
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
 """
 
-from qpid.args import DYNAMIC, STATIC, TEMPORARY
+from qpid.args import DYNAMIC, STATIC, TEMPORARY, EmptyArgs
 from qpid.silverballers import AgentArgs
 
 
-class SocialCircleArgs(AgentArgs):
+class SocialCircleArgs(EmptyArgs):
 
     @property
     def rel_speed(self) -> int:
