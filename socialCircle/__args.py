@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:19:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-17 18:44:27
+@LastEditTime: 2023-10-23 19:46:35
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -39,8 +39,7 @@ class SocialCircleArgs(EmptyArgs):
     def partitions(self) -> int:
         """
         Partitions in the SocialCircle.
-        Set it to `-1` to adapt to different observation/prediction
-        length settings.
+        It should be manually set at each training run.
         """
         return self._arg('partitions', -1, argtype=STATIC)
 
@@ -75,7 +74,8 @@ class SocialCircleArgs(EmptyArgs):
     def _init_all_args(self):
         super()._init_all_args()
 
-        # Set partitions for `-1` case
-        if self.partitions == -1:
-            self._set('partitions', self.obs_frames,
-                      verbose=self._verbose_mode)
+        # Check partitions (`-1` case)
+        if ((p := self.partitions) == -1):
+            self.log(f'The number of partitions should be set properly. ' +
+                     f'Received `{p}`.',
+                     level='error', raiseError=ValueError)
