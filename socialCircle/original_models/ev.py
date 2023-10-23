@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:38
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-11 19:04:37
+@LastEditTime: 2023-10-20 09:38:44
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -106,7 +106,7 @@ class Agent47CModel(BaseAgentModel):
                 # Assign random ids and embedding -> (batch, steps, d)
                 z = torch.normal(mean=0, std=1,
                                  size=list(f_traj.shape[:-1]) + [self.d_id])
-                f_z = self.ie(z)
+                f_z = self.ie(z.to(obs.device))
 
                 # (batch, steps, 2*d)
                 f_final = torch.concat([f_traj, f_z], dim=-1)
