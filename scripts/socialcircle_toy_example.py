@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-11 15:25:13
+@LastEditTime: 2023-10-25 11:23:52
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -55,13 +55,13 @@ class BetaToyExample():
             ds = self.t.agent_manager.make(CLIP, 'test')
             self.input_and_gt = [ds.dataset.inputs, ds.dataset.labels]
 
-    def load_model(self, args: list[str]) -> qpid.training.Structure:
+    def load_model(self, args: list[str]):
         try:
             t = main(args, run_train_or_test=False)
             self.t = t
             self.init_model()
             self.t.log(
-                f'Model `{toy.t.args.loada}` and dataset files ({CLIP}) loaded.')
+                f'Model `{t.args.loada}` and dataset files ({CLIP}) loaded.')
         except Exception as e:
             print(e)
 
