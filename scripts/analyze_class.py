@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2021-04-16 16:02:45
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-09-07 09:03:10
+@LastEditTime: 2023-10-25 16:41:52
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -15,6 +15,7 @@ import sys
 sys.path.insert(0, os.path.abspath('.'))
 
 import qpid
+import socialCircle
 
 
 def get_menmber(package):
@@ -85,8 +86,10 @@ def update_readme_file(file_path, new_lines, start: str, end: str):
         print('File update success.')
 
 
-lines_codes = print_all_members(qpid)
+lines_qpid = print_all_members(qpid)
+lines_sc = print_all_members(socialCircle)
 
-update_readme_file('./classRef.md', lines_codes,
+
+update_readme_file('./classRef.md', lines_qpid + lines_sc,
                    start='<!-- GRAPH BEGINS HERE -->',
                    end='<!-- GRAPH ENDS HERE -->')
