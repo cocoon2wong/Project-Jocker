@@ -2,25 +2,24 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:57:43
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-17 18:56:09
+@LastEditTime: 2023-11-02 19:26:32
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
 """
 
 from qpid.silverballers import AgentArgs, BaseAgentModel, BaseAgentStructure
-from qpid.training import Structure
 
 from .__args import SocialCircleArgs
 
 
 class BaseSocialCircleModel(BaseAgentModel):
     def __init__(self, Args: AgentArgs, as_single_model: bool = True,
-                 structure: BaseAgentStructure = None, *args, **kwargs):
+                 structure=None, *args, **kwargs):
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
-        self.sc_args = self.args._register_mod_args(SocialCircleArgs,
-                                                    __package__)
+        self.sc_args = self.args.register_subargs(SocialCircleArgs,
+                                                  __package__)
 
     def print_info(self, **kwargs):
         factors = [item for item in ['velocity',
@@ -42,7 +41,7 @@ class BaseSocialCircleModel(BaseAgentModel):
 class BaseSocialCircleStructure(BaseAgentStructure):
 
     def __init__(self, terminal_args: list[str] | AgentArgs,
-                 manager: Structure = None):
+                 manager=None):
         super().__init__(terminal_args, manager)
 
         if self.args.model_type != 'agent-based':

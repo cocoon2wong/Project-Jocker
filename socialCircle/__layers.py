@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 14:55:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-17 18:48:22
+@LastEditTime: 2023-11-02 19:34:16
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -17,13 +17,13 @@ from qpid.utils import get_mask
 class SocialCircleLayer(torch.nn.Module):
 
     def __init__(self, partitions: int,
-                 max_partitions: int = None,
-                 use_velocity=True,
-                 use_distance=True,
-                 use_direction=True,
-                 use_move_direction=False,
+                 max_partitions: int,
+                 use_velocity: bool | int = True,
+                 use_distance: bool | int = True,
+                 use_direction: bool | int = True,
+                 use_move_direction: bool | int = False,
                  mu=0.0001,
-                 relative_velocity=False,
+                 relative_velocity: bool | int = False,
                  *args, **kwargs):
         """
         A layer to compute the SocialCircle Meta-components.

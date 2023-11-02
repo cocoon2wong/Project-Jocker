@@ -12,7 +12,7 @@ import torch
 
 from qpid.constant import INPUT_TYPES
 from qpid.model import layers, transformer
-from qpid.silverballers import AgentArgs, BaseAgentStructure
+from qpid.silverballers import AgentArgs
 
 from .__base import BaseSocialCircleModel, BaseSocialCircleStructure
 from .__layers import SocialCircleLayer
@@ -21,7 +21,7 @@ from .__layers import SocialCircleLayer
 class EVSCModel(BaseSocialCircleModel):
 
     def __init__(self, Args: AgentArgs, as_single_model: bool = True,
-                 structure: BaseAgentStructure = None, *args, **kwargs):
+                 structure=None, *args, **kwargs):
 
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
 

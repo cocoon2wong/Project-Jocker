@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-25 11:23:52
+@LastEditTime: 2023-11-02 19:30:09
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -47,12 +47,12 @@ class BetaToyExample():
         self.load_model(args)
 
     def init_model(self):
-        self.t.model = self.t.create_model()
+        self.t.create_model()
         self.t.agent_manager.set_types(self.t.model.input_types,
                                        self.t.label_types)
 
         if self.input_and_gt is None:
-            ds = self.t.agent_manager.make(CLIP, 'test')
+            ds = self.t.agent_manager.make(CLIP, training=False)
             self.input_and_gt = [ds.dataset.inputs, ds.dataset.labels]
 
     def load_model(self, args: list[str]):
@@ -106,7 +106,7 @@ class BetaToyExample():
             self.outputs = self.t.model.implement(inputs, training=False)
         self.outputs = move_to_device(self.outputs, self.t.device_cpu)
 
-    def get_neighbor_count(self, neighbor_obs: torch.tensor):
+    def get_neighbor_count(self, neighbor_obs: torch.Tensor):
         '''
         Input's shape should be `(1, max_agents, obs, dim)`.
         '''

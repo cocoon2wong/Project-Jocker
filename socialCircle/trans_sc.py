@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-15 20:30:51
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-17 18:54:40
+@LastEditTime: 2023-11-02 19:36:35
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -12,8 +12,7 @@ import torch
 
 from qpid.constant import INPUT_TYPES, PROCESS_TYPES
 from qpid.model import layers, transformer
-from qpid.silverballers import AgentArgs, BaseAgentStructure
-from qpid.training import Structure
+from qpid.silverballers import AgentArgs
 
 from .__base import BaseSocialCircleModel, BaseSocialCircleStructure
 from .__layers import SocialCircleLayer
@@ -31,7 +30,7 @@ class TransformerSCModel(BaseSocialCircleModel):
     """
 
     def __init__(self, Args: AgentArgs, as_single_model: bool = True,
-                 structure: BaseAgentStructure = None, *args, **kwargs):
+                 structure=None, *args, **kwargs):
 
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
@@ -158,7 +157,7 @@ class TransformerSCModel(BaseSocialCircleModel):
 class TransformerSCStructure(BaseSocialCircleStructure):
     MODEL_TYPE = TransformerSCModel
 
-    def __init__(self, terminal_args, manager: Structure = None):
+    def __init__(self, terminal_args, manager=None):
         super().__init__(terminal_args, manager)
 
         # Force args

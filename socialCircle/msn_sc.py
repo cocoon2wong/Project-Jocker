@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-21 19:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-17 18:54:15
+@LastEditTime: 2023-11-02 19:35:10
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -12,7 +12,7 @@ import torch
 
 from qpid.constant import INPUT_TYPES, PROCESS_TYPES
 from qpid.model import layers, transformer
-from qpid.silverballers import AgentArgs, BaseAgentStructure
+from qpid.silverballers import AgentArgs
 
 from .__base import BaseSocialCircleModel, BaseSocialCircleStructure
 from .__layers import SocialCircleLayer
@@ -21,7 +21,7 @@ from .__layers import SocialCircleLayer
 class MSNSCModel(BaseSocialCircleModel):
 
     def __init__(self, Args: AgentArgs, as_single_model: bool = True,
-                 structure: BaseAgentStructure = None, *args, **kwargs):
+                 structure=None, *args, **kwargs):
 
         from qpid.mods.contextMaps.settings import (MAP_HALF_SIZE,
                                                     POOLING_BEFORE_SAVING)

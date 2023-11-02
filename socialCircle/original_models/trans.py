@@ -2,7 +2,7 @@
 @Author: Beihao Xia
 @Date: 2023-03-20 16:15:25
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-17 09:37:42
+@LastEditTime: 2023-11-02 19:27:39
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Beihao Xia, All Rights Reserved.
@@ -137,11 +137,12 @@ class MinimalV(Structure):
 
     def __init__(self, terminal_args: list[str]):
         super().__init__(AgentArgs(terminal_args))
+        self.args: AgentArgs
         self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
 
     def create_model(self, *args, **kwargs):
-        return MinimalVModel(self.args,
-                             feature_dim=self.args.feature_dim,
-                             id_depth=self.args.depth,
-                             structure=self,
-                             *args, **kwargs)
+        self.model = MinimalVModel(self.args,
+                                   feature_dim=self.args.feature_dim,
+                                   id_depth=self.args.depth,
+                                   structure=self,
+                                   *args, **kwargs)
