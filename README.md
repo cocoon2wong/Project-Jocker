@@ -200,6 +200,9 @@ About the `argtype`:
 - `--T` (short for `-T`): type=`str`, argtype=`static`.
   Type of transformations used when encoding or decoding trajectories. It could be: - `none`: no transformations - `fft`: fast Fourier transform - `fft2d`: 2D fast Fourier transform - `haar`: haar wavelet transform - `db2`: DB2 wavelet transform 
   The default value is `fft`.
+- `--depth`: type=`int`, argtype=`static`.
+  Depth of the random noise vector. 
+  The default value is `16`.
 - `--feature_dim`: type=`int`, argtype=`static`.
   Feature dimensions that are used in most layers. 
   The default value is `128`.
