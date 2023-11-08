@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-11-07 16:51:07
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-08 20:51:27
+@LastEditTime: 2023-11-08 21:06:10
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -18,11 +18,14 @@ from qpid.silverballers import AgentArgs
 from .__args import PhysicalCircleArgs
 from .__layers import PhysicalCircleLayer, SocialCircleLayer
 from .ev_sc import EVSCModel, EVSCStructure
+from .__base import BaseSocialCircleModel, BaseSocialCircleStructure
 
 
-class EVSPCModel(EVSCModel):
+class EVSPCModel(BaseSocialCircleModel):
 
-    def __init__(self, Args: AgentArgs, as_single_model: bool = True, structure=None, *args, **kwargs):
+    def __init__(self, Args: AgentArgs, as_single_model: bool = True,
+                 structure=None, *args, **kwargs):
+
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
         # Init physicalCircle's args
@@ -63,12 +66,13 @@ class EVSPCModel(EVSCModel):
         self.pc = PhysicalCircleLayer(partitions=self.sc_args.partitions,
                                       max_partitions=self.args.obs_frames,
                                       vision_radius=self.pc_args.vision_radius)
+        self.tp = tslayer((self.args.obs_frames, self.pc.dim))
         self.tpe = layers.TrajEncoding(self.pc.dim, self.d//2, torch.nn.ReLU,
-                                       transform_layer=self.ts)
+                                       transform_layer=self.tp)
 
         # Concat and fuse SC
         self.concat_fc = layers.Dense(
-            self.d + self.d//2, self.d//2, torch.nn.Tanh)
+            self.d+self.d//2, self.d//2, torch.nn.Tanh)
 
         # Shapes
         self.Tsteps_en, self.Tchannels_en = self.t1.Tshape
@@ -109,7 +113,6 @@ class EVSPCModel(EVSCModel):
                                         self.Tsteps_de * self.Tchannels_de)
 
     def forward(self, inputs: list[torch.Tensor], training=None, *args, **kwargs):
-
         # Unpack inputs
         obs = inputs[0]     # (batch, obs, dim)
         nei = inputs[1]     # (batch, a:=max_agents, obs, dim)
@@ -185,7 +188,7 @@ class EVSPCModel(EVSCModel):
         return Y, social_circle, f_direction
 
 
-class EVSPCStructure(EVSCStructure):
+class EVSPCStructure(BaseSocialCircleStructure):
     MODEL_TYPE = EVSPCModel
 
 
