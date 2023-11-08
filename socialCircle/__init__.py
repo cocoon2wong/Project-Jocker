@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:52:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-23 18:17:46
+@LastEditTime: 2023-11-08 20:30:38
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -11,15 +11,17 @@
 import qpid as __qpid
 
 from . import original_models
-from .__args import SocialCircleArgs
+from .__args import PhysicalCircleArgs, SocialCircleArgs
 from .__layers import SocialCircleLayer
 from .ev_sc import EVSCModel, EVSCStructure
+from .ev_spc import EVSPCModel, EVSPCStructure
 from .msn_sc import MSNSCModel, MSNSCStructure
 from .trans_sc import TransformerSCModel, TransformerSCStructure
 from .v_sc import VSCModel, VSCStructure
 
 # Add new args
 __qpid.register_new_args(SocialCircleArgs, 'SocialCircle Args', __package__)
+__qpid.register_new_args(PhysicalCircleArgs, 'PhysicalCircle Args', __package__)
 __qpid.args.add_arg_alias('--sc', ['--model', 'MKII', '-lb', 'speed', '-la'])
 
 # Register new models

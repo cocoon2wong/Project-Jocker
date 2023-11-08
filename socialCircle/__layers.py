@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 14:55:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-02 19:34:16
+@LastEditTime: 2023-11-08 20:48:54
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -11,6 +11,7 @@
 import numpy as np
 import torch
 
+from qpid.mods.segMaps.settings import NORMALIZED_SIZE
 from qpid.utils import get_mask
 
 
@@ -145,3 +146,89 @@ class SocialCircleLayer(torch.nn.Module):
             social_circle = torch.nn.functional.pad(social_circle, paddings)
 
         return social_circle, f_direction
+
+
+class PhysicalCircleLayer(torch.nn.Module):
+
+    def __init__(self, partitions: int,
+                 max_partitions: int,
+                 vision_radius: str,
+                 *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        self.partitions = partitions
+        self.max_partitions = max_partitions
+
+        self.radius = [float(r) for r in vision_radius.split('_') if len(r)]
+
+        # Compute all pixels' indices
+        xs, ys = torch.meshgrid(torch.arange(NORMALIZED_SIZE),
+                                torch.arange(NORMALIZED_SIZE),
+                                indexing='ij')
+        self.map_indices = torch.stack(
+            [xs.reshape([-1]), ys.reshape([-1])], dim=-1).to(torch.float32)
+
+    @property
+    def dim(self) -> int:
+        """
+        The number of PhysicalCircle factors.
+        """
+        return len(self.radius)
+
+    def forward(self, seg_maps: torch.Tensor,
+                seg_map_paras: torch.Tensor,
+                trajectories: torch.Tensor,
+                current_pos: torch.Tensor,
+                *args, **kwargs):
+
+        # Move back to original trajectories
+        _obs = trajectories + current_pos
+
+        # Treat seg maps as a long sequence
+        _maps = torch.flatten(seg_maps, start_dim=1, end_dim=-1)
+
+        # Compute pixel positions on seg maps
+        W = seg_map_paras[..., :2][..., None, :]
+        b = seg_map_paras[..., 2:4][..., None, :]
+        obs_pixel = W * _obs + b
+        # pos_pixel = pos_pixel.to(torch.int32)
+
+        # Compute velocity (moving length) during observation period
+        moving_vector = obs_pixel[..., -1, :] - obs_pixel[..., 0, :]
+        moving_length = torch.norm(moving_vector, dim=-1)
+
+        # Compute angles and distances
+        self.map_indices = self.map_indices.to(W.device)
+        direction_vectors = self.map_indices - obs_pixel[..., -1:, :]
+        distances = torch.norm(direction_vectors, dim=-1)
+
+        # shapes are (batch, a*a)
+        angles = torch.atan2(direction_vectors[..., 0],
+                             direction_vectors[..., 1])
+        angle_indices = (angles % (2*np.pi)) / (2*np.pi/self.partitions)
+        angle_indices = angle_indices.to(torch.int32)
+
+        # Compute the PhysicalCircle
+        pc = []
+        for r_times in self.radius:
+            r = (r_times * moving_length)[..., None]            # (batch, 1)
+            radius_mask = (distances <= r).to(torch.float32)    # (batch, a*a)
+
+            for ang in range(self.partitions):
+                angle_mask = (angle_indices == ang).to(torch.float32)
+                final_mask = radius_mask * angle_mask
+
+                pc.append(torch.mean(_maps * final_mask, dim=-1))
+
+        # Final return shape: (batch, max_partitions, dim)
+        pc = torch.stack(pc, dim=-1)
+        pc = pc.reshape([-1, self.dim, self.partitions])
+        pc = torch.transpose(pc, -2, -1)
+
+        if (((m := self.max_partitions) is not None) and
+                (m > (n := self.partitions))):
+            paddings = [0, 0, 0, m - n, 0, 0]
+            pc = torch.nn.functional.pad(pc, paddings)
+
+        return pc

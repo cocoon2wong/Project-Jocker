@@ -2,14 +2,13 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:19:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-23 19:46:35
+@LastEditTime: 2023-11-08 20:48:13
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
 """
 
 from qpid.args import DYNAMIC, STATIC, TEMPORARY, EmptyArgs
-from qpid.silverballers import AgentArgs
 
 
 class SocialCircleArgs(EmptyArgs):
@@ -79,3 +78,17 @@ class SocialCircleArgs(EmptyArgs):
             self.log(f'The number of partitions should be set properly. ' +
                      f'Received `{p}`.',
                      level='error', raiseError=ValueError)
+
+
+class PhysicalCircleArgs(EmptyArgs):
+
+    @property
+    def vision_radius(self) -> str:
+        """
+        Radius of the target-agent's vision field when constructing the 
+        PhysicalCircle. Radiuses are based on the length that the agent 
+        moves during the observation period.
+        It accepts multiple inputs that split with `'_'`, like `'0.5_1.0_1.5'`.
+
+        """
+        return self._arg('vision_radius', '0.5_1.0_2.0_4.0', argtype=STATIC)
