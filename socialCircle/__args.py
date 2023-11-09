@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:19:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-08 20:48:13
+@LastEditTime: 2023-11-09 18:27:41
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -91,4 +91,4 @@ class PhysicalCircleArgs(EmptyArgs):
         It accepts multiple inputs that split with `'_'`, like `'0.5_1.0_1.5'`.
 
         """
-        return self._arg('vision_radius', '0.5_1.0_2.0_4.0', argtype=STATIC)
+        return self._arg('vision_radius', '2.0', argtype=STATIC)

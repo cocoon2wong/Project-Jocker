@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-11-07 16:51:07
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-08 21:06:10
+@LastEditTime: 2023-11-09 14:47:49
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -16,9 +16,8 @@ from qpid.model import layers, transformer
 from qpid.silverballers import AgentArgs
 
 from .__args import PhysicalCircleArgs
-from .__layers import PhysicalCircleLayer, SocialCircleLayer
-from .ev_sc import EVSCModel, EVSCStructure
 from .__base import BaseSocialCircleModel, BaseSocialCircleStructure
+from .__layers import PhysicalCircleLayer, SocialCircleLayer
 
 
 class EVSPCModel(BaseSocialCircleModel):
@@ -58,21 +57,18 @@ class EVSPCModel(BaseSocialCircleModel):
                                     use_direction=self.sc_args.use_direction,
                                     relative_velocity=self.sc_args.rel_speed,
                                     use_move_direction=self.sc_args.use_move_direction)
-        self.ts = tslayer((self.args.obs_frames, self.sc.dim))
-        self.tse = layers.TrajEncoding(self.sc.dim, self.d//2, torch.nn.ReLU,
-                                       transform_layer=self.ts)
-
         # PhysicalCircle encoding
         self.pc = PhysicalCircleLayer(partitions=self.sc_args.partitions,
                                       max_partitions=self.args.obs_frames,
                                       vision_radius=self.pc_args.vision_radius)
-        self.tp = tslayer((self.args.obs_frames, self.pc.dim))
-        self.tpe = layers.TrajEncoding(self.pc.dim, self.d//2, torch.nn.ReLU,
-                                       transform_layer=self.tp)
+
+        self.ts = tslayer((self.args.obs_frames, self.sc.dim + self.pc.dim))
+        self.tse = layers.TrajEncoding(self.sc.dim + self.pc.dim,
+                                       self.d//2, torch.nn.ReLU,
+                                       transform_layer=self.ts)
 
         # Concat and fuse SC
-        self.concat_fc = layers.Dense(
-            self.d+self.d//2, self.d//2, torch.nn.Tanh)
+        self.concat_fc = layers.Dense(self.d, self.d//2, torch.nn.Tanh)
 
         # Shapes
         self.Tsteps_en, self.Tchannels_en = self.t1.Tshape
@@ -131,13 +127,15 @@ class EVSPCModel(BaseSocialCircleModel):
         c_nei = self.picker.get_center(nei)[..., :2]
         c_unpro_pos = self.picker.get_center(unprocessed_pos)[..., :2]
 
-        # Compute and encode the SocialCircle
+        # Compute the SocialCircle
         social_circle, f_direction = self.sc(c_obs, c_nei)
-        f_social = self.tse(social_circle)    # (batch, steps, d/2)
 
-        # Compute and encode the PhysicalCircle
+        # Compute the PhysicalCircle
         physical_circle = self.pc(seg_maps, seg_map_paras, c_obs, c_unpro_pos)
-        f_physical = self.tpe(physical_circle)  # (batch, steps, d/2)
+
+        # Encode the final social-physical circle
+        sp_circle = torch.concat([social_circle, physical_circle], dim=-1)
+        f_social = self.tse(sp_circle)      # (batch, steps, d/2)
 
         # Trajectory embedding and encoding
         f = self.te(obs)
@@ -147,7 +145,7 @@ class EVSPCModel(BaseSocialCircleModel):
         f_traj = self.outer_fc(f)       # (batch, steps, d/2)
 
         # Feature fusion
-        f_behavior = torch.concat([f_traj, f_social, f_physical], dim=-1)
+        f_behavior = torch.concat([f_traj, f_social], dim=-1)
         f_behavior = self.concat_fc(f_behavior)
 
         # Sampling random noise vectors
@@ -185,7 +183,7 @@ class EVSPCModel(BaseSocialCircleModel):
             all_predictions.append(y)
 
         Y = torch.concat(all_predictions, dim=-3)   # (batch, K, n_key, dim)
-        return Y, social_circle, f_direction
+        return Y, sp_circle, f_direction
 
 
 class EVSPCStructure(BaseSocialCircleStructure):
