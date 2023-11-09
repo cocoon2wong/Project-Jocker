@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-02 19:30:09
+@LastEditTime: 2023-11-09 09:43:47
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -10,6 +10,9 @@
 
 import os
 import sys
+
+sys.path.insert(0, os.path.abspath('.'))
+
 import tkinter as tk
 from copy import copy
 from tkinter import filedialog
@@ -19,10 +22,13 @@ import torch
 from matplotlib import pyplot as plt
 from utils import TK_BORDER_WIDTH, TK_TITLE_STYLE, TextboxHandler
 
-sys.path.insert(0, os.path.abspath('.'))
 import qpid
 from main import main
+from qpid.constant import INPUT_TYPES
 from qpid.utils import dir_check, get_mask, move_to_device
+
+OBS = INPUT_TYPES.OBSERVED_TRAJ
+NEI = INPUT_TYPES.NEIGHBOR_TRAJ
 
 DATASET = 'ETH-UCY'
 SPLIT = 'zara1'
@@ -48,12 +54,14 @@ class BetaToyExample():
 
     def init_model(self):
         self.t.create_model()
+        old_input_types = self.t.agent_manager.model_inputs
         self.t.agent_manager.set_types(self.t.model.input_types,
                                        self.t.label_types)
 
-        if self.input_and_gt is None:
-            ds = self.t.agent_manager.make(CLIP, training=False)
-            self.input_and_gt = [ds.dataset.inputs, ds.dataset.labels]
+        if self.input_and_gt is None or self.t.model.input_types != old_input_types:
+            self.t.log('Reloading dataset files...')
+            ds = self.t.agent_manager.clean().make(CLIP, training=False)
+            self.input_and_gt = list(ds)[0]
 
     def load_model(self, args: list[str]):
         try:
@@ -65,6 +73,9 @@ class BetaToyExample():
         except Exception as e:
             print(e)
 
+    def get_input_index(self, input_type: str):
+        return self.t.model.input_types.index(input_type)
+
     def run_on_agent(self, agent_index: int,
                      extra_neighbor_position=None):
 
@@ -73,7 +84,7 @@ class BetaToyExample():
 
         if (p := extra_neighbor_position) is not None:
             nei = self.add_one_neighbor(inputs, p)
-            inputs[1] = nei
+            inputs[self.get_input_index(NEI)] = nei
 
         self.forward(inputs)
         self.draw_results()
@@ -83,8 +94,8 @@ class BetaToyExample():
         '''
         Shape of `nei` should be `(1, max_agents, obs, 2)`
         '''
-        obs = inputs[0]
-        nei = inputs[1]
+        obs = inputs[self.get_input_index(OBS)]
+        nei = inputs[self.get_input_index(NEI)]
 
         nei = copy(nei.numpy())
         steps = nei.shape[-2]
@@ -122,8 +133,8 @@ class BetaToyExample():
         inputs = self.inputs
         outputs = self.outputs
 
-        obs = inputs[0][0].numpy()      # (obs, dim)
-        nei = inputs[1][0].numpy()      # (max_agents, obs, dim)
+        obs = inputs[self.get_input_index(OBS)][0].numpy()      # (obs, dim)
+        nei = inputs[self.get_input_index(NEI)][0].numpy()      # (a, obs, dim)
         out = outputs[0][0].numpy()
 
         c_obs = self.t.picker.get_center(obs)
@@ -133,7 +144,7 @@ class BetaToyExample():
         plt.figure()
 
         # draw neighbors
-        nei_count = self.get_neighbor_count(inputs[1])
+        nei_count = self.get_neighbor_count(inputs[self.get_input_index(NEI)])
         _nei = c_nei[:nei_count, :, :] + c_obs[np.newaxis, -1, :]
         plt.plot(_nei[:, -1, 0], _nei[:, -1, 1], 'o',
                  color='darkorange', markersize=13)
@@ -192,7 +203,7 @@ def run_prediction(t: BetaToyExample,
     social_circle.config(text=str(sc.T))
 
     # All neighbors' angles
-    count = t.get_neighbor_count(t.inputs[1])
+    count = t.get_neighbor_count(t.inputs[t.get_input_index(NEI)])
     na = t.outputs[1][2].numpy()[0][:count]
     nei_angles.config(text=str(na*180/np.pi))
 
@@ -293,9 +304,9 @@ if __name__ == '__main__':
     logbar.pack()
 
     # Init model and training structure
-    def args(path): return ['main.py', '--model', 'MKII',
-                            '--loada', path,
-                            '--loadb', 'speed',
+    def args(path): return ['main.py',
+                            '--sc', path,
+                            '-bs', '4000',
                             '--force_dataset', DATASET,
                             '--force_split', SPLIT,
                             '--force_clip', CLIP]
