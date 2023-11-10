@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:52:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-08 20:30:38
+@LastEditTime: 2023-11-10 09:18:27
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -20,8 +20,8 @@ from .trans_sc import TransformerSCModel, TransformerSCStructure
 from .v_sc import VSCModel, VSCStructure
 
 # Add new args
-__qpid.register_new_args(SocialCircleArgs, 'SocialCircle Args', __package__)
-__qpid.register_new_args(PhysicalCircleArgs, 'PhysicalCircle Args', __package__)
+__qpid.register_new_args(SocialCircleArgs, 'SocialCircle Args')
+__qpid.register_new_args(PhysicalCircleArgs, 'PhysicalCircle Args')
 __qpid.args.add_arg_alias('--sc', ['--model', 'MKII', '-lb', 'speed', '-la'])
 
 # Register new models
