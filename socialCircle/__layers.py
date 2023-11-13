@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 14:55:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-09 19:27:04
+@LastEditTime: 2023-11-13 19:43:54
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -224,6 +224,7 @@ class PhysicalCircleLayer(torch.nn.Module):
                 angle_mask = (angle_indices == ang).to(torch.float32)
                 final_mask = radius_mask * angle_mask
 
+                # Compute the minimum distance factor
                 _d = (0 * map_safe_mask +
                       (1 - map_safe_mask) * final_mask * ((distances + MU) / (_maps + MU)))
 
@@ -248,3 +249,26 @@ class PhysicalCircleLayer(torch.nn.Module):
             pc = torch.nn.functional.pad(pc, paddings)
 
         return pc
+
+    def rotate(self, circle: torch.Tensor, angles: torch.Tensor) -> torch.Tensor:
+        """
+        Rotate the physicalCircle. (Usually used after preprocess operations.)
+        """
+        # Rotate the circle <=> left or right shift the circle
+        # Compute shift length
+        angles = angles % (2*np.pi)
+        partition_angle = (2*np.pi) / (self.partitions)
+        move_length = (angles // partition_angle).to(torch.int32)
+
+        # Remove paddings
+        valid_circle = circle[..., :self.partitions, :]
+        valid_circle = torch.concat([valid_circle, valid_circle], dim=-2)
+        paddings = circle[..., self.partitions:, :]
+
+        # Shift each circle
+        rotated_circles = []
+        for _circle, _move in zip(valid_circle, move_length):
+            rotated_circles.append(_circle[_move:self.partitions+_move])
+
+        rotated_circles = torch.stack(rotated_circles, dim=0)
+        return torch.concat([rotated_circles, paddings], dim=-2)

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-11-07 16:51:07
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-13 14:47:28
+@LastEditTime: 2023-11-13 19:41:44
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -12,7 +12,7 @@ import torch
 
 import qpid
 from qpid.constant import INPUT_TYPES
-from qpid.model import layers, transformer
+from qpid.model import layers, process, transformer
 from qpid.silverballers import AgentArgs
 
 from .__args import PhysicalCircleArgs
@@ -118,8 +118,10 @@ class EVSPCModel(BaseSocialCircleModel):
         seg_map_paras = inputs[3]       # (batch, 4)
 
         # Get unprocessed positions from the `MOVE` layer
-        unprocessed_pos = self.processor.get_submodule(
-            'process_layer_0').ref_points
+        if (m_layer := self.processor.get_layer_by_type(process.Move)):
+            unprocessed_pos = m_layer.ref_points
+        else:
+            unprocessed_pos = torch.zeros_like(obs[..., -1:, :])
 
         # Start computing the SocialCircle
         # SocialCircle will be computed on each agent's center point
@@ -135,6 +137,10 @@ class EVSPCModel(BaseSocialCircleModel):
             seg_maps = torch.zeros_like(seg_maps)
 
         physical_circle = self.pc(seg_maps, seg_map_paras, c_obs, c_unpro_pos)
+
+        # Rotate the PhysicalCircle (if needed)
+        if (r_layer := self.processor.get_layer_by_type(process.Rotate)):
+            physical_circle = self.pc.rotate(physical_circle, r_layer.angles)
 
         # Encode the final social-physical circle
         sp_circle = torch.concat([social_circle, physical_circle], dim=-1)
