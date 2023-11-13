@@ -309,7 +309,7 @@ if __name__ == '__main__':
                             '-bs', '4000',
                             '--force_dataset', DATASET,
                             '--force_split', SPLIT,
-                            '--force_clip', CLIP]
+                            '--force_clip', CLIP] + sys.argv
 
     qpid.set_log_path(LOG_PATH)
     qpid.set_log_stream_handler(TextboxHandler(logbar))
