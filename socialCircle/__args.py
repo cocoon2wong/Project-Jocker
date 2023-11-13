@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:19:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-09 18:27:41
+@LastEditTime: 2023-11-13 14:45:59
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -92,3 +92,13 @@ class PhysicalCircleArgs(EmptyArgs):
 
         """
         return self._arg('vision_radius', '2.0', argtype=STATIC)
+
+    @property
+    def use_empty_seg_maps(self) -> int:
+        """
+        Choose whether to use empty segmentation maps when computing the
+        PhysicalCircle. The empty segmentation map means that EVERYWHERE
+        in the scene are available for walking.
+        This arg is only used when runing ablation studies.
+        """
+        return self._arg('use_empty_seg_maps', 0, argtype=TEMPORARY)

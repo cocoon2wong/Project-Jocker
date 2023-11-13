@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-11-07 16:51:07
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-09 14:47:49
+@LastEditTime: 2023-11-13 14:47:28
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -131,6 +131,9 @@ class EVSPCModel(BaseSocialCircleModel):
         social_circle, f_direction = self.sc(c_obs, c_nei)
 
         # Compute the PhysicalCircle
+        if self.pc_args.use_empty_seg_maps:
+            seg_maps = torch.zeros_like(seg_maps)
+
         physical_circle = self.pc(seg_maps, seg_map_paras, c_obs, c_unpro_pos)
 
         # Encode the final social-physical circle
