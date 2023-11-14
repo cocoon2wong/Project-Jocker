@@ -28,6 +28,7 @@ def main(args: list[str], run_train_or_test=True):
         h_value = get_value('-h', args, default='all_args')
 
     if h_value:
+        from qpid.mods import vis
         qpid.print_help_info(h_value)
         exit()
 

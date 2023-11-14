@@ -258,6 +258,15 @@ About the `argtype`:
   Choose whether to use the velocity factor in the SocialCircle. 
   The default value is `1`.
 
+### PhysicalCircle Args
+
+- `--use_empty_seg_maps`: type=`int`, argtype=`temporary`.
+  Choose whether to use empty segmentation maps when computing the PhysicalCircle. The empty segmentation map means that EVERYWHERE in the scene is available for walking. This arg is only used when running ablation studies. 
+  The default value is `0`.
+- `--vision_radius`: type=`str`, argtype=`static`.
+  The radius of the target agent's vision field when constructing the PhysicalCircle. Radiuses are based on the length that the agent moves during the observation period. It accepts multiple inputs that split with `'_'`, like `'0.5_1.0_1.5'`. 
+  The default value is `2.0`.
+
 ### Visualization Args
 
 - `--draw_distribution`: type=`int`, argtype=`temporary`.

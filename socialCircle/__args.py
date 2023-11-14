@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:19:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-13 14:45:59
+@LastEditTime: 2023-11-14 09:37:56
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -85,7 +85,7 @@ class PhysicalCircleArgs(EmptyArgs):
     @property
     def vision_radius(self) -> str:
         """
-        Radius of the target-agent's vision field when constructing the 
+        The radius of the target agent's vision field when constructing the 
         PhysicalCircle. Radiuses are based on the length that the agent 
         moves during the observation period.
         It accepts multiple inputs that split with `'_'`, like `'0.5_1.0_1.5'`.
@@ -98,7 +98,7 @@ class PhysicalCircleArgs(EmptyArgs):
         """
         Choose whether to use empty segmentation maps when computing the
         PhysicalCircle. The empty segmentation map means that EVERYWHERE
-        in the scene are available for walking.
-        This arg is only used when runing ablation studies.
+        in the scene is available for walking.
+        This arg is only used when running ablation studies.
         """
         return self._arg('use_empty_seg_maps', 0, argtype=TEMPORARY)
