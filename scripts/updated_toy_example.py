@@ -1,30 +1,31 @@
 """
-@Author: ***
+@Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
-@LastEditors: Ziqian Zou
-@LastEditTime: 2023-11-25 13:59:25
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-11-27 20:53:42
 @Description: file content
-@Github: ***
-@Copyright 2023 ***, All Rights Reserved.
+@Github: https://cocoon2wong.github.io
+@Copyright 2023 Conghao Wong, All Rights Reserved.
 """
 
 import os
 import sys
-
-sys.path.insert(0, os.path.abspath('.'))
-
 import tkinter as tk
-from copy import copy
+from copy import copy, deepcopy
 from tkinter import filedialog
+from typing import Any
 
 import numpy as np
 import torch
-from matplotlib import pyplot as plt
 from utils import TK_BORDER_WIDTH, TK_TITLE_STYLE, TextboxHandler
+
+sys.path.insert(0, os.path.abspath('.'))
 
 import qpid
 from main import main
 from qpid.constant import INPUT_TYPES
+from qpid.dataset.agent_based import Agent
+from qpid.mods import vis
 from qpid.utils import dir_check, get_mask, move_to_device
 
 OBS = INPUT_TYPES.OBSERVED_TRAJ
@@ -33,37 +34,96 @@ NEI = INPUT_TYPES.NEIGHBOR_TRAJ
 DATASET = 'ETH-UCY'
 SPLIT = 'zara1'
 CLIP = 'zara1'
-MODEL_PATH = 'weights/evsczara1_vis'
+MODEL_PATH = 'weights/Silverbullet-Torch/evsczara1_vis'
 
 TEMP_IMG_PATH = './temp_files/socialcircle_toy_example/fig.png'
+TEMP_RGB_IMG_PATH = './temp_files/socialcircle_toy_example/fig_rgb.png'
 LOG_PATH = './temp_files/socialcircle_toy_example/run.log'
+
+DRAW_MODE_PLT = 'PLT'
+DRAW_MODE_QPID = 'INTERACTIVE'
+DRAW_MODES_ALL = [DRAW_MODE_QPID, DRAW_MODE_PLT]
+
+MAX_HEIGHT = 480
+MAX_WIDTH = 640
+
+MARK_CIRCLE_RADIUS = 3
+MARKER_RADIUS = 5
 
 dir_check(os.path.dirname(LOG_PATH))
 
 
-class BetaToyExample():
+class SocialCircleToy():
     def __init__(self, args: list[str]) -> None:
-        self.t: qpid.training.Structure = None
-        self.image: tk.PhotoImage = None
+        # Manager objects
+        self.t: qpid.training.Structure | None = None
+        self.image: tk.PhotoImage | None = None
+        self.vis_mgr: vis.Visualization | None = None
 
-        self.inputs: list[torch.Tensor] = None
-        self.outputs: list[torch.Tensor] = None
-        self.input_and_gt: list[list[torch.Tensor]] = None
+        # Data containers
+        self.inputs: list[torch.Tensor] | None = None
+        self.outputs: list[torch.Tensor] | None = None
+        self.input_and_gt: list[list[torch.Tensor]] | None = None
 
+        # Settings
+        self.draw_mode_count = 0
+        self.click_count = 0
+        self.marker_count: int | None = None
+
+        # Variables
+        self.image_scale = 1.0
+        self.image_margin = [0.0, 0.0]
+
+        # Try to load models from the init args
         self.load_model(args)
 
+        # TK variables
+        self.tk_vars: dict[str, tk.StringVar] = {}
+        self.tk_vars['agent_id'] = tk.StringVar(value='1195')
+        for i in ['px0', 'py0', 'px1', 'py1']:
+            self.tk_vars[i] = tk.StringVar()
+
+    @property
+    def draw_mode(self) -> str:
+        return DRAW_MODES_ALL[self.draw_mode_count]
+
+    @property
+    def agents(self):
+        if self.t:
+            agents = self.t.agent_manager.agents
+        else:
+            raise ValueError(self.t)
+        return agents
+
     def init_model(self):
+        """
+        Init models and managers, then load all needed data.
+        """
+        if not self.t:
+            raise ValueError('Structure Not Initialized!')
+
+        # Create model(s)
         self.t.create_model()
         old_input_types = self.t.agent_manager.model_inputs
         self.t.agent_manager.set_types(self.t.model.input_types,
                                        self.t.label_types)
 
+        # Load dataset files
         if self.input_and_gt is None or self.t.model.input_types != old_input_types:
             self.t.log('Reloading dataset files...')
             ds = self.t.agent_manager.clean().make(CLIP, training=False)
             self.input_and_gt = list(ds)[0]
 
+        # Create vis manager
+        if not self.vis_mgr:
+            self.vis_mgr = vis.Visualization(manager=self.t,
+                                             dataset=self.t.args.force_dataset,
+                                             clip=self.t.args.force_clip)
+
     def load_model(self, args: list[str]):
+        """
+        Create new models and training structures from the given args.
+        """
         try:
             t = main(args, run_train_or_test=False)
             self.t = t
@@ -74,10 +134,15 @@ class BetaToyExample():
             print(e)
 
     def get_input_index(self, input_type: str):
+        if not self.t:
+            raise ValueError
         return self.t.model.input_types.index(input_type)
 
     def run_on_agent(self, agent_index: int,
                      extra_neighbor_position=None):
+
+        if not self.input_and_gt:
+            raise ValueError
 
         inputs = self.input_and_gt[0]
         inputs = [i[agent_index][None] for i in inputs]
@@ -87,7 +152,31 @@ class BetaToyExample():
             inputs[self.get_input_index(NEI)] = nei
 
         self.forward(inputs)
-        self.draw_results()
+
+        # Draw results on images
+        m = self.draw_mode
+        if m == DRAW_MODE_QPID:
+            self.draw_results(agent_index, draw_with_plt=False,
+                              image_save_path=TEMP_RGB_IMG_PATH,
+                              resize_image=True)
+        elif m == DRAW_MODE_PLT:
+            self.draw_results(agent_index, draw_with_plt=True,
+                              image_save_path=TEMP_IMG_PATH,
+                              resize_image=False)
+        else:
+            raise ValueError(m)
+
+    def get_neighbor_count(self, neighbor_obs: torch.Tensor):
+        '''
+        Input's shape should be `(1, max_agents, obs, dim)`.
+        '''
+        nei = neighbor_obs[0]
+
+        if issubclass(type(nei), np.ndarray):
+            nei = torch.from_numpy(nei)
+
+        nei_mask = get_mask(torch.sum(nei, dim=[-1, -2]))
+        return int(torch.sum(nei_mask))
 
     def add_one_neighbor(self, inputs: list[torch.Tensor],
                          position: list[tuple[float, float]]):
@@ -112,300 +201,236 @@ class BetaToyExample():
         return torch.from_numpy(nei)
 
     def forward(self, inputs: list[torch.Tensor]):
+        if not self.t:
+            raise ValueError
+
         self.inputs = inputs
         with torch.no_grad():
             self.outputs = self.t.model.implement(inputs, training=False)
         self.outputs = move_to_device(self.outputs, self.t.device_cpu)
 
-    def get_neighbor_count(self, neighbor_obs: torch.Tensor):
-        '''
-        Input's shape should be `(1, max_agents, obs, dim)`.
-        '''
-        nei = neighbor_obs[0]
+    def switch_draw_mode(self, label: tk.Label | None = None):
+        self.draw_mode_count += 1
+        self.draw_mode_count %= len(DRAW_MODES_ALL)
 
-        if issubclass(type(nei), np.ndarray):
-            nei = torch.from_numpy(nei)
+        if label:
+            label.config(text=f'Mode: {self.draw_mode}')
 
-        nei_mask = get_mask(torch.sum(nei, dim=[-1, -2]))
-        return int(torch.sum(nei_mask))
+    def draw_results(self, agent_index: int,
+                     draw_with_plt: bool,
+                     image_save_path: str,
+                     resize_image=False):
 
-    def draw_results(self):
-        global neighbors, neighbors_traj, agent_center, predictions
-        inputs = self.inputs
-        outputs = self.outputs
+        if ((not self.inputs) or
+            (not self.outputs) or
+            (not self.vis_mgr) or
+                (not self.t)):
+            raise ValueError
 
-        obs = inputs[self.get_input_index(OBS)][0].numpy()      # (obs, dim)
-        nei = inputs[self.get_input_index(NEI)][0].numpy()      # (a, obs, dim)
-        out = outputs[0][0].numpy()
+        # Write predicted trajectories and new neighbors to the agent
+        agent = Agent().load_data(
+            deepcopy(self.agents[agent_index].zip_data()))
+        agent.manager = self.t.agent_manager
 
-        c_obs = self.t.picker.get_center(obs)
-        c_nei = self.t.picker.get_center(nei)
-        c_out = self.t.picker.get_center(out)
+        agent.write_pred(self.outputs[0].numpy()[0])
 
-        plt.figure()
+        nei = self.inputs[self.get_input_index(NEI)]
+        obs = self.inputs[self.get_input_index(OBS)]
+        agent.neighbor_number = self.get_neighbor_count(nei)
+        agent._traj_neighbor = nei[0].numpy(
+        )[:agent.neighbor_number] + obs[0].numpy()[..., -1:, :]
+        self.vis_mgr.draw(agent=agent,
+                          frames=[agent.frames[self.t.args.obs_frames-1]],
+                          save_name=image_save_path,
+                          save_name_with_frame=False,
+                          save_as_images=True,
+                          draw_with_plt=draw_with_plt)
+        del agent
 
-        # draw neighbors
-        nei_count = self.get_neighbor_count(inputs[self.get_input_index(NEI)])
-        _nei = c_nei[:nei_count, :, :] + c_obs[np.newaxis, -1, :]
-        neighbors = _nei
-        plt.plot(_nei[:, -1, 0], _nei[:, -1, 1], 'o',
-                 color='darkorange', markersize=13)
+        # Resize the image
+        if resize_image:
+            import cv2
+            f = cv2.imread(image_save_path)
+            h, w = f.shape[:2]
+            if ((h > MAX_HEIGHT) and (h/w >= MAX_HEIGHT/MAX_WIDTH)):
+                self.image_scale = h / MAX_HEIGHT
+                self.image_margin = [0, (MAX_WIDTH - w/self.image_scale)//2]
+            elif ((w > MAX_WIDTH) and (h/w <= MAX_HEIGHT/MAX_WIDTH)):
+                self.image_scale = w / MAX_WIDTH
+                self.image_margin = [(MAX_HEIGHT - h/self.image_scale)//2, 0]
+            else:
+                raise ValueError
 
-        # draw neighbors' trajectories
-        _nei = np.reshape(_nei, [-1, 2])
-        neighbors_traj = _nei
-        plt.plot(_nei[:, 0], _nei[:, 1], 's', color='purple')
+            f = cv2.resize(f, [int(w//self.image_scale),
+                               int(h//self.image_scale)])
+            _p = os.path.join(os.path.dirname(image_save_path),
+                              'resized_' + os.path.basename(image_save_path))
+            cv2.imwrite(_p, f)
+            image_save_path = _p
 
-        # draw observations
-        agent_center = c_obs
-        plt.plot(c_obs[:, 0], c_obs[:, 1], 's', color='cornflowerblue')
+        self.image = tk.PhotoImage(file=image_save_path)
 
-        # draw predictions
-        predictions = c_out
-        for pred in c_out:
-            plt.plot(pred[:, 0], pred[:, 1], 's')
+    def click(self, event: tk.Event, canvas: tk.Canvas):
 
-        plt.axis('equal')
-        save_dir = os.path.dirname(TEMP_IMG_PATH)
-        dir_check(save_dir)
-        plt.savefig(TEMP_IMG_PATH)
-        plt.close()
-        self.image = tk.PhotoImage(file=TEMP_IMG_PATH)
+        if ((not self.draw_mode == DRAW_MODE_QPID)
+                or (not self.vis_mgr)):
+            return
 
+        r = MARK_CIRCLE_RADIUS
 
-def run_prediction(t: BetaToyExample,
-                   agent_id: tk.StringVar,
-                   px0: tk.StringVar,
-                   py0: tk.StringVar,
-                   px1: tk.StringVar,
-                   py1: tk.StringVar,
-                   canvas: tk.Canvas,
-                   social_circle: tk.Label,
-                   nei_angles: tk.Label):
-    canvas.delete('all')
-    if (px0 and py0 and px0 and py0 and
-        len(x0 := px0.get()) and len(y0 := py0.get()) and
-            len(x1 := px1.get()) and len(y1 := py1.get())):
-        extra_neighbor = [[float(x0), float(y0)],
-                          [float(x1), float(y1)]]
-        t.t.log('Start running with an addition neighbor' +
-                f'from {extra_neighbor[0]} to {extra_neighbor[1]}...')
-    else:
-        extra_neighbor = None
-        t.t.log('Start running without any manual inputs...')
+        [x, y] = [event.x, event.y]
+        [px, py] = self.vis_mgr.pixel2real(
+            self.image_scale * np.array([[y - self.image_margin[0],
+                                          x - self.image_margin[1]]]))[0]
 
-    t.run_on_agent(int(agent_id.get()),
-                   extra_neighbor_position=extra_neighbor)
-    
-    # canvas.create_image(320, 240, image=t.image)
-    # Draw axis X and Y
-    canvas.create_line(70, 440, 570, 440)  # X
-    canvas.create_line(70, 440, 70, 40)  # Y
+        if self.click_count == 0:
+            canvas.delete('click_point')
+            canvas.create_text(x - 2, y - 20 - 2, text='START',
+                               anchor=tk.N, fill='black')
+            canvas.create_text(x, y - 20, text='START',
+                               anchor=tk.N, fill='white')
+            canvas.create_oval(x - r, y - r, x + r, y + r,
+                               fill='red', tags='click_point')
+            self.click_count = 1
+            self.tk_vars['px0'].set(px)
+            self.tk_vars['py0'].set(py)
 
-    # X轴刻度
-    for i in range(-5, 26, 1):
-        x = 150 + (i * 16)
-        canvas.create_line(x, 440, x, 435)
-        canvas.create_text(x, 445, text=str(i), anchor=tk.N)
+        elif self.click_count == 1:
+            canvas.create_text(x - 2, y - 20 - 2, text='END',
+                               anchor=tk.N, fill='black')
+            canvas.create_text(x, y - 20, text='END',
+                               anchor=tk.N, fill='white')
+            canvas.create_oval(x - r, y - r, x + r, y + r,
+                               fill='blue', tags='click_point')
+            self.click_count = 0
+            self.tk_vars['px1'].set(px)
+            self.tk_vars['py1'].set(py)
 
-    # Y轴刻度
-    for i in range(-5, 21, 1):
-        y = 360 - (i * 16)
-        canvas.create_line(70, y, 75, y)
-        canvas.create_text(65, y, text=str(i), anchor=tk.E)
+        else:
+            raise ValueError
 
-    # draw neighbors
-    a = np.append(np.vstack(neighbors[:, -1, 0]), np.vstack(neighbors[:, -1, 1]), axis = 1).tolist()
-    b = []
-    for i in range(len(a)):
-        b.append(tuple(a[i]))
-    for x, y in b:
-        canvas_x = 150 + (x * 16)
-        canvas_y = 360 - (y * 16)
-        canvas.create_oval(canvas_x - 3, canvas_y - 3, canvas_x + 3, canvas_y + 3, fill='orange')
+    def hover(self, event: tk.Event, canvas: tk.Canvas):
+        """
+        Draw a dot to the canvas when hovering on it.
+        """
+        if not self.draw_mode == DRAW_MODE_QPID:
+            return
 
-    # draw neighbors' trajectories
-    a = np.append(np.vstack(neighbors_traj[:, 0]), np.vstack(neighbors_traj[:, 1]), axis = 1).tolist()
-    b = []
-    for i in range(len(a)):
-        b.append(tuple(a[i]))
-    for x, y in b:
-        canvas_x = 150 + (x * 16)
-        canvas_y = 360 - (y * 16)
-        canvas.create_oval(canvas_x - 1, canvas_y - 1, canvas_x + 1, canvas_y + 1, fill='purple')
+        if self.marker_count is not None:
+            canvas.delete(self.marker_count)
 
-    # draw observations
-    a = np.append(np.vstack(agent_center[:, 0]), np.vstack(agent_center[:, 1]), axis = 1).tolist()
-    b = []
-    for i in range(len(a)):
-        b.append(tuple(a[i]))
-    for x, y in b:
-        canvas_x = 150 + (x * 16)
-        canvas_y = 360 - (y * 16)
-        canvas.create_oval(canvas_x - 2, canvas_y - 2, canvas_x + 2, canvas_y + 2, fill='blue')
+        self.marker_count = canvas.create_oval(event.x - MARKER_RADIUS,
+                                               event.y - MARKER_RADIUS,
+                                               event.x + MARKER_RADIUS,
+                                               event.y + MARKER_RADIUS,
+                                               fill='green')
 
-    # draw predictions
-    for pred in predictions:
-        a = np.append(np.vstack(pred[:, 0]), np.vstack(pred[:, 1]), axis = 1).tolist()
-        b = []
-        for i in range(len(a)):
-            b.append(tuple(a[i]))
-        for x, y in b:
-            canvas_x = 150 + (x * 16)
-            canvas_y = 360 - (y * 16)
-            canvas.create_oval(canvas_x - 2, canvas_y - 2, canvas_x + 2, canvas_y + 2, fill='green')
+    def run_prediction(self, with_manual_neighbor: bool,
+                       canvas: tk.Canvas,
+                       social_circle: tk.Label,
+                       nei_angles: tk.Label):
 
+        if self.t is None:
+            raise ValueError(self.t)
 
-    time = int(1000 * t.t.model.inference_times[-1])
-    t.t.log(f'Running done. Time cost = {time} ms.')
+        # Check if the manual neighbor exists
+        if (with_manual_neighbor
+            and len(x0 := self.tk_vars['px0'].get())
+            and len(y0 := self.tk_vars['py0'].get())
+            and len(x1 := self.tk_vars['px1'].get())
+                and len(y1 := self.tk_vars['py1'].get())):
 
-    # Set numpy format
-    np.set_printoptions(formatter={'float': '{:0.3f}'.format})
+            extra_neighbor = [[float(x0), float(y0)],
+                              [float(x1), float(y1)]]
+            self.t.log('Start running with an addition neighbor' +
+                       f'from {extra_neighbor[0]} to {extra_neighbor[1]}...')
+        else:
+            extra_neighbor = None
+            self.t.log('Start running without any manual inputs...')
 
-    # SocialCircle
-    sc = t.outputs[1][1].numpy()[0]
-    social_circle.config(text=str(sc.T))
+        # Run the prediction model
+        self.run_on_agent(int(self.tk_vars['agent_id'].get()),
+                          extra_neighbor_position=extra_neighbor)
 
-    # All neighbors' angles
-    count = t.get_neighbor_count(t.inputs[t.get_input_index(NEI)])
-    na = t.outputs[1][2].numpy()[0][:count]
-    nei_angles.config(text=str(na*180/np.pi))
+        # Show the visualized image
+        if self.image:
+            canvas.create_image(MAX_WIDTH//2 + self.image_margin[1]//2,
+                                MAX_HEIGHT//2 + self.image_margin[0]//2,
+                                image=self.image)
 
-# Define transform function
-def transform_coordinates(x, y):
-    global x_cor, y_cor
-    x_cor = round((x - 150)/16, 1)
-    y_cor = round((-(y - 360)/16), 1)
-    return x_cor, y_cor
+        # Print model outputs
+        time = int(1000 * self.t.model.inference_times[-1])
+        self.t.log(f'Running done. Time cost = {time} ms.')
 
-# Click to set new neighbor
-def on_canvas_click(event):
-    global click_count, px0, py0, px1, py1
-    radius = 3
-    if click_count == 0:
-        canvas.create_oval(event.x - radius, event.y - radius, event.x + radius, event.y + radius, fill='red', tags='click_point')
-        x_cor, y_cor = transform_coordinates(event.x, event.y)
-        px0.set(x_cor)
-        py0.set(y_cor)
-        click_count = 1
-    elif click_count == 1:
-        canvas.create_oval(event.x - radius, event.y - radius, event.x + radius, event.y + radius, fill='blue', tags='click_point')
-        x_cor, y_cor = transform_coordinates(event.x, event.y)
-        px1.set(x_cor)
-        py1.set(y_cor)
-        click_count = 0
+        # Set numpy format
+        np.set_printoptions(formatter={'float': '{:0.3f}'.format})
 
-# Change cursor to dot when hover on canvas
-def on_canvas_move(event):
-    global hover_circle
-    radius = 5
-    canvas.delete(hover_circle)  # 删除上一个临时圆点
-    hover_circle = canvas.create_oval(event.x - radius, event.y - radius, event.x + radius, event.y + radius, fill='green')
+        if (not self.outputs) or (not self.inputs):
+            return
 
-# Clear canvas when click refresh button
-def clear_canvas():
-    canvas.delete('click_point')
-    px0.set("")
-    py0.set("")
-    px1.set("")
-    py1.set("")
+        # Print the SocialCircle
+        sc = self.outputs[1][1].numpy()[0]
+        social_circle.config(text=str(sc.T))
+
+        # Print all neighbors' angles
+        count = self.get_neighbor_count(self.inputs[self.get_input_index(NEI)])
+        na = self.outputs[1][2].numpy()[0][:count]
+        nei_angles.config(text=str(na*180/np.pi))
+
+    def clear_canvas(self, canvas: tk.Canvas):
+        """
+        Clear canvas when click refresh button
+        """
+        canvas.delete('click_point')
+        self.tk_vars['px0'].set("")
+        self.tk_vars['py0'].set("")
+        self.tk_vars['px1'].set("")
+        self.tk_vars['py1'].set("")
 
 
 if __name__ == '__main__':
 
     root = tk.Tk()
     root.title('Toy Example of SocialCircle Models')
-    
-    click_count = 0
-    hover_circle = None
 
+    """
+    Configs
+    """
     # Left column
-    l_args = {
+    l_args: dict[str, Any] = {
         # 'background': '#FFFFFF',
         'border': TK_BORDER_WIDTH,
     }
 
-    left_frame = tk.Frame(root, **l_args)
-    left_frame.grid(row=0, column=0, sticky=tk.NW)
-
-    tk.Label(left_frame, text='Settings',
-             **TK_TITLE_STYLE, **l_args).grid(
-                 column=0, row=0, sticky=tk.W)
-
-    agent_id = tk.StringVar(left_frame, '1195')
-    tk.Label(left_frame, text='Agent ID', **l_args).grid(
-        column=0, row=1)
-    tk.Entry(left_frame, textvariable=agent_id).grid(
-        column=0, row=2)
-
-    px0 = tk.StringVar(left_frame)
-    tk.Label(left_frame, text='New Neighbor (x-axis, start)', **l_args).grid(
-        column=0, row=3)
-    tk.Entry(left_frame, textvariable=px0).grid(
-        column=0, row=4)
-
-    py0 = tk.StringVar(left_frame)
-    tk.Label(left_frame, text='New Neighbor (y-axis, start)', **l_args).grid(
-        column=0, row=5)
-    tk.Entry(left_frame,  textvariable=py0).grid(
-        column=0, row=6)
-
-    px1 = tk.StringVar(left_frame)
-    tk.Label(left_frame, text='New Neighbor (x-axis, end)', **l_args).grid(
-        column=0, row=7)
-    tk.Entry(left_frame, textvariable=px1).grid(
-        column=0, row=8)
-
-    py1 = tk.StringVar(left_frame)
-    tk.Label(left_frame, text='New Neighbor (y-axis, end)', **l_args).grid(
-        column=0, row=9)
-    tk.Entry(left_frame,  textvariable=py1).grid(
-        column=0, row=10)
-
     # Right Column
-    r_args = {
+    r_args: dict[str, Any] = {
         'background': '#FFFFFF',
         'border': TK_BORDER_WIDTH,
     }
-    t_args = {
+    t_args: dict[str, Any] = {
         'foreground': '#000000',
     }
 
-    right_frame = tk.Frame(root, **r_args)
-    right_frame.grid(row=0, column=1, sticky=tk.NW, rowspan=2)
+    # Button Frame
+    b_args = {
+        # 'background': '#FFFFFF',
+        # 'border': TK_BORDER_WIDTH,
+    }
 
-    tk.Label(right_frame, text='Predictions',
-             **TK_TITLE_STYLE, **r_args, **t_args).grid(
-                 column=0, row=0, sticky=tk.W)
+    """
+    Init base frames
+    """
+    (LF := tk.Frame(root, **l_args)).grid(
+        row=0, column=0, sticky=tk.NW)
+    (RF := tk.Frame(root, **r_args)).grid(
+        row=0, column=1, sticky=tk.NW, rowspan=2)
+    (BF := tk.Frame(root, **b_args)).grid(
+        row=1, column=0, sticky=tk.N)
 
-    tk.Label(right_frame, text='Model Path:', width=16, anchor=tk.E, **r_args, **t_args).grid(
-        column=0, row=1)
-    (model_path := tk.Label(right_frame, width=60, wraplength=510,
-                            text=MODEL_PATH, **r_args, **t_args)).grid(
-        column=1, row=1)
-
-    tk.Label(right_frame, text='Social Circle:', width=16, anchor=tk.E, **r_args, **t_args).grid(
-        column=0, row=2)
-    (sc := tk.Label(right_frame, width=60, **r_args, **t_args)).grid(
-        column=1, row=2)
-
-    tk.Label(right_frame, text='Neighbor Angles:', width=16, anchor=tk.E, **r_args, **t_args).grid(
-        column=0, row=3)
-    (angles := tk.Label(right_frame, width=60, **r_args, **t_args)).grid(
-        column=1, row=3)
-
-    canvas = tk.Canvas(right_frame, width=640, height=480, **r_args)
-    canvas.grid(column=0, row=4, columnspan=2)
-    # (canvas_label := tk.Label(right_frame, **r_args, **t_args)).grid(
-    #     column=0, row=4, columnspan=2)
-    
-    # canvas = tk.Canvas(right_frame, width=640, height=480)
-    # canvas.grid(column=0, row=4, columnspan=2)
-    canvas.bind("<Button-1>", on_canvas_click)
-    canvas.bind("<Motion>", on_canvas_move)
-
-    # Log frame
-    log_frame = tk.Frame(right_frame, **r_args)
+    """
+    Init the log window
+    """
+    log_frame = tk.Frame(RF, **r_args)
     log_frame.grid(column=0, row=5, columnspan=2)
 
     logbar = tk.Text(log_frame, width=89, height=7, **r_args, **t_args)
@@ -414,46 +439,100 @@ if __name__ == '__main__':
     logbar.config(yscrollcommand=scroll.set)
     logbar.pack()
 
-    # Init model and training structure
+    """
+    Init the Training Structure
+    """
     def args(path): return ['main.py',
                             '--sc', path,
                             '-bs', '4000',
+                            '--draw_full_neighbors', '1',
                             '--force_dataset', DATASET,
                             '--force_split', SPLIT,
                             '--force_clip', CLIP] + sys.argv
 
     qpid.set_log_path(LOG_PATH)
     qpid.set_log_stream_handler(TextboxHandler(logbar))
-    toy = BetaToyExample(args(MODEL_PATH))
+    toy = SocialCircleToy(args(MODEL_PATH))
 
-    # Button Frame
-    b_args = {
-        # 'background': '#FFFFFF',
-        # 'border': TK_BORDER_WIDTH,
-    }
+    """
+    Init TK Components
+    """
+    tk.Label(LF, text='Settings', **TK_TITLE_STYLE, **l_args).grid(
+        column=0, row=0, sticky=tk.W)
 
-    button_frame = tk.Frame(root, **b_args)
-    button_frame.grid(column=0, row=1, sticky=tk.N)
+    tk.Label(LF, text='Agent ID', **l_args).grid(
+        column=0, row=1)
+    tk.Entry(LF, textvariable=toy.tk_vars['agent_id']).grid(
+        column=0, row=2)
 
-    tk.Button(button_frame, text='Run Prediction',
-              command=lambda: run_prediction(
-                  toy, agent_id, px0, py0, px1, py1,
-                  canvas, sc, angles), **b_args).grid(
+    tk.Label(LF, text='New Neighbor (x-axis, start)', **l_args).grid(
+        column=0, row=3)
+    tk.Entry(LF, textvariable=toy.tk_vars['px0']).grid(
+        column=0, row=4)
+
+    tk.Label(LF, text='New Neighbor (y-axis, start)', **l_args).grid(
+        column=0, row=5)
+    tk.Entry(LF,  textvariable=toy.tk_vars['py0']).grid(
+        column=0, row=6)
+
+    tk.Label(LF, text='New Neighbor (x-axis, end)', **l_args).grid(
+        column=0, row=7)
+    tk.Entry(LF, textvariable=toy.tk_vars['px1']).grid(
+        column=0, row=8)
+
+    tk.Label(LF, text='New Neighbor (y-axis, end)', **l_args).grid(
+        column=0, row=9)
+    tk.Entry(LF,  textvariable=toy.tk_vars['py1']).grid(
+        column=0, row=10)
+
+    tk.Label(RF, text='Predictions', **TK_TITLE_STYLE, **r_args, **t_args).grid(
+        column=0, row=0, sticky=tk.W)
+
+    tk.Label(RF, text='Model Path:', width=16, anchor=tk.E, **r_args, **t_args).grid(
+        column=0, row=1)
+    (model_path := tk.Label(RF, width=60, wraplength=510,
+                            text=MODEL_PATH, **r_args, **t_args)).grid(
+        column=1, row=1)
+
+    tk.Label(RF, text='Social Circle:', width=16, anchor=tk.E, **r_args, **t_args).grid(
+        column=0, row=2)
+    (sc := tk.Label(RF, width=60, **r_args, **t_args)).grid(
+        column=1, row=2)
+
+    tk.Label(RF, text='Neighbor Angles:', width=16, anchor=tk.E, **r_args, **t_args).grid(
+        column=0, row=3)
+    (angles := tk.Label(RF, width=60, **r_args, **t_args)).grid(
+        column=1, row=3)
+
+    (canvas := tk.Canvas(RF, width=MAX_WIDTH, height=MAX_HEIGHT, **r_args)).grid(
+        column=0, row=4, columnspan=2)
+    canvas.bind("<Motion>", lambda e: toy.hover(e, canvas))
+    canvas.bind("<Button-1>", lambda e: toy.click(e, canvas))
+
+    tk.Button(BF, text='Run Prediction',
+              command=lambda: toy.run_prediction(
+                  True, canvas, sc, angles), **b_args).grid(
         column=0, row=10, sticky=tk.N)
 
-    tk.Button(button_frame, text='Run Prediction (original)',
-              command=lambda: run_prediction(
-                  toy, agent_id, None, None, None, None,
-                  canvas, sc, angles), **b_args).grid(
+    tk.Button(BF, text='Run Prediction (original)',
+              command=lambda: toy.run_prediction(
+                  False, canvas, sc, angles), **b_args).grid(
         column=0, row=11, sticky=tk.N)
 
-    tk.Button(button_frame, text='Reload Model Weights',
+    tk.Button(BF, text='Reload Model Weights',
               command=lambda: [toy.load_model(args(p := filedialog.askdirectory(initialdir=os.path.dirname(MODEL_PATH)))),
                                model_path.config(text=p)]).grid(
         column=0, row=12, sticky=tk.N)
-    
-    tk.Button(button_frame, text='Clear Canvas',
-              command=lambda: clear_canvas()).grid(
+
+    tk.Button(BF, text='Clear Manual Inputs',
+              command=lambda: toy.clear_canvas(canvas)).grid(
         column=0, row=13, sticky=tk.N)
+
+    (mode_label := tk.Label(BF, text=f'Mode: {toy.draw_mode}', **l_args)).grid(
+        column=0, row=15)
+
+    tk.Button(BF, text='Switch Mode',
+              command=lambda: toy.switch_draw_mode(mode_label)).grid(
+        column=0, row=14, sticky=tk.N)
 
     root.mainloop()
