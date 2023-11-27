@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
-@LastEditors: Conghao Wong
-@LastEditTime: 2023-11-27 20:53:42
+@LastEditors: Ziqian Zou
+@LastEditTime: 2023-11-27 21:46:55
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -285,9 +285,10 @@ class SocialCircleToy():
 
         if self.click_count == 0:
             canvas.delete('click_point')
-            canvas.create_text(x - 2, y - 20 - 2, text='START',
+            canvas.delete('indicator')
+            canvas.create_text(x - 2, y - 20 - 2, text='START', tags='indicator',
                                anchor=tk.N, fill='black')
-            canvas.create_text(x, y - 20, text='START',
+            canvas.create_text(x, y - 20, text='START', tags='indicator',
                                anchor=tk.N, fill='white')
             canvas.create_oval(x - r, y - r, x + r, y + r,
                                fill='red', tags='click_point')
@@ -296,9 +297,9 @@ class SocialCircleToy():
             self.tk_vars['py0'].set(py)
 
         elif self.click_count == 1:
-            canvas.create_text(x - 2, y - 20 - 2, text='END',
+            canvas.create_text(x - 2, y - 20 - 2, text='END', tags='indicator',
                                anchor=tk.N, fill='black')
-            canvas.create_text(x, y - 20, text='END',
+            canvas.create_text(x, y - 20, text='END', tags='indicator',
                                anchor=tk.N, fill='white')
             canvas.create_oval(x - r, y - r, x + r, y + r,
                                fill='blue', tags='click_point')
