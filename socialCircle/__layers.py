@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 14:55:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-13 19:43:54
+@LastEditTime: 2023-11-21 09:22:55
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -11,7 +11,7 @@
 import numpy as np
 import torch
 
-from qpid.mods.segMaps.settings import NORMALIZED_SIZE
+NORMALIZED_SIZE = None
 from qpid.utils import get_mask
 
 INF = 1000000000
@@ -160,6 +160,8 @@ class PhysicalCircleLayer(torch.nn.Module):
                  *args, **kwargs):
 
         super().__init__(*args, **kwargs)
+
+        from qpid.mods.segMaps.settings import NORMALIZED_SIZE
 
         self.partitions = partitions
         self.max_partitions = max_partitions
