@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
-@LastEditors: Ziqian Zou
-@LastEditTime: 2023-11-27 21:46:55
+@LastEditors: Conghao Wong
+@LastEditTime: 2023-11-28 11:44:21
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -17,19 +17,21 @@ from typing import Any
 
 import numpy as np
 import torch
+from PIL import Image, ImageTk
 from utils import TK_BORDER_WIDTH, TK_TITLE_STYLE, TextboxHandler
 
 sys.path.insert(0, os.path.abspath('.'))
 
 import qpid
 from main import main
-from qpid.constant import INPUT_TYPES
+from qpid.constant import DATASET_CONFIGS, INPUT_TYPES
 from qpid.dataset.agent_based import Agent
 from qpid.mods import vis
-from qpid.utils import dir_check, get_mask, move_to_device
+from qpid.utils import dir_check, get_mask, get_relative_path, move_to_device
 
 OBS = INPUT_TYPES.OBSERVED_TRAJ
 NEI = INPUT_TYPES.NEIGHBOR_TRAJ
+SEG = INPUT_TYPES.SEG_MAP
 
 DATASET = 'ETH-UCY'
 SPLIT = 'zara1'
@@ -42,13 +44,17 @@ LOG_PATH = './temp_files/socialcircle_toy_example/run.log'
 
 DRAW_MODE_PLT = 'PLT'
 DRAW_MODE_QPID = 'INTERACTIVE'
-DRAW_MODES_ALL = [DRAW_MODE_QPID, DRAW_MODE_PLT]
+DRAW_MODE_QPID_PHYSICAL = 'INTERACTIVE(PHYSICAL)'
+DRAW_MODES_ALL = [DRAW_MODE_QPID, DRAW_MODE_PLT, DRAW_MODE_QPID_PHYSICAL]
+
+OBSTACLE_IMAGE_PATH = get_relative_path(__file__, 'mask.png')
 
 MAX_HEIGHT = 480
 MAX_WIDTH = 640
 
-MARK_CIRCLE_RADIUS = 3
+MARKER_CIRCLE_RADIUS = 3
 MARKER_RADIUS = 5
+MARKER_TAG = 'indicator'
 
 dir_check(os.path.dirname(LOG_PATH))
 
@@ -58,6 +64,8 @@ class SocialCircleToy():
         # Manager objects
         self.t: qpid.training.Structure | None = None
         self.image: tk.PhotoImage | None = None
+        self.image_shape = None
+        self.mask_image: ImageTk.PhotoImage | None = None
         self.vis_mgr: vis.Visualization | None = None
 
         # Data containers
@@ -148,14 +156,23 @@ class SocialCircleToy():
         inputs = [i[agent_index][None] for i in inputs]
 
         if (p := extra_neighbor_position) is not None:
-            nei = self.add_one_neighbor(inputs, p)
-            inputs[self.get_input_index(NEI)] = nei
+            if self.draw_mode in [DRAW_MODE_PLT, DRAW_MODE_QPID]:
+                nei = self.add_one_neighbor(inputs, p)
+                inputs[self.get_input_index(NEI)] = nei
+
+            elif self.draw_mode == DRAW_MODE_QPID_PHYSICAL:
+                try:
+                    seg_map = inputs[self.get_input_index(SEG)]
+                    seg_map = self.add_obstacle(seg_map)
+                    inputs[self.get_input_index(SEG)] = seg_map
+                except ValueError:
+                    pass
 
         self.forward(inputs)
 
         # Draw results on images
         m = self.draw_mode
-        if m == DRAW_MODE_QPID:
+        if m in [DRAW_MODE_QPID, DRAW_MODE_QPID_PHYSICAL]:
             self.draw_results(agent_index, draw_with_plt=False,
                               image_save_path=TEMP_RGB_IMG_PATH,
                               resize_image=True)
@@ -199,6 +216,41 @@ class SocialCircleToy():
         nei_count = self.get_neighbor_count(nei)
         nei[0, nei_count] = traj - obs.numpy()[0, -1:, :]
         return torch.from_numpy(nei)
+
+    def add_obstacle(self, seg_map: torch.Tensor):
+        """
+        Add a rectangle obstacle to the segmentation map.
+
+        :param seg_map: Seg map, shape = (..., 100, 100).
+        """
+        if not self.t:
+            raise ValueError
+
+        from qpid.mods.segMaps.settings import NORMALIZED_SIZE
+
+        r = []
+        for _i in ['0', '1']:
+            for _j in ['px', 'py']:
+                r.append(NORMALIZED_SIZE *
+                         int(float(self.tk_vars[_j + _i].get())))
+
+        if not self.image_shape:
+            seg_img_path = self.t.agent_manager.split_manager.\
+                clips_dict[self.t.args.force_clip].\
+                other_files[DATASET_CONFIGS.RGB_IMG]
+            img = Image.open(seg_img_path)
+            self.image_shape = img.size
+            img.close()
+
+        xs = [int(r[0]/self.image_shape[1]), int(r[2]/self.image_shape[1])]
+        ys = [int(r[1]/self.image_shape[0]), int(r[3]/self.image_shape[0])]
+
+        xs.sort()
+        ys.sort()
+
+        new_map = deepcopy(seg_map)
+        new_map[..., xs[0]:xs[1], ys[0]:ys[1]] = 1.0
+        return new_map
 
     def forward(self, inputs: list[torch.Tensor]):
         if not self.t:
@@ -270,42 +322,70 @@ class SocialCircleToy():
 
         self.image = tk.PhotoImage(file=image_save_path)
 
+    def draw_obstacle(self, canvas: tk.Canvas):
+        # Get saved positions (image/pixel)
+        res = []
+        for _i in ['0', '1']:
+            for _j in ['px', 'py']:
+                _r = self.tk_vars[_j + _i].get()
+                if not len(_r):
+                    return
+
+                res.append(float(_r))
+
+        # Transform to canvas positions (canvas/pixel)
+        x0_cp, y0_cp = self.image_pixel_to_canvas_pixel(*res[:2])
+        x1_cp, y1_cp = self.image_pixel_to_canvas_pixel(*res[2:])
+
+        _dx, _dy = (abs(int(x1_cp - x0_cp)), abs(int(y1_cp - y0_cp)))
+        img = Image.open(OBSTACLE_IMAGE_PATH).resize((_dx, _dy))
+        self.mask_image = ImageTk.PhotoImage(img)
+        canvas.create_image(min(x0_cp, x1_cp) + _dx // 2,
+                            min(y0_cp, y1_cp) + _dy // 2,
+                            image=self.mask_image)
+
     def click(self, event: tk.Event, canvas: tk.Canvas):
 
-        if ((not self.draw_mode == DRAW_MODE_QPID)
+        if ((not self.draw_mode in [DRAW_MODE_QPID,
+                                    DRAW_MODE_QPID_PHYSICAL])
                 or (not self.vis_mgr)):
             return
 
-        r = MARK_CIRCLE_RADIUS
-
-        [x, y] = [event.x, event.y]
-        [px, py] = self.vis_mgr.pixel2real(
-            self.image_scale * np.array([[y - self.image_margin[0],
-                                          x - self.image_margin[1]]]))[0]
+        x, y = [event.x, event.y]
+        x_ip, y_ip = self.canvas_pixel_to_image_pixel(x, y)
+        x_ir, y_ir = self.image_pixel_to_image_real(x_ip, y_ip)
 
         if self.click_count == 0:
-            canvas.delete('click_point')
-            canvas.delete('indicator')
-            canvas.create_text(x - 2, y - 20 - 2, text='START', tags='indicator',
-                               anchor=tk.N, fill='black')
-            canvas.create_text(x, y - 20, text='START', tags='indicator',
-                               anchor=tk.N, fill='white')
-            canvas.create_oval(x - r, y - r, x + r, y + r,
-                               fill='red', tags='click_point')
+            clear_indicator(canvas)
+            draw_indicator(canvas, x, y, 'red', text='START')
             self.click_count = 1
-            self.tk_vars['px0'].set(px)
-            self.tk_vars['py0'].set(py)
+
+            if self.draw_mode == DRAW_MODE_QPID:
+                self.tk_vars['px0'].set(str(x_ir))
+                self.tk_vars['py0'].set(str(y_ir))
+
+            elif self.draw_mode == DRAW_MODE_QPID_PHYSICAL:
+                self.tk_vars['px0'].set(str(x_ip))
+                self.tk_vars['py0'].set(str(y_ip))
+
+            else:
+                pass
 
         elif self.click_count == 1:
-            canvas.create_text(x - 2, y - 20 - 2, text='END', tags='indicator',
-                               anchor=tk.N, fill='black')
-            canvas.create_text(x, y - 20, text='END', tags='indicator',
-                               anchor=tk.N, fill='white')
-            canvas.create_oval(x - r, y - r, x + r, y + r,
-                               fill='blue', tags='click_point')
+            draw_indicator(canvas, x, y, 'blue', text='END')
             self.click_count = 0
-            self.tk_vars['px1'].set(px)
-            self.tk_vars['py1'].set(py)
+
+            if self.draw_mode == DRAW_MODE_QPID:
+                self.tk_vars['px1'].set(str(x_ir))
+                self.tk_vars['py1'].set(str(y_ir))
+
+            elif self.draw_mode == DRAW_MODE_QPID_PHYSICAL:
+                self.tk_vars['px1'].set(str(x_ip))
+                self.tk_vars['py1'].set(str(y_ip))
+                self.draw_obstacle(canvas)
+
+            else:
+                pass
 
         else:
             raise ValueError
@@ -314,7 +394,8 @@ class SocialCircleToy():
         """
         Draw a dot to the canvas when hovering on it.
         """
-        if not self.draw_mode == DRAW_MODE_QPID:
+        if not self.draw_mode in [DRAW_MODE_QPID,
+                                  DRAW_MODE_QPID_PHYSICAL]:
             return
 
         if self.marker_count is not None:
@@ -326,7 +407,7 @@ class SocialCircleToy():
                                                event.y + MARKER_RADIUS,
                                                fill='green')
 
-    def run_prediction(self, with_manual_neighbor: bool,
+    def run_prediction(self, with_manual_inputs: bool,
                        canvas: tk.Canvas,
                        social_circle: tk.Label,
                        nei_angles: tk.Label):
@@ -335,7 +416,7 @@ class SocialCircleToy():
             raise ValueError(self.t)
 
         # Check if the manual neighbor exists
-        if (with_manual_neighbor
+        if (with_manual_inputs
             and len(x0 := self.tk_vars['px0'].get())
             and len(y0 := self.tk_vars['py0'].get())
             and len(x1 := self.tk_vars['px1'].get())
@@ -345,6 +426,7 @@ class SocialCircleToy():
                               [float(x1), float(y1)]]
             self.t.log('Start running with an addition neighbor' +
                        f'from {extra_neighbor[0]} to {extra_neighbor[1]}...')
+
         else:
             extra_neighbor = None
             self.t.log('Start running without any manual inputs...')
@@ -358,6 +440,9 @@ class SocialCircleToy():
             canvas.create_image(MAX_WIDTH//2 + self.image_margin[1]//2,
                                 MAX_HEIGHT//2 + self.image_margin[0]//2,
                                 image=self.image)
+
+        if self.draw_mode == DRAW_MODE_QPID_PHYSICAL:
+            self.draw_obstacle(canvas)
 
         # Print model outputs
         time = int(1000 * self.t.model.inference_times[-1])
@@ -382,11 +467,48 @@ class SocialCircleToy():
         """
         Clear canvas when click refresh button
         """
-        canvas.delete('click_point')
+        clear_indicator(canvas)
         self.tk_vars['px0'].set("")
         self.tk_vars['py0'].set("")
         self.tk_vars['px1'].set("")
         self.tk_vars['py1'].set("")
+
+    def canvas_pixel_to_image_pixel(self, x: float, y: float) -> tuple[float, float]:
+        return (self.image_scale * (y - self.image_margin[0]),
+                self.image_scale * (x - self.image_margin[1]))
+
+    def image_pixel_to_image_real(self, x: float, y: float) -> tuple[float, float]:
+        if not self.vis_mgr:
+            raise ValueError
+        return self.vis_mgr.pixel2real(np.array([[x, y]]))[0]
+
+    def image_pixel_to_canvas_pixel(self, x: float, y: float) -> tuple[float, float]:
+        return (y / self.image_scale + self.image_margin[1],
+                x / self.image_scale + self.image_margin[0])
+
+
+def draw_indicator(canvas: tk.Canvas,
+                   x: float, y: float,
+                   color: str,
+                   text: str | None = None):
+    """
+    Draw a circle indicator on the canvas.
+    """
+    if text:
+        canvas.create_text(x - 2, y - 20 - 2, text=text,
+                           tags=MARKER_TAG, anchor=tk.N, fill='black')
+        canvas.create_text(x, y - 20, text=text,
+                           tags=MARKER_TAG, anchor=tk.N, fill='white')
+
+    canvas.create_oval(x - MARKER_CIRCLE_RADIUS,
+                       y - MARKER_CIRCLE_RADIUS,
+                       x + MARKER_CIRCLE_RADIUS,
+                       y + MARKER_CIRCLE_RADIUS,
+                       fill=color, tags=MARKER_TAG)
+
+
+def clear_indicator(canvas: tk.Canvas):
+    canvas.delete(MARKER_TAG)
 
 
 if __name__ == '__main__':
