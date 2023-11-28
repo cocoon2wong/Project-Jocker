@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-28 11:44:21
+@LastEditTime: 2023-11-28 15:36:15
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -43,8 +43,8 @@ TEMP_RGB_IMG_PATH = './temp_files/socialcircle_toy_example/fig_rgb.png'
 LOG_PATH = './temp_files/socialcircle_toy_example/run.log'
 
 DRAW_MODE_PLT = 'PLT'
-DRAW_MODE_QPID = 'INTERACTIVE'
-DRAW_MODE_QPID_PHYSICAL = 'INTERACTIVE(PHYSICAL)'
+DRAW_MODE_QPID = 'Interactive (SC)'
+DRAW_MODE_QPID_PHYSICAL = 'Interactive (PC)'
 DRAW_MODES_ALL = [DRAW_MODE_QPID, DRAW_MODE_PLT, DRAW_MODE_QPID_PHYSICAL]
 
 OBSTACLE_IMAGE_PATH = get_relative_path(__file__, 'mask.png')
@@ -71,7 +71,9 @@ class SocialCircleToy():
         # Data containers
         self.inputs: list[torch.Tensor] | None = None
         self.outputs: list[torch.Tensor] | None = None
+        self._agents: list = []
         self.input_and_gt: list[list[torch.Tensor]] | None = None
+        self.input_types = None
 
         # Settings
         self.draw_mode_count = 0
@@ -99,6 +101,12 @@ class SocialCircleToy():
     def agents(self):
         if self.t:
             agents = self.t.agent_manager.agents
+            if len(agents):
+                self._agents = agents
+            elif len(self._agents):
+                agents = self._agents
+            else:
+                raise ValueError('No Agent Data!')
         else:
             raise ValueError(self.t)
         return agents
@@ -112,14 +120,16 @@ class SocialCircleToy():
 
         # Create model(s)
         self.t.create_model()
-        old_input_types = self.t.agent_manager.model_inputs
+        old_input_types = self.input_types
+        self.input_types = self.t.model.input_types
         self.t.agent_manager.set_types(self.t.model.input_types,
                                        self.t.label_types)
 
         # Load dataset files
-        if self.input_and_gt is None or self.t.model.input_types != old_input_types:
+        if ((self.input_and_gt is None) or 
+                (self.input_types != old_input_types)):
             self.t.log('Reloading dataset files...')
-            ds = self.t.agent_manager.clean().make(CLIP, training=False)
+            ds = self.t.agent_manager.clean().make(self.t.args.force_clip, training=False)
             self.input_and_gt = list(ds)[0]
 
         # Create vis manager
@@ -135,6 +145,9 @@ class SocialCircleToy():
         try:
             t = main(args, run_train_or_test=False)
             self.t = t
+            self.t.args._set_default('force_dataset', DATASET)
+            self.t.args._set_default('force_split', SPLIT)
+            self.t.args._set_default('force_clip', CLIP)
             self.init_model()
             self.t.log(
                 f'Model `{t.args.loada}` and dataset files ({CLIP}) loaded.')
@@ -268,6 +281,16 @@ class SocialCircleToy():
         if label:
             label.config(text=f'Mode: {self.draw_mode}')
 
+    def set_a_random_agent_id(self):
+        try:
+            n = len(self.agents)
+            if self.t:
+                n = min(n, self.t.args.batch_size)
+            i = np.random.randint(0, n)
+            self.tk_vars['agent_id'].set(str(i))
+        except:
+            pass
+
     def draw_results(self, agent_index: int,
                      draw_with_plt: bool,
                      image_save_path: str,
@@ -285,12 +308,10 @@ class SocialCircleToy():
         agent.manager = self.t.agent_manager
 
         agent.write_pred(self.outputs[0].numpy()[0])
+        agent.traj_neighbor = self.inputs[self.get_input_index(NEI)][0].numpy()
+        agent.neighbor_number = self.get_neighbor_count(
+            agent.traj_neighbor[None])
 
-        nei = self.inputs[self.get_input_index(NEI)]
-        obs = self.inputs[self.get_input_index(OBS)]
-        agent.neighbor_number = self.get_neighbor_count(nei)
-        agent._traj_neighbor = nei[0].numpy(
-        )[:agent.neighbor_number] + obs[0].numpy()[..., -1:, :]
         self.vis_mgr.draw(agent=agent,
                           frames=[agent.frames[self.t.args.obs_frames-1]],
                           save_name=image_save_path,
@@ -437,9 +458,7 @@ class SocialCircleToy():
 
         # Show the visualized image
         if self.image:
-            canvas.create_image(MAX_WIDTH//2 + self.image_margin[1]//2,
-                                MAX_HEIGHT//2 + self.image_margin[0]//2,
-                                image=self.image)
+            canvas.create_image(MAX_WIDTH//2, MAX_HEIGHT//2, image=self.image)
 
         if self.draw_mode == DRAW_MODE_QPID_PHYSICAL:
             self.draw_obstacle(canvas)
@@ -568,10 +587,8 @@ if __name__ == '__main__':
     def args(path): return ['main.py',
                             '--sc', path,
                             '-bs', '4000',
-                            '--draw_full_neighbors', '1',
-                            '--force_dataset', DATASET,
-                            '--force_split', SPLIT,
-                            '--force_clip', CLIP] + sys.argv
+                            '--test_mode', 'one',
+                            '--draw_full_neighbors', '1'] + sys.argv
 
     qpid.set_log_path(LOG_PATH)
     qpid.set_log_stream_handler(TextboxHandler(logbar))
@@ -585,8 +602,13 @@ if __name__ == '__main__':
 
     tk.Label(LF, text='Agent ID', **l_args).grid(
         column=0, row=1)
-    tk.Entry(LF, textvariable=toy.tk_vars['agent_id']).grid(
+    (id_frame := tk.Frame(LF, **l_args)).grid(
         column=0, row=2)
+
+    tk.Entry(id_frame, textvariable=toy.tk_vars['agent_id'], width=10).grid(
+        column=0, row=0)
+    tk.Button(id_frame, text='Random', command=toy.set_a_random_agent_id).grid(
+        column=1, row=0)
 
     tk.Label(LF, text='New Neighbor (x-axis, start)', **l_args).grid(
         column=0, row=3)
