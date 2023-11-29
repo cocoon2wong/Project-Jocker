@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-11-07 16:51:07
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-13 19:41:44
+@LastEditTime: 2023-11-29 11:10:27
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -17,7 +17,7 @@ from qpid.silverballers import AgentArgs
 
 from .__args import PhysicalCircleArgs
 from .__base import BaseSocialCircleModel, BaseSocialCircleStructure
-from .__layers import PhysicalCircleLayer, SocialCircleLayer
+from .__layers import CircleFusionLayer, PhysicalCircleLayer, SocialCircleLayer
 
 
 class EVSPCModel(BaseSocialCircleModel):
@@ -60,10 +60,15 @@ class EVSPCModel(BaseSocialCircleModel):
         # PhysicalCircle encoding
         self.pc = PhysicalCircleLayer(partitions=self.sc_args.partitions,
                                       max_partitions=self.args.obs_frames,
+                                      use_velocity=self.sc_args.use_velocity,
+                                      use_distance=self.sc_args.use_distance,
+                                      use_direction=self.sc_args.use_direction,
                                       vision_radius=self.pc_args.vision_radius)
 
-        self.ts = tslayer((self.args.obs_frames, self.sc.dim + self.pc.dim))
-        self.tse = layers.TrajEncoding(self.sc.dim + self.pc.dim,
+        self.spc = CircleFusionLayer(self.sc)
+
+        self.ts = tslayer((self.args.obs_frames, self.sc.dim))
+        self.tse = layers.TrajEncoding(self.sc.dim,
                                        self.d//2, torch.nn.ReLU,
                                        transform_layer=self.ts)
 
@@ -142,8 +147,10 @@ class EVSPCModel(BaseSocialCircleModel):
         if (r_layer := self.processor.get_layer_by_type(process.Rotate)):
             physical_circle = self.pc.rotate(physical_circle, r_layer.angles)
 
+        # Fuse circles
+        sp_circle = self.spc(social_circle, physical_circle)
+
         # Encode the final social-physical circle
-        sp_circle = torch.concat([social_circle, physical_circle], dim=-1)
         f_social = self.tse(sp_circle)      # (batch, steps, d/2)
 
         # Trajectory embedding and encoding

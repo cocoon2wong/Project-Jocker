@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 14:55:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-21 09:22:55
+@LastEditTime: 2023-11-29 11:04:10
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -11,8 +11,9 @@
 import numpy as np
 import torch
 
-NORMALIZED_SIZE = None
 from qpid.utils import get_mask
+
+NORMALIZED_SIZE = None
 
 INF = 1000000000
 SAFE_THRESHOLDS = 0.05
@@ -156,7 +157,10 @@ class PhysicalCircleLayer(torch.nn.Module):
 
     def __init__(self, partitions: int,
                  max_partitions: int,
-                 vision_radius: str,
+                 use_velocity: bool | int = True,
+                 use_distance: bool | int = True,
+                 use_direction: bool | int = True,
+                 vision_radius: float = 2.0,
                  *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -166,7 +170,11 @@ class PhysicalCircleLayer(torch.nn.Module):
         self.partitions = partitions
         self.max_partitions = max_partitions
 
-        self.radius = [float(r) for r in vision_radius.split('_') if len(r)]
+        self.use_velocity = use_velocity
+        self.use_distance = use_distance
+        self.use_direction = use_direction
+
+        self.radius = vision_radius
 
         # Compute all pixels' indices
         xs, ys = torch.meshgrid(torch.arange(NORMALIZED_SIZE),
@@ -180,7 +188,9 @@ class PhysicalCircleLayer(torch.nn.Module):
         """
         The number of PhysicalCircle factors.
         """
-        return len(self.radius)
+        return (int(self.use_velocity) +
+                int(self.use_distance) +
+                int(self.use_direction))
 
     def forward(self, seg_maps: torch.Tensor,
                 seg_map_paras: torch.Tensor,
@@ -216,34 +226,52 @@ class PhysicalCircleLayer(torch.nn.Module):
         angle_indices = (angles % (2*np.pi)) / (2*np.pi/self.partitions)
         angle_indices = angle_indices.to(torch.int32)
 
+        # Compute the `equivalent` distance
+        equ_dis = (distances + MU) / (_maps + MU)
+
+        # Compute the vision range
+        r = (self.radius * moving_length)[..., None]
+        radius_mask = (distances <= r).to(torch.float32)
+
         # Compute the PhysicalCircle
         pc = []
-        for r_times in self.radius:
-            r = (r_times * moving_length)[..., None]
-            radius_mask = (distances <= r).to(torch.float32)
+        for ang in range(self.partitions):
+            # Compute the partition's mask
+            angle_mask = (angle_indices == ang).to(torch.float32)
+            final_mask = radius_mask * angle_mask
 
-            for ang in range(self.partitions):
-                angle_mask = (angle_indices == ang).to(torch.float32)
-                final_mask = radius_mask * angle_mask
+            # Compute the minimum distance factor
+            d = (0 * map_safe_mask +
+                 (1 - map_safe_mask) * final_mask * (equ_dis))
 
-                # Compute the minimum distance factor
-                _d = (0 * map_safe_mask +
-                      (1 - map_safe_mask) * final_mask * ((distances + MU) / (_maps + MU)))
+            # Find the non-zero minimum value
+            zero_mask = (d == 0).to(torch.float32)
+            d = (torch.ones_like(d) * zero_mask * INF +
+                 d * (1 - zero_mask))
+            min_d, _ = torch.min(d, dim=-1)
 
-                # Find the non-zero minimum value
-                _zero_mask = (_d == 0).to(torch.float32)
-                _d = (torch.ones_like(_d) * _zero_mask * INF +
-                      _d * (1 - _zero_mask))
-                _min_d, _ = torch.min(_d, dim=-1)
+            # `d == INF` <=> there are no obstacles
+            obstacle_mask = (min_d < INF).to(torch.float32)
 
-                _min_mask = (_min_d < INF).to(torch.float32)
-                _min_d = _min_d * _min_mask
-                pc.append(_min_d)
+            # The velocity factor
+            if self.use_velocity:
+                f_velocity = moving_length * obstacle_mask
+                pc.append(f_velocity)
+
+            # The distance factor
+            if self.use_distance:
+                f_min_distance = min_d * obstacle_mask
+                pc.append(f_min_distance)
+
+            # The direction factor
+            if self.use_direction:
+                _angle = 2 * np.pi * (ang + 0.5) / self.partitions
+                f_direction = _angle * obstacle_mask
+                pc.append(f_direction)
 
         # Final return shape: (batch, max_partitions, dim)
         pc = torch.stack(pc, dim=-1)
-        pc = pc.reshape([-1, self.dim, self.partitions])
-        pc = torch.transpose(pc, -2, -1)
+        pc = pc.reshape([-1, self.partitions, self.dim])
 
         if (((m := self.max_partitions) is not None) and
                 (m > (n := self.partitions))):
@@ -274,3 +302,55 @@ class PhysicalCircleLayer(torch.nn.Module):
 
         rotated_circles = torch.stack(rotated_circles, dim=0)
         return torch.concat([rotated_circles, paddings], dim=-2)
+
+
+class CircleFusionLayer(torch.nn.Module):
+
+    def __init__(self, sclayer: SocialCircleLayer, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        self.max_partitions = sclayer.max_partitions
+        self.use_velocity = sclayer.use_velocity
+        self.use_distance = sclayer.use_distance
+        self.use_direction = sclayer.use_direction
+
+    def forward(self, sc: torch.Tensor, pc: torch.Tensor, *args, **kwargs):
+
+        index = -1
+        spc = []
+        if self.use_velocity:
+            index += 1
+            f_v_sc = sc[..., index]
+            f_v_pc = pc[..., index]
+            f_v_spc = torch.max(f_v_sc, f_v_pc)
+            spc.append(f_v_spc)
+
+        if self.use_distance:
+            index += 1
+            f_dis_sc = sc[..., index]
+            f_dis_pc = pc[..., index]
+
+            _sc_valid_mask = (f_dis_sc > MU).to(torch.float32)
+            _pc_valid_mask = (f_dis_pc > MU).to(torch.float32)
+            _cross_mask = _sc_valid_mask * _pc_valid_mask
+
+            f_dis_spc = (_cross_mask * torch.min(f_dis_sc, f_dis_pc) +
+                         (1 - _cross_mask) * torch.max(f_dis_sc, f_dis_pc))
+            spc.append(f_dis_spc)
+
+        if self.use_direction:
+            index += 1
+            f_dir_sc = sc[..., index]
+            f_dir_pc = pc[..., index]
+
+            _sc_valid_mask = (f_dir_sc > MU).to(torch.float32)
+            _pc_valid_mask = (f_dir_pc > MU).to(torch.float32)
+            _cross_mask = _sc_valid_mask * _pc_valid_mask
+
+            f_dir_spc = (_cross_mask * 0.5 * (f_dir_sc + f_dir_pc) +
+                         (1 - _cross_mask) * torch.max(f_dir_sc, f_dir_pc))
+            spc.append(f_dir_spc)
+
+        spc = torch.stack(spc, dim=-1)
+        return spc
