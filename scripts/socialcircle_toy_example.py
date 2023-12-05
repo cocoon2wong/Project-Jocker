@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-28 15:36:15
+@LastEditTime: 2023-12-05 16:51:01
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -89,7 +89,7 @@ class SocialCircleToy():
 
         # TK variables
         self.tk_vars: dict[str, tk.StringVar] = {}
-        self.tk_vars['agent_id'] = tk.StringVar(value='1195')
+        self.tk_vars['agent_id'] = tk.StringVar(value='0')
         for i in ['px0', 'py0', 'px1', 'py1']:
             self.tk_vars[i] = tk.StringVar()
 
@@ -121,7 +121,9 @@ class SocialCircleToy():
         # Create model(s)
         self.t.create_model()
         old_input_types = self.input_types
-        self.input_types = self.t.model.input_types
+        self.input_types = (self.t.model.input_types,
+                            self.t.args.obs_frames,
+                            self.t.args.pred_frames)
         self.t.agent_manager.set_types(self.t.model.input_types,
                                        self.t.label_types)
 
