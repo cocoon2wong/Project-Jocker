@@ -1,8 +1,8 @@
 """
 @Author: Conghao Wong
-@Date: 2023-11-07 16:51:07
+@Date: 2023-08-15 19:08:05
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-06 15:37:58
+@LastEditTime: 2023-12-06 16:49:55
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -19,7 +19,7 @@ from .__base import BaseSocialCircleModel, BaseSocialCircleStructure
 from .__layers import PhysicalCircleLayer, SocialCircleLayer
 
 
-class EVSPCModel(BaseSocialCircleModel):
+class VSPCModel(BaseSocialCircleModel):
 
     def __init__(self, Args: AgentArgs, as_single_model: bool = True,
                  structure=None, *args, **kwargs):
@@ -44,10 +44,10 @@ class EVSPCModel(BaseSocialCircleModel):
 
         # Trajectory encoding
         self.te = layers.TrajEncoding(self.dim, self.d//2,
-                                      torch.nn.ReLU,
+                                      torch.nn.Tanh,
                                       transform_layer=self.t1)
 
-        # SocialCircle (meta-components) and encoding
+        # SocialCircle (meta-components)
         tslayer, _ = layers.get_transform_layers(self.sc_args.Ts)
         self.sc = SocialCircleLayer(partitions=self.sc_args.partitions,
                                     max_partitions=self.args.obs_frames,
@@ -56,7 +56,8 @@ class EVSPCModel(BaseSocialCircleModel):
                                     use_direction=self.sc_args.use_direction,
                                     relative_velocity=self.sc_args.rel_speed,
                                     use_move_direction=self.sc_args.use_move_direction)
-        # PhysicalCircle (meta-components) and encoding
+
+        # PhysicalCircle (meta-components)
         self.pc = PhysicalCircleLayer(partitions=self.sc_args.partitions,
                                       max_partitions=self.args.obs_frames,
                                       vision_radius=self.pc_args.vision_radius)
@@ -70,19 +71,9 @@ class EVSPCModel(BaseSocialCircleModel):
         # Concat and fuse SC
         self.concat_fc = layers.Dense(self.d, self.d//2, torch.nn.Tanh)
 
-        # Shapes
+        # Steps and shapes after applying transforms
         self.Tsteps_en, self.Tchannels_en = self.t1.Tshape
         self.Tsteps_de, self.Tchannels_de = self.it1.Tshape
-
-        # Bilinear structure (outer product + pooling + fc)
-        # For trajectories
-        self.outer = layers.OuterLayer(self.d//2, self.d//2)
-        self.pooling = layers.MaxPooling2D((2, 2))
-        self.flatten = layers.Flatten(axes_num=2)
-        self.outer_fc = layers.Dense((self.d//4)**2, self.d//2, torch.nn.Tanh)
-
-        # Noise encoding
-        self.ie = layers.TrajEncoding(self.d_id, self.d//2, torch.nn.Tanh)
 
         # Transformer is used as a feature extractor
         self.T = transformer.Transformer(
@@ -103,6 +94,9 @@ class EVSPCModel(BaseSocialCircleModel):
         self.ms_fc = layers.Dense(self.d, self.args.Kc, torch.nn.Tanh)
         self.ms_conv = layers.GraphConv(self.d, self.d)
 
+        # Noise encoding
+        self.ie = layers.TrajEncoding(self.d_id, self.d//2, torch.nn.Tanh)
+
         # Decoder layers
         self.decoder_fc1 = layers.Dense(self.d, self.d, torch.nn.Tanh)
         self.decoder_fc2 = layers.Dense(self.d,
@@ -117,25 +111,25 @@ class EVSPCModel(BaseSocialCircleModel):
         seg_maps = inputs[2]            # (batch, h, w)
         seg_map_paras = inputs[3]       # (batch, 4)
 
+        if self.pc_args.use_empty_seg_maps:
+            seg_maps = torch.zeros_like(seg_maps)
+
         # Get unprocessed positions from the `MOVE` layer
         if (m_layer := self.processor.get_layer_by_type(process.Move)):
             unprocessed_pos = m_layer.ref_points
         else:
             unprocessed_pos = torch.zeros_like(obs[..., -1:, :])
 
-        # Start computing the SocialCircle
-        # SocialCircle will be computed on each agent's center point
+        # Start computing the InteractionCircle
+        # InteractionCircles will be computed on each agent's 2D center point
         c_obs = self.picker.get_center(obs)[..., :2]
         c_nei = self.picker.get_center(nei)[..., :2]
         c_unpro_pos = self.picker.get_center(unprocessed_pos)[..., :2]
 
         # Compute SocialCircle meta-components
-        social_circle, f_direction = self.sc(c_obs, c_nei)
+        social_circle, _ = self.sc(c_obs, c_nei)
 
         # Compute PhysicalCircle meta-components
-        if self.pc_args.use_empty_seg_maps:
-            seg_maps = torch.zeros_like(seg_maps)
-
         physical_circle = self.pc(seg_maps, seg_map_paras, c_obs, c_unpro_pos)
 
         # Rotate the PhysicalCircle (if needed)
@@ -146,12 +140,8 @@ class EVSPCModel(BaseSocialCircleModel):
         sp_circle = torch.concat([social_circle, physical_circle], dim=-1)
         f_social = self.tse(sp_circle)      # (batch, steps, d/2)
 
-        # Trajectory embedding and encoding
-        f = self.te(obs)
-        f = self.outer(f, f)
-        f = self.pooling(f)
-        f = self.flatten(f)
-        f_traj = self.outer_fc(f)       # (batch, steps, d/2)
+        # feature embedding and encoding -> (batch, obs, d/2)
+        f_traj = self.te(obs)
 
         # Feature fusion
         f_behavior = torch.concat([f_traj, f_social], dim=-1)
@@ -164,12 +154,12 @@ class EVSPCModel(BaseSocialCircleModel):
         traj_targets = self.t1(obs)
 
         for _ in range(repeats):
-            # Assign random ids and embedding -> (batch, steps, d)
+            # Assign random ids and embedding -> (batch, steps, d/2)
             z = torch.normal(mean=0, std=1,
                              size=list(f_behavior.shape[:-1]) + [self.d_id])
             f_z = self.ie(z.to(obs.device))
 
-            # (batch, steps, 2*d)
+            # Transformer inputs -> (batch, steps, d)
             f_final = torch.concat([f_behavior, f_z], dim=-1)
 
             # Transformer outputs' shape is (batch, steps, d)
@@ -191,9 +181,8 @@ class EVSPCModel(BaseSocialCircleModel):
             y = self.it1(y)
             all_predictions.append(y)
 
-        Y = torch.concat(all_predictions, dim=-3)   # (batch, K, n_key, dim)
-        return Y, sp_circle, f_direction
+        return torch.concat(all_predictions, dim=-3)   # (batch, K, n_key, dim)
 
 
-class EVSPCStructure(BaseSocialCircleStructure):
-    MODEL_TYPE = EVSPCModel
+class VSPCStructure(BaseSocialCircleStructure):
+    MODEL_TYPE = VSPCModel
