@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-05 16:51:01
+@LastEditTime: 2023-12-18 16:54:36
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -125,7 +125,7 @@ class SocialCircleToy():
                             self.t.args.obs_frames,
                             self.t.args.pred_frames)
         self.t.agent_manager.set_types(self.t.model.input_types,
-                                       self.t.label_types)
+                                       self.t.model.label_types)
 
         # Load dataset files
         if ((self.input_and_gt is None) or 
