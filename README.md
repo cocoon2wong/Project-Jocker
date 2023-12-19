@@ -95,6 +95,9 @@ About the `argtype`:
 - `--gpu`: type=`str`, argtype=`temporary`.
   Speed up training or test if you have at least one NVidia GPU. If you have no GPUs or want to run the code on your CPU, please set it to `-1`. NOTE: It only supports training or testing on one GPU. 
   The default value is `0`.
+- `--help` (short for `-h`): type=`str`, argtype=`temporary`.
+  Print help information on the screen. 
+  The default value is `null`.
 - `--interval`: type=`float`, argtype=`static`.
   Time interval of each sampled trajectory point. 
   The default value is `0.4`.
@@ -146,7 +149,7 @@ About the `argtype`:
 - `--split` (short for `-s`): type=`str`, argtype=`static`.
   The dataset split that used to train and evaluate. 
   The default value is `zara1`.
-- `--start_test_percent`: type=`float`, argtype=`static`.
+- `--start_test_percent`: type=`float`, argtype=`temporary`.
   Set when (at which epoch) to start validation during training. The range of this arg should be `0 <= x <= 1`. Validation may start at epoch `args.epochs * args.start_test_percent`. 
   The default value is `0.0`.
 - `--step`: type=`float`, argtype=`dynamic`.
@@ -155,7 +158,7 @@ About the `argtype`:
 - `--test_mode`: type=`str`, argtype=`temporary`.
   Test settings. It can be `'one'`, `'all'`, or `'mix'`. When setting it to `one`, it will test the model on the `args.force_split` only; When setting it to `all`, it will test on each of the test datasets in `args.split`; When setting it to `mix`, it will test on all test datasets in `args.split` together. 
   The default value is `mix`.
-- `--test_step`: type=`int`, argtype=`static`.
+- `--test_step`: type=`int`, argtype=`temporary`.
   Epoch interval to run validation during training. 
   The default value is `1`.
 - `--update_saved_args`: type=`int`, argtype=`temporary`.
@@ -277,6 +280,9 @@ About the `argtype`:
   The default value is `null`.
 - `--draw_extra_outputs`: type=`int`, argtype=`temporary`.
   Choose whether to draw (put text) extra model outputs on the visualized images. 
+  The default value is `0`.
+- `--draw_full_neighbors`: type=`int`, argtype=`temporary`.
+  Choose whether to draw the full observed trajectories of all neighbor agents or only the last trajectory point at the current observation moment. 
   The default value is `0`.
 - `--draw_index`: type=`str`, argtype=`temporary`.
   Indexes of test agents to visualize. Numbers are split with `_`. For example, `'123_456_789'`. 
