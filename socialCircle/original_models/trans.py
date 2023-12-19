@@ -2,7 +2,7 @@
 @Author: Beihao Xia
 @Date: 2023-03-20 16:15:25
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-02 19:27:39
+@LastEditTime: 2023-12-18 16:50:26
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Beihao Xia, All Rights Reserved.
@@ -37,8 +37,9 @@ class MinimalVModel(Model):
         # Preprocess
         self.set_preprocess(**{PROCESS_TYPES.MOVE: 0})
 
-        # Assign model inputs
+        # Assign input and label types
         self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ)
+        self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
 
         # Parameters
         self.args: AgentArgs
@@ -138,7 +139,6 @@ class MinimalV(Structure):
     def __init__(self, terminal_args: list[str]):
         super().__init__(AgentArgs(terminal_args))
         self.args: AgentArgs
-        self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
 
     def create_model(self, *args, **kwargs):
         self.model = MinimalVModel(self.args,
