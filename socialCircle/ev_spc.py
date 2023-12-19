@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-11-07 16:51:07
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-06 15:37:58
+@LastEditTime: 2023-12-19 16:37:31
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -10,30 +10,25 @@
 
 import torch
 
-from qpid.constant import INPUT_TYPES
 from qpid.model import layers, process, transformer
 from qpid.silverballers import AgentArgs
 
-from .__args import PhysicalCircleArgs
 from .__base import BaseSocialCircleModel, BaseSocialCircleStructure
 from .__layers import PhysicalCircleLayer, SocialCircleLayer
 
 
 class EVSPCModel(BaseSocialCircleModel):
 
+    include_socialCircle = True
+    include_physicalCircle = True
+
     def __init__(self, Args: AgentArgs, as_single_model: bool = True,
                  structure=None, *args, **kwargs):
 
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
 
-        # Init physicalCircle's args
-        self.pc_args = self.args.register_subargs(PhysicalCircleArgs, 'PCArgs')
-
-        # Assign model inputs
-        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
-                        INPUT_TYPES.NEIGHBOR_TRAJ,
-                        INPUT_TYPES.SEG_MAP,
-                        INPUT_TYPES.SEG_MAP_PARAS)
+        if not self.sc_args or not self.pc_args:
+            raise ValueError
 
         # Layers
         tlayer, itlayer = layers.get_transform_layers(self.args.T)
@@ -133,7 +128,7 @@ class EVSPCModel(BaseSocialCircleModel):
         social_circle, f_direction = self.sc(c_obs, c_nei)
 
         # Compute PhysicalCircle meta-components
-        if self.pc_args.use_empty_seg_maps:
+        if self.pc_args and self.pc_args.use_empty_seg_maps:
             seg_maps = torch.zeros_like(seg_maps)
 
         physical_circle = self.pc(seg_maps, seg_map_paras, c_obs, c_unpro_pos)

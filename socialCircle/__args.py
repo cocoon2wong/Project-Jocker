@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:19:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-14 09:37:56
+@LastEditTime: 2023-12-19 16:35:43
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -102,3 +102,7 @@ class PhysicalCircleArgs(EmptyArgs):
         This arg is only used when running ablation studies.
         """
         return self._arg('use_empty_seg_maps', 0, argtype=TEMPORARY)
+
+    @property
+    def use_seg_map_loss(self) -> int:
+        return self._arg('use_seg_map_loss', 0, argtype=STATIC)
