@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-18 16:54:36
+@LastEditTime: 2023-12-20 09:15:39
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -594,6 +594,10 @@ if __name__ == '__main__':
 
     qpid.set_log_path(LOG_PATH)
     qpid.set_log_stream_handler(TextboxHandler(logbar))
+    qpid.args.add_arg_alias(['-sdd', '-SDD'],
+                            ['--force_dataset', 'SDD',
+                             '--force_split', 'sdd',
+                             '--force_clip'])
     toy = SocialCircleToy(args(MODEL_PATH))
 
     """
