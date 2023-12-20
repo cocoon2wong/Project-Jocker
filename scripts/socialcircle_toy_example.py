@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-20 09:15:39
+@LastEditTime: 2023-12-20 09:53:28
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -65,6 +65,7 @@ class SocialCircleToy():
         self.t: qpid.training.Structure | None = None
         self.image: tk.PhotoImage | None = None
         self.image_shape = None
+        self.image_vis_scale = None 
         self.mask_image: ImageTk.PhotoImage | None = None
         self.vis_mgr: vis.Visualization | None = None
 
@@ -257,8 +258,14 @@ class SocialCircleToy():
             self.image_shape = img.size
             img.close()
 
-        xs = [int(r[0]/self.image_shape[1]), int(r[2]/self.image_shape[1])]
-        ys = [int(r[1]/self.image_shape[0]), int(r[3]/self.image_shape[0])]
+        if not self.image_vis_scale:
+            s = self.t.agent_manager.split_manager.scale_vis
+            self.image_vis_scale = s
+
+        xs = [int(self.image_vis_scale * r[0]/self.image_shape[1]), 
+              int(self.image_vis_scale * r[2]/self.image_shape[1])]
+        ys = [int(self.image_vis_scale * r[1]/self.image_shape[0]), 
+              int(self.image_vis_scale * r[3]/self.image_shape[0])]
 
         xs.sort()
         ys.sort()
