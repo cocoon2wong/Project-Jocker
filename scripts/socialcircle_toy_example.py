@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-20 09:53:28
+@LastEditTime: 2023-12-20 15:09:35
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -487,9 +487,9 @@ class SocialCircleToy():
         social_circle.config(text=str(sc.T))
 
         # Print all neighbors' angles
-        count = self.get_neighbor_count(self.inputs[self.get_input_index(NEI)])
-        na = self.outputs[1][2].numpy()[0][:count]
-        nei_angles.config(text=str(na*180/np.pi))
+        # count = self.get_neighbor_count(self.inputs[self.get_input_index(NEI)])
+        # na = self.outputs[1][2].numpy()[0][:count]
+        # nei_angles.config(text=str(na*180/np.pi))
 
     def clear_canvas(self, canvas: tk.Canvas):
         """
@@ -582,7 +582,7 @@ if __name__ == '__main__':
     Init the log window
     """
     log_frame = tk.Frame(RF, **r_args)
-    log_frame.grid(column=0, row=5, columnspan=2)
+    log_frame.grid(column=0, row=4, columnspan=2)
 
     logbar = tk.Text(log_frame, width=89, height=7, **r_args, **t_args)
     (scroll := tk.Scrollbar(log_frame, command=logbar.yview)).pack(
@@ -657,13 +657,14 @@ if __name__ == '__main__':
     (sc := tk.Label(RF, width=60, **r_args, **t_args)).grid(
         column=1, row=2)
 
-    tk.Label(RF, text='Neighbor Angles:', width=16, anchor=tk.E, **r_args, **t_args).grid(
-        column=0, row=3)
-    (angles := tk.Label(RF, width=60, **r_args, **t_args)).grid(
-        column=1, row=3)
+    # tk.Label(RF, text='Neighbor Angles:', width=16, anchor=tk.E, **r_args, **t_args).grid(
+    #     column=0, row=3)
+    # (angles := tk.Label(RF, width=60, **r_args, **t_args)).grid(
+    #     column=1, row=3)
+    angles = tk.Label(RF, width=60, **r_args, **t_args)
 
     (canvas := tk.Canvas(RF, width=MAX_WIDTH, height=MAX_HEIGHT, **r_args)).grid(
-        column=0, row=4, columnspan=2)
+        column=0, row=3, columnspan=2)
     canvas.bind("<Motion>", lambda e: toy.hover(e, canvas))
     canvas.bind("<Button-1>", lambda e: toy.click(e, canvas))
 
