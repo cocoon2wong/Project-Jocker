@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-11-07 16:51:07
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-06 15:37:58
+@LastEditTime: 2023-12-20 15:30:03
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -114,27 +114,34 @@ class EVSPCModel(BaseSocialCircleModel):
 
     def forward(self, inputs: list[torch.Tensor], training=None, *args, **kwargs):
         # Unpack inputs
-        obs = inputs[0]     # (batch, obs, dim)
-        nei = inputs[1]     # (batch, a:=max_agents, obs, dim)
+        # (batch, obs, dim)
+        obs = self.get_input(inputs, INPUT_TYPES.OBSERVED_TRAJ)
+
+        # (batch, a:=max_agents, obs, dim)
+        nei = self.get_input(inputs, INPUT_TYPES.NEIGHBOR_TRAJ)
 
         # Segmentaion-map-related inputs (for PhysicalCircle)
-        seg_maps = inputs[2]            # (batch, h, w)
-        seg_map_paras = inputs[3]       # (batch, 4)
+        # (batch, h, w)
+        seg_maps = self.get_input(inputs, INPUT_TYPES.SEG_MAP)
 
+        # (batch, 4)
+        seg_map_paras = self.get_input(inputs, INPUT_TYPES.SEG_MAP_PARAS)
+
+        # Start computing the SocialCircle
+        # SocialCircle will be computed on each agent's 2D center point
+        c_obs = self.picker.get_center(obs)[..., :2]
+        c_nei = self.picker.get_center(nei)[..., :2]
+
+        # Compute SocialCircle meta-components
+        social_circle, _ = self.sc(c_obs, c_nei)
+
+        # Start computing the PhysicalCircle
         # Get unprocessed positions from the `MOVE` layer
         if (m_layer := self.processor.get_layer_by_type(process.Move)):
             unprocessed_pos = m_layer.ref_points
         else:
             unprocessed_pos = torch.zeros_like(obs[..., -1:, :])
-
-        # Start computing the SocialCircle
-        # SocialCircle will be computed on each agent's center point
-        c_obs = self.picker.get_center(obs)[..., :2]
-        c_nei = self.picker.get_center(nei)[..., :2]
         c_unpro_pos = self.picker.get_center(unprocessed_pos)[..., :2]
-
-        # Compute SocialCircle meta-components
-        social_circle, f_direction = self.sc(c_obs, c_nei)
 
         # Compute PhysicalCircle meta-components
         if self.pc_args.use_empty_seg_maps:
@@ -146,10 +153,10 @@ class EVSPCModel(BaseSocialCircleModel):
         if (r_layer := self.processor.get_layer_by_type(process.Rotate)):
             physical_circle = self.pc.rotate(physical_circle, r_layer.angles)
 
-        # Fuse circles
+        # Fuse SocialCircles and PhysicalCircles
         sp_circle = self.spc(social_circle, physical_circle)
 
-        # Encode the final social-physical circle
+        # Encode the final InteractionCircle
         f_social = self.tse(sp_circle)      # (batch, steps, d/2)
 
         # Trajectory embedding and encoding
@@ -168,7 +175,6 @@ class EVSPCModel(BaseSocialCircleModel):
         repeats = self.args.K_train if training else self.args.K
 
         traj_targets = self.t1(obs)
-
         for _ in range(repeats):
             # Assign random ids and embedding -> (batch, steps, d)
             z = torch.normal(mean=0, std=1,
@@ -198,7 +204,7 @@ class EVSPCModel(BaseSocialCircleModel):
             all_predictions.append(y)
 
         Y = torch.concat(all_predictions, dim=-3)   # (batch, K, n_key, dim)
-        return Y, sp_circle, f_direction
+        return Y, sp_circle
 
 
 class EVSPCStructure(BaseSocialCircleStructure):
