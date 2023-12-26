@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 14:55:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-29 11:04:10
+@LastEditTime: 2023-12-26 17:14:44
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -11,6 +11,7 @@
 import numpy as np
 import torch
 
+from qpid.model import layers
 from qpid.utils import get_mask
 
 NORMALIZED_SIZE = None
@@ -21,6 +22,15 @@ MU = 0.00000001
 
 
 class SocialCircleLayer(torch.nn.Module):
+    """
+    A layer to compute SocialCircle meta components.
+
+    Supported factors:
+    - Velocity;
+    - Distance;
+    - Direction;
+    - Movement Direction (Optional).
+    """
 
     def __init__(self, partitions: int,
                  max_partitions: int,
@@ -32,17 +42,15 @@ class SocialCircleLayer(torch.nn.Module):
                  relative_velocity: bool | int = False,
                  *args, **kwargs):
         """
-        A layer to compute the SocialCircle Meta-components.
-
         ## Partition Settings
         :param partitions: The number of partitions in the circle.
         :param max_partitions: The number of partitions (after zero padding).
 
-        ## SocialCircle Factors
-        :param use_velocity: Choose whether to use the velocity factor.
-        :param use_distance: Choose whether to use the distance factor.
-        :param use_direction: Choose whether to use the direction factor.
-        :param use_move_direction: Choose whether to use the move direction factor.
+        ## SocialCircle Meta Components
+        :param use_velocity: Choose whether to use the `velocity` factor.
+        :param use_distance: Choose whether to use the `distance` factor.
+        :param use_direction: Choose whether to use the `direction` factor.
+        :param use_move_direction: Choose whether to use the `move direction` factor.
 
         ## SocialCircle Options
         :param relative_velocity: Choose whether to use relative velocity or not.
@@ -154,6 +162,14 @@ class SocialCircleLayer(torch.nn.Module):
 
 
 class PhysicalCircleLayer(torch.nn.Module):
+    """
+    A layer to compute PhysicalCircle Meta components.
+
+    Supported factors:
+    - Relative Velocity;
+    - Minimum Distance;
+    - Direction.
+    """
 
     def __init__(self, partitions: int,
                  max_partitions: int,
@@ -162,6 +178,25 @@ class PhysicalCircleLayer(torch.nn.Module):
                  use_direction: bool | int = True,
                  vision_radius: float = 2.0,
                  *args, **kwargs):
+        """
+        ## Partition Settings
+        :param partitions: The number of partitions in the circle.
+        :param max_partitions: The number of partitions (after zero padding).
+
+        ## PhysicalCircle Meta Components
+        :param use_velocity: Choose whether to use the `relative velocity` factor.
+        :param use_distance: Choose whether to use the `minimum distance` factor.
+        :param use_direction: Choose whether to use the `direction` factor.
+
+        ## PhysicalCircle Options
+        :param vision_radius: The raduis to compute PhysicalCircle meta components \
+            on the scene segmentation map. It should be a float number that used to \
+            represent the scaling relationship between the field of vision and the \
+            length of the target agent's movement (during the observation period). \
+            For example, suppose that someone has moved 10 meters during the observation \
+            period, and given the `vision_radius = 2.0`, its radius to compute on the \
+            segmentation map will be `2.0 * 10 = 20` meters.
+        """
 
         super().__init__(*args, **kwargs)
 
@@ -305,8 +340,15 @@ class PhysicalCircleLayer(torch.nn.Module):
 
 
 class CircleFusionLayer(torch.nn.Module):
+    """
+    A layer to fuse SocialCircle and PhysicalCircle meta components,
+    i.e., to compute InteractionCircle meta components.
+    """
 
-    def __init__(self, sclayer: SocialCircleLayer, *args, **kwargs):
+    def __init__(self, sclayer: SocialCircleLayer,
+                 adaptive_fusion: bool | int = False,
+                 feature_dimension=128,
+                 *args, **kwargs):
 
         super().__init__(*args, **kwargs)
 
@@ -315,10 +357,25 @@ class CircleFusionLayer(torch.nn.Module):
         self.use_distance = sclayer.use_distance
         self.use_direction = sclayer.use_direction
 
+        self.d = feature_dimension
+        self.adaptive_fusion = adaptive_fusion
+        
+        if self.adaptive_fusion:
+            self.fc1 = layers.Dense(sclayer.dim, self.d, torch.nn.Tanh)
+            self.fc2 = layers.Dense(self.d, 1, torch.nn.Sigmoid)
+
     def forward(self, sc: torch.Tensor, pc: torch.Tensor, *args, **kwargs):
 
         index = -1
         spc = []
+
+        if self.adaptive_fusion:
+            w_partition_sc = self.fc2(self.fc1(sc))     # (batch, p, 1)
+            w_partition_pc = self.fc2(self.fc1(pc))     # (batch, p, 1)
+
+            return ((w_partition_sc * sc + w_partition_pc * pc) /
+                    (w_partition_sc + w_partition_pc + MU))
+
         if self.use_velocity:
             index += 1
             f_v_sc = sc[..., index]
@@ -330,11 +387,7 @@ class CircleFusionLayer(torch.nn.Module):
             index += 1
             f_dis_sc = sc[..., index]
             f_dis_pc = pc[..., index]
-
-            _sc_valid_mask = (f_dis_sc > MU).to(torch.float32)
-            _pc_valid_mask = (f_dis_pc > MU).to(torch.float32)
-            _cross_mask = _sc_valid_mask * _pc_valid_mask
-
+            _cross_mask = self.get_cross_mask(f_dis_sc, f_dis_pc)
             f_dis_spc = (_cross_mask * torch.min(f_dis_sc, f_dis_pc) +
                          (1 - _cross_mask) * torch.max(f_dis_sc, f_dis_pc))
             spc.append(f_dis_spc)
@@ -343,14 +396,15 @@ class CircleFusionLayer(torch.nn.Module):
             index += 1
             f_dir_sc = sc[..., index]
             f_dir_pc = pc[..., index]
-
-            _sc_valid_mask = (f_dir_sc > MU).to(torch.float32)
-            _pc_valid_mask = (f_dir_pc > MU).to(torch.float32)
-            _cross_mask = _sc_valid_mask * _pc_valid_mask
-
+            _cross_mask = self.get_cross_mask(f_dir_sc, f_dir_pc)
             f_dir_spc = (_cross_mask * 0.5 * (f_dir_sc + f_dir_pc) +
                          (1 - _cross_mask) * torch.max(f_dir_sc, f_dir_pc))
             spc.append(f_dir_spc)
 
         spc = torch.stack(spc, dim=-1)
         return spc
+
+    def get_cross_mask(self, x: torch.Tensor, y: torch.Tensor):
+        x_mask = (x > MU).to(torch.float32)
+        y_mask = (y > MU).to(torch.float32)
+        return x_mask * y_mask

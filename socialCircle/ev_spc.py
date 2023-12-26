@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-11-07 16:51:07
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-20 15:30:03
+@LastEditTime: 2023-12-26 17:13:44
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -56,6 +56,7 @@ class EVSPCModel(BaseSocialCircleModel):
                                     use_direction=self.sc_args.use_direction,
                                     relative_velocity=self.sc_args.rel_speed,
                                     use_move_direction=self.sc_args.use_move_direction)
+
         # PhysicalCircle (meta-components) and encoding
         self.pc = PhysicalCircleLayer(partitions=self.sc_args.partitions,
                                       max_partitions=self.args.obs_frames,
@@ -64,7 +65,8 @@ class EVSPCModel(BaseSocialCircleModel):
                                       use_direction=self.sc_args.use_direction,
                                       vision_radius=self.pc_args.vision_radius)
 
-        self.spc = CircleFusionLayer(self.sc)
+        self.spc = CircleFusionLayer(sclayer=self.sc,
+                                     adaptive_fusion=self.pc_args.adaptive_fusion)
 
         self.ts = tslayer((self.args.obs_frames, self.sc.dim))
         self.tse = layers.TrajEncoding(self.sc.dim,

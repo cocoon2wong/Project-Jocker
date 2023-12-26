@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:19:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-29 10:05:03
+@LastEditTime: 2023-12-26 17:15:28
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -90,6 +90,10 @@ class PhysicalCircleArgs(EmptyArgs):
         moves during the observation period.
         """
         return self._arg('vision_radius', 2.0, argtype=STATIC)
+
+    @property
+    def adaptive_fusion(self) -> int:
+        return self._arg('adaptive_fusion', 0, argtype=STATIC)
 
     @property
     def use_empty_seg_maps(self) -> int:

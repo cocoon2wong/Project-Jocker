@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:57:43
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-06 16:50:14
+@LastEditTime: 2023-12-26 16:08:11
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -40,6 +40,7 @@ class BaseSocialCircleModel(BaseAgentModel):
                 (isinstance(self.pc_args, PhysicalCircleArgs))):
             info.update({
                 '- Vision radiuses in PhysicalCircle': self.pc_args.vision_radius,
+                '- Adaptive Fusion': 'Activated' if self.pc_args.adaptive_fusion else 'Disabled',
             })
 
         return super().print_info(**kwargs, **info)
