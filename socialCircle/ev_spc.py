@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-11-07 16:51:07
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-26 17:13:44
+@LastEditTime: 2023-12-28 10:45:25
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -14,26 +14,31 @@ from qpid.constant import INPUT_TYPES
 from qpid.model import layers, process, transformer
 from qpid.silverballers import AgentArgs
 
-from .__args import PhysicalCircleArgs
 from .__base import BaseSocialCircleModel, BaseSocialCircleStructure
 from .__layers import CircleFusionLayer, PhysicalCircleLayer, SocialCircleLayer
 
 
 class EVSPCModel(BaseSocialCircleModel):
+    """
+    E-V^2-Net-SPC
+    ---
+    `E-V^2-Net` Model with the InteractionCircle.
+
+    This model comes from "Another vertical view: A hierarchical network for 
+    heterogeneous trajectory prediction via spectrums".
+    Its original interaction-modeling part has been removed, and layers
+    related to SocialCircle and PhysicalCircle are plugged in.
+    Set the arg `--adaptive_fusion` when training this model to activate
+    the adaptive fusion stragety to fuse SocialCircle and PhysicalCircle.
+    """
+
+    include_socialCircle = True
+    include_physicalCircle = True
 
     def __init__(self, Args: AgentArgs, as_single_model: bool = True,
                  structure=None, *args, **kwargs):
 
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
-
-        # Init physicalCircle's args
-        self.pc_args = self.args.register_subargs(PhysicalCircleArgs, 'PCArgs')
-
-        # Assign model inputs
-        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
-                        INPUT_TYPES.NEIGHBOR_TRAJ,
-                        INPUT_TYPES.SEG_MAP,
-                        INPUT_TYPES.SEG_MAP_PARAS)
 
         # Layers
         tlayer, itlayer = layers.get_transform_layers(self.args.T)

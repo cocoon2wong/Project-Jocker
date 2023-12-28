@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 14:55:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-26 17:14:44
+@LastEditTime: 2023-12-28 10:43:56
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -349,6 +349,14 @@ class CircleFusionLayer(torch.nn.Module):
                  adaptive_fusion: bool | int = False,
                  feature_dimension=128,
                  *args, **kwargs):
+        """
+        :param sclayer: The `SocialCircleLayer` object. It is used as a \
+            reference for SocialCircle and PhysicalCircle settings.
+        :param adaptive_fusion: Choose whether to activate the adaptive \
+            fusion stragety when fusing meta components from two circles.
+        :param feature_dimension: Feature dimension of the encoded circle \
+            meta components. It only works when `adaptive_fusion == True`.
+        """
 
         super().__init__(*args, **kwargs)
 
@@ -359,7 +367,7 @@ class CircleFusionLayer(torch.nn.Module):
 
         self.d = feature_dimension
         self.adaptive_fusion = adaptive_fusion
-        
+
         if self.adaptive_fusion:
             self.fc1 = layers.Dense(sclayer.dim, self.d, torch.nn.Tanh)
             self.fc2 = layers.Dense(self.d, 1, torch.nn.Sigmoid)
