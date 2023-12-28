@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-20 15:09:35
+@LastEditTime: 2023-12-28 15:31:15
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -65,7 +65,7 @@ class SocialCircleToy():
         self.t: qpid.training.Structure | None = None
         self.image: tk.PhotoImage | None = None
         self.image_shape = None
-        self.image_vis_scale = None 
+        self.image_vis_scale = None
         self.mask_image: ImageTk.PhotoImage | None = None
         self.vis_mgr: vis.Visualization | None = None
 
@@ -129,7 +129,7 @@ class SocialCircleToy():
                                        self.t.model.label_types)
 
         # Load dataset files
-        if ((self.input_and_gt is None) or 
+        if ((self.input_and_gt is None) or
                 (self.input_types != old_input_types)):
             self.t.log('Reloading dataset files...')
             ds = self.t.agent_manager.clean().make(self.t.args.force_clip, training=False)
@@ -262,9 +262,9 @@ class SocialCircleToy():
             s = self.t.agent_manager.split_manager.scale_vis
             self.image_vis_scale = s
 
-        xs = [int(self.image_vis_scale * r[0]/self.image_shape[1]), 
+        xs = [int(self.image_vis_scale * r[0]/self.image_shape[1]),
               int(self.image_vis_scale * r[2]/self.image_shape[1])]
-        ys = [int(self.image_vis_scale * r[1]/self.image_shape[0]), 
+        ys = [int(self.image_vis_scale * r[1]/self.image_shape[0]),
               int(self.image_vis_scale * r[3]/self.image_shape[0])]
 
         xs.sort()
@@ -543,6 +543,7 @@ if __name__ == '__main__':
 
     root = tk.Tk()
     root.title('Toy Example of SocialCircle Models')
+    verbose = False if '--lite' in sys.argv else True
 
     """
     Configs
@@ -610,13 +611,17 @@ if __name__ == '__main__':
     """
     Init TK Components
     """
-    tk.Label(LF, text='Settings', **TK_TITLE_STYLE, **l_args).grid(
-        column=0, row=0, sticky=tk.W)
+    # Left part
+    i_l = -1
+
+    if verbose:
+        tk.Label(LF, text='Settings', **TK_TITLE_STYLE, **l_args).grid(
+            column=0, row=(i_l := i_l + 1), sticky=tk.W)
 
     tk.Label(LF, text='Agent ID', **l_args).grid(
-        column=0, row=1)
+        column=0, row=(i_l := i_l + 1))
     (id_frame := tk.Frame(LF, **l_args)).grid(
-        column=0, row=2)
+        column=0, row=(i_l := i_l + 1))
 
     tk.Entry(id_frame, textvariable=toy.tk_vars['agent_id'], width=10).grid(
         column=0, row=0)
@@ -624,47 +629,51 @@ if __name__ == '__main__':
         column=1, row=0)
 
     tk.Label(LF, text='New Neighbor (x-axis, start)', **l_args).grid(
-        column=0, row=3)
+        column=0, row=(i_l := i_l + 1))
     tk.Entry(LF, textvariable=toy.tk_vars['px0']).grid(
-        column=0, row=4)
+        column=0, row=(i_l := i_l + 1))
 
     tk.Label(LF, text='New Neighbor (y-axis, start)', **l_args).grid(
-        column=0, row=5)
+        column=0, row=(i_l := i_l + 1))
     tk.Entry(LF,  textvariable=toy.tk_vars['py0']).grid(
-        column=0, row=6)
+        column=0, row=(i_l := i_l + 1))
 
     tk.Label(LF, text='New Neighbor (x-axis, end)', **l_args).grid(
-        column=0, row=7)
+        column=0, row=(i_l := i_l + 1))
     tk.Entry(LF, textvariable=toy.tk_vars['px1']).grid(
-        column=0, row=8)
+        column=0, row=(i_l := i_l + 1))
 
     tk.Label(LF, text='New Neighbor (y-axis, end)', **l_args).grid(
-        column=0, row=9)
+        column=0, row=(i_l := i_l + 1))
     tk.Entry(LF,  textvariable=toy.tk_vars['py1']).grid(
-        column=0, row=10)
+        column=0, row=(i_l := i_l + 1))
 
-    tk.Label(RF, text='Predictions', **TK_TITLE_STYLE, **r_args, **t_args).grid(
-        column=0, row=0, sticky=tk.W)
-
-    tk.Label(RF, text='Model Path:', width=16, anchor=tk.E, **r_args, **t_args).grid(
-        column=0, row=1)
-    (model_path := tk.Label(RF, width=60, wraplength=510,
-                            text=MODEL_PATH, **r_args, **t_args)).grid(
-        column=1, row=1)
-
-    tk.Label(RF, text='Social Circle:', width=16, anchor=tk.E, **r_args, **t_args).grid(
-        column=0, row=2)
-    (sc := tk.Label(RF, width=60, **r_args, **t_args)).grid(
-        column=1, row=2)
-
-    # tk.Label(RF, text='Neighbor Angles:', width=16, anchor=tk.E, **r_args, **t_args).grid(
-    #     column=0, row=3)
-    # (angles := tk.Label(RF, width=60, **r_args, **t_args)).grid(
-    #     column=1, row=3)
+    # Right Part
+    i_r = -1
+    model_path = tk.Label(RF, width=60, wraplength=510,
+                          text=MODEL_PATH, **r_args, **t_args)
+    sc = tk.Label(RF, width=60, **r_args, **t_args)
     angles = tk.Label(RF, width=60, **r_args, **t_args)
+    canvas = tk.Canvas(RF, width=MAX_WIDTH, height=MAX_HEIGHT, **r_args)
 
-    (canvas := tk.Canvas(RF, width=MAX_WIDTH, height=MAX_HEIGHT, **r_args)).grid(
-        column=0, row=3, columnspan=2)
+    if verbose:
+        tk.Label(RF, text='Predictions', **TK_TITLE_STYLE, **r_args, **t_args).grid(
+            column=0, row=(i_r := i_r + 1), sticky=tk.W)
+
+        tk.Label(RF, text='Model Path:', width=16, anchor=tk.E, **r_args, **t_args).grid(
+            column=0, row=(i_r := i_r + 1))
+        model_path.grid(column=1, row=i_r)
+
+        tk.Label(RF, text='Social Circle:', width=16, anchor=tk.E, **r_args, **t_args).grid(
+            column=0, row=(i_r := i_r + 1))
+        sc.grid(column=1, row=i_r)
+
+        # tk.Label(RF, text='Neighbor Angles:', width=16, anchor=tk.E, **r_args, **t_args).grid(
+        #     column=0, row=(i_r := i_r + 1))
+        # (angles := tk.Label(RF, width=60, **r_args, **t_args)).grid(
+        #     column=1, row=i_r)
+
+    canvas.grid(column=0, row=(i_r := i_r + 1), columnspan=2)
     canvas.bind("<Motion>", lambda e: toy.hover(e, canvas))
     canvas.bind("<Button-1>", lambda e: toy.click(e, canvas))
 
