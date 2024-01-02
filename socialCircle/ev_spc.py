@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-11-07 16:51:07
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-06 15:37:58
+@LastEditTime: 2023-12-28 10:45:25
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -14,26 +14,31 @@ from qpid.constant import INPUT_TYPES
 from qpid.model import layers, process, transformer
 from qpid.silverballers import AgentArgs
 
-from .__args import PhysicalCircleArgs
 from .__base import BaseSocialCircleModel, BaseSocialCircleStructure
-from .__layers import PhysicalCircleLayer, SocialCircleLayer
+from .__layers import CircleFusionLayer, PhysicalCircleLayer, SocialCircleLayer
 
 
 class EVSPCModel(BaseSocialCircleModel):
+    """
+    E-V^2-Net-SPC
+    ---
+    `E-V^2-Net` Model with the InteractionCircle.
+
+    This model comes from "Another vertical view: A hierarchical network for 
+    heterogeneous trajectory prediction via spectrums".
+    Its original interaction-modeling part has been removed, and layers
+    related to SocialCircle and PhysicalCircle are plugged in.
+    Set the arg `--adaptive_fusion` when training this model to activate
+    the adaptive fusion stragety to fuse SocialCircle and PhysicalCircle.
+    """
+
+    include_socialCircle = True
+    include_physicalCircle = True
 
     def __init__(self, Args: AgentArgs, as_single_model: bool = True,
                  structure=None, *args, **kwargs):
 
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
-
-        # Init physicalCircle's args
-        self.pc_args = self.args.register_subargs(PhysicalCircleArgs, 'PCArgs')
-
-        # Assign model inputs
-        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
-                        INPUT_TYPES.NEIGHBOR_TRAJ,
-                        INPUT_TYPES.SEG_MAP,
-                        INPUT_TYPES.SEG_MAP_PARAS)
 
         # Layers
         tlayer, itlayer = layers.get_transform_layers(self.args.T)
@@ -56,14 +61,20 @@ class EVSPCModel(BaseSocialCircleModel):
                                     use_direction=self.sc_args.use_direction,
                                     relative_velocity=self.sc_args.rel_speed,
                                     use_move_direction=self.sc_args.use_move_direction)
+
         # PhysicalCircle (meta-components) and encoding
         self.pc = PhysicalCircleLayer(partitions=self.sc_args.partitions,
                                       max_partitions=self.args.obs_frames,
+                                      use_velocity=self.sc_args.use_velocity,
+                                      use_distance=self.sc_args.use_distance,
+                                      use_direction=self.sc_args.use_direction,
                                       vision_radius=self.pc_args.vision_radius)
 
-        # Transform and encoding layers for the InteractionCircle
-        self.ts = tslayer((self.args.obs_frames, self.sc.dim + self.pc.dim))
-        self.tse = layers.TrajEncoding(self.sc.dim + self.pc.dim,
+        self.spc = CircleFusionLayer(sclayer=self.sc,
+                                     adaptive_fusion=self.pc_args.adaptive_fusion)
+
+        self.ts = tslayer((self.args.obs_frames, self.sc.dim))
+        self.tse = layers.TrajEncoding(self.sc.dim,
                                        self.d//2, torch.nn.ReLU,
                                        transform_layer=self.ts)
 
@@ -110,27 +121,34 @@ class EVSPCModel(BaseSocialCircleModel):
 
     def forward(self, inputs: list[torch.Tensor], training=None, *args, **kwargs):
         # Unpack inputs
-        obs = inputs[0]     # (batch, obs, dim)
-        nei = inputs[1]     # (batch, a:=max_agents, obs, dim)
+        # (batch, obs, dim)
+        obs = self.get_input(inputs, INPUT_TYPES.OBSERVED_TRAJ)
+
+        # (batch, a:=max_agents, obs, dim)
+        nei = self.get_input(inputs, INPUT_TYPES.NEIGHBOR_TRAJ)
 
         # Segmentaion-map-related inputs (for PhysicalCircle)
-        seg_maps = inputs[2]            # (batch, h, w)
-        seg_map_paras = inputs[3]       # (batch, 4)
+        # (batch, h, w)
+        seg_maps = self.get_input(inputs, INPUT_TYPES.SEG_MAP)
 
+        # (batch, 4)
+        seg_map_paras = self.get_input(inputs, INPUT_TYPES.SEG_MAP_PARAS)
+
+        # Start computing the SocialCircle
+        # SocialCircle will be computed on each agent's 2D center point
+        c_obs = self.picker.get_center(obs)[..., :2]
+        c_nei = self.picker.get_center(nei)[..., :2]
+
+        # Compute SocialCircle meta-components
+        social_circle, _ = self.sc(c_obs, c_nei)
+
+        # Start computing the PhysicalCircle
         # Get unprocessed positions from the `MOVE` layer
         if (m_layer := self.processor.get_layer_by_type(process.Move)):
             unprocessed_pos = m_layer.ref_points
         else:
             unprocessed_pos = torch.zeros_like(obs[..., -1:, :])
-
-        # Start computing the SocialCircle
-        # SocialCircle will be computed on each agent's center point
-        c_obs = self.picker.get_center(obs)[..., :2]
-        c_nei = self.picker.get_center(nei)[..., :2]
         c_unpro_pos = self.picker.get_center(unprocessed_pos)[..., :2]
-
-        # Compute SocialCircle meta-components
-        social_circle, f_direction = self.sc(c_obs, c_nei)
 
         # Compute PhysicalCircle meta-components
         if self.pc_args.use_empty_seg_maps:
@@ -142,8 +160,10 @@ class EVSPCModel(BaseSocialCircleModel):
         if (r_layer := self.processor.get_layer_by_type(process.Rotate)):
             physical_circle = self.pc.rotate(physical_circle, r_layer.angles)
 
+        # Fuse SocialCircles and PhysicalCircles
+        sp_circle = self.spc(social_circle, physical_circle)
+
         # Encode the final InteractionCircle
-        sp_circle = torch.concat([social_circle, physical_circle], dim=-1)
         f_social = self.tse(sp_circle)      # (batch, steps, d/2)
 
         # Trajectory embedding and encoding
@@ -162,7 +182,6 @@ class EVSPCModel(BaseSocialCircleModel):
         repeats = self.args.K_train if training else self.args.K
 
         traj_targets = self.t1(obs)
-
         for _ in range(repeats):
             # Assign random ids and embedding -> (batch, steps, d)
             z = torch.normal(mean=0, std=1,
@@ -192,7 +211,7 @@ class EVSPCModel(BaseSocialCircleModel):
             all_predictions.append(y)
 
         Y = torch.concat(all_predictions, dim=-3)   # (batch, K, n_key, dim)
-        return Y, sp_circle, f_direction
+        return Y, sp_circle
 
 
 class EVSPCStructure(BaseSocialCircleStructure):

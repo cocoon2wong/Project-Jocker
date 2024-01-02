@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-15 19:08:05
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-06 16:49:55
+@LastEditTime: 2023-12-28 10:46:35
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -14,26 +14,31 @@ from qpid.constant import INPUT_TYPES
 from qpid.model import layers, process, transformer
 from qpid.silverballers import AgentArgs
 
-from .__args import PhysicalCircleArgs
 from .__base import BaseSocialCircleModel, BaseSocialCircleStructure
 from .__layers import PhysicalCircleLayer, SocialCircleLayer
 
 
 class VSPCModel(BaseSocialCircleModel):
+    """
+    V^2-Net-SPC
+    ---
+    `V^2-Net` Model with the InteractionCircle.
+
+    This model comes from "View vertically: A hierarchical network for
+    trajectory prediction via fourier spectrums".
+    Its original interaction-modeling part has been removed, and layers
+    related to SocialCircle and PhysicalCircle are plugged in.
+    Set the arg `--adaptive_fusion` when training this model to activate
+    the adaptive fusion stragety to fuse SocialCircle and PhysicalCircle.
+    """
+
+    include_socialCircle = True
+    include_physicalCircle = True
 
     def __init__(self, Args: AgentArgs, as_single_model: bool = True,
                  structure=None, *args, **kwargs):
 
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
-
-        # Init physicalCircle's args
-        self.pc_args = self.args.register_subargs(PhysicalCircleArgs, 'PCArgs')
-
-        # Assign model inputs
-        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
-                        INPUT_TYPES.NEIGHBOR_TRAJ,
-                        INPUT_TYPES.SEG_MAP,
-                        INPUT_TYPES.SEG_MAP_PARAS)
 
         # Layers
         tlayer, itlayer = layers.get_transform_layers(self.args.T)
@@ -104,12 +109,18 @@ class VSPCModel(BaseSocialCircleModel):
 
     def forward(self, inputs: list[torch.Tensor], training=None, *args, **kwargs):
         # Unpack inputs
-        obs = inputs[0]     # (batch, obs, dim)
-        nei = inputs[1]     # (batch, a:=max_agents, obs, dim)
+        # (batch, obs, dim)
+        obs = self.get_input(inputs, INPUT_TYPES.OBSERVED_TRAJ)
+
+        # (batch, a:=max_agents, obs, dim)
+        nei = self.get_input(inputs, INPUT_TYPES.NEIGHBOR_TRAJ)
 
         # Segmentaion-map-related inputs (for PhysicalCircle)
-        seg_maps = inputs[2]            # (batch, h, w)
-        seg_map_paras = inputs[3]       # (batch, 4)
+        # (batch, h, w)
+        seg_maps = self.get_input(inputs, INPUT_TYPES.SEG_MAP)
+
+        # (batch, 4)
+        seg_map_paras = self.get_input(inputs, INPUT_TYPES.SEG_MAP_PARAS)
 
         if self.pc_args.use_empty_seg_maps:
             seg_maps = torch.zeros_like(seg_maps)

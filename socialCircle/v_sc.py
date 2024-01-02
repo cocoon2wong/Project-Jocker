@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-15 19:08:05
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-02 19:37:04
+@LastEditTime: 2023-12-28 10:46:17
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -19,15 +19,24 @@ from .__layers import SocialCircleLayer
 
 
 class VSCModel(BaseSocialCircleModel):
+    """
+    V^2-Net-SC
+    ---
+    `V^2-Net` Model with the InteractionCircle.
+
+    This model comes from "View vertically: A hierarchical network for
+    trajectory prediction via fourier spectrums".
+    Its original interaction-modeling part has been removed, and layers
+    related to SocialCircle are plugged in.
+    """
+
+    include_socialCircle = True
+    include_physicalCircle = False
 
     def __init__(self, Args: AgentArgs, as_single_model: bool = True,
                  structure=None, *args, **kwargs):
 
         super().__init__(Args, as_single_model, structure, *args, **kwargs)
-
-        # Assign model inputs
-        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
-                        INPUT_TYPES.NEIGHBOR_TRAJ)
 
         # Layers
         tlayer, itlayer = layers.get_transform_layers(self.args.T)
@@ -90,8 +99,11 @@ class VSCModel(BaseSocialCircleModel):
 
     def forward(self, inputs: list[torch.Tensor], training=None, *args, **kwargs):
         # Unpack inputs
-        obs = inputs[0]     # (batch, obs, dim)
-        nei = inputs[1]     # (batch, a:=max_agents, obs, dim)
+        # (batch, obs, dim)
+        obs = self.get_input(inputs, INPUT_TYPES.OBSERVED_TRAJ)
+
+        # (batch, a:=max_agents, obs, dim)
+        nei = self.get_input(inputs, INPUT_TYPES.NEIGHBOR_TRAJ)
 
         # Start computing the SocialCircle
         # SocialCircle will be computed on each agent's center point

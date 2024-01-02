@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 15:28:14
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-06 14:39:02
+@LastEditTime: 2023-12-19 16:57:38
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -41,7 +41,7 @@ def main(args: list[str], run_train_or_test=True):
     else:
         s = qpid.silverballers.SILVERBALLERS_DICT.get_structure(model)
 
-    t = s(terminal_args=args)
+    t = s(args)
 
     if run_train_or_test:
         t.train_or_test()
