@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-15 20:30:51
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-02 19:36:35
+@LastEditTime: 2024-01-04 16:55:55
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -161,5 +161,6 @@ class TransformerSCStructure(BaseSocialCircleStructure):
         super().__init__(terminal_args, manager)
 
         # Force args
+        self.args._set_default('T', 'none')
         self.args._set('key_points', '_'.join(
             [str(i) for i in range(self.args.pred_frames)]))

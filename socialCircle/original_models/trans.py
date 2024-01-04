@@ -2,7 +2,7 @@
 @Author: Beihao Xia
 @Date: 2023-03-20 16:15:25
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-18 16:50:26
+@LastEditTime: 2024-01-04 16:55:28
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Beihao Xia, All Rights Reserved.
@@ -139,6 +139,9 @@ class MinimalV(Structure):
     def __init__(self, terminal_args: list[str]):
         super().__init__(AgentArgs(terminal_args))
         self.args: AgentArgs
+
+        # Force args
+        self.args._set_default('T', 'none')
 
     def create_model(self, *args, **kwargs):
         self.model = MinimalVModel(self.args,
