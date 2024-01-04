@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-11-07 16:51:07
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-28 10:45:25
+@LastEditTime: 2024-01-02 16:40:51
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -52,7 +52,7 @@ class EVSPCModel(BaseSocialCircleModel):
                                       torch.nn.ReLU,
                                       transform_layer=self.t1)
 
-        # SocialCircle (meta-components) and encoding
+        # SocialCircle (meta components) layer
         tslayer, _ = layers.get_transform_layers(self.sc_args.Ts)
         self.sc = SocialCircleLayer(partitions=self.sc_args.partitions,
                                     max_partitions=self.args.obs_frames,
@@ -62,7 +62,7 @@ class EVSPCModel(BaseSocialCircleModel):
                                     relative_velocity=self.sc_args.rel_speed,
                                     use_move_direction=self.sc_args.use_move_direction)
 
-        # PhysicalCircle (meta-components) and encoding
+        # PhysicalCircle (meta components) layer
         self.pc = PhysicalCircleLayer(partitions=self.sc_args.partitions,
                                       max_partitions=self.args.obs_frames,
                                       use_velocity=self.sc_args.use_velocity,
@@ -70,9 +70,11 @@ class EVSPCModel(BaseSocialCircleModel):
                                       use_direction=self.sc_args.use_direction,
                                       vision_radius=self.pc_args.vision_radius)
 
+        # Fusion layer for SocialCircle and PhysicalCircle meta components
         self.spc = CircleFusionLayer(sclayer=self.sc,
                                      adaptive_fusion=self.pc_args.adaptive_fusion)
 
+        # Encoding (embedding) layer for the fused circle
         self.ts = tslayer((self.args.obs_frames, self.sc.dim))
         self.tse = layers.TrajEncoding(self.sc.dim,
                                        self.d//2, torch.nn.ReLU,
@@ -81,7 +83,7 @@ class EVSPCModel(BaseSocialCircleModel):
         # Concat and fuse SC
         self.concat_fc = layers.Dense(self.d, self.d//2, torch.nn.Tanh)
 
-        # Shapes
+        # Steps and channels after applying transforms
         self.Tsteps_en, self.Tchannels_en = self.t1.Tshape
         self.Tsteps_de, self.Tchannels_de = self.it1.Tshape
 
@@ -127,33 +129,33 @@ class EVSPCModel(BaseSocialCircleModel):
         # (batch, a:=max_agents, obs, dim)
         nei = self.get_input(inputs, INPUT_TYPES.NEIGHBOR_TRAJ)
 
-        # Segmentaion-map-related inputs (for PhysicalCircle)
+        # Segmentaion-map-related inputs (to compute the PhysicalCircle)
         # (batch, h, w)
         seg_maps = self.get_input(inputs, INPUT_TYPES.SEG_MAP)
 
         # (batch, 4)
         seg_map_paras = self.get_input(inputs, INPUT_TYPES.SEG_MAP_PARAS)
 
-        # Start computing the SocialCircle
-        # SocialCircle will be computed on each agent's 2D center point
-        c_obs = self.picker.get_center(obs)[..., :2]
-        c_nei = self.picker.get_center(nei)[..., :2]
+        # Process model inputs
+        if self.pc_args.use_empty_seg_maps:
+            seg_maps = torch.zeros_like(seg_maps)
 
-        # Compute SocialCircle meta-components
-        social_circle, _ = self.sc(c_obs, c_nei)
-
-        # Start computing the PhysicalCircle
         # Get unprocessed positions from the `MOVE` layer
         if (m_layer := self.processor.get_layer_by_type(process.Move)):
             unprocessed_pos = m_layer.ref_points
         else:
             unprocessed_pos = torch.zeros_like(obs[..., -1:, :])
+
+        # Start computing the InteractionCircle
+        # InteractionCircle will be computed on each agent's 2D center point
+        c_obs = self.picker.get_center(obs)[..., :2]
+        c_nei = self.picker.get_center(nei)[..., :2]
         c_unpro_pos = self.picker.get_center(unprocessed_pos)[..., :2]
 
-        # Compute PhysicalCircle meta-components
-        if self.pc_args.use_empty_seg_maps:
-            seg_maps = torch.zeros_like(seg_maps)
+        # Compute SocialCircle meta components
+        social_circle, _ = self.sc(c_obs, c_nei)
 
+        # Compute PhysicalCircle meta components
         physical_circle = self.pc(seg_maps, seg_map_paras, c_obs, c_unpro_pos)
 
         # Rotate the PhysicalCircle (if needed)

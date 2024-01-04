@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:52:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-06 15:36:55
+@LastEditTime: 2024-01-02 16:22:45
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -16,6 +16,7 @@ from .ev_sc import EVSCModel, EVSCStructure
 from .ev_spc import EVSPCModel, EVSPCStructure
 from .msn_sc import MSNSCModel, MSNSCStructure
 from .trans_sc import TransformerSCModel, TransformerSCStructure
+from .trans_spc import TransformerSPCModel, TransformerSPCStructure
 from .v_sc import VSCModel, VSCStructure
 from .v_spc import VSPCModel, VSPCStructure
 
@@ -36,6 +37,7 @@ __qpid.silverballers.register(
     # InteractionCircle Models (SocialCircle + PhysicalCircle)
     evspc=[EVSPCStructure, EVSPCModel],
     vspc=[VSPCStructure, VSPCModel],
+    transspc=[TransformerSPCStructure, TransformerSPCModel],
 )
 
 __qpid._log_mod_loaded(__package__)
