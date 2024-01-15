@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 21:40:38
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-20 09:38:44
+@LastEditTime: 2024-01-15 19:45:09
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -102,17 +102,13 @@ class Agent47CModel(BaseAgentModel):
         traj_targets = self.t1(obs)
 
         for _ in range(repeats):
-            if not self.args.deterministic:
-                # Assign random ids and embedding -> (batch, steps, d)
-                z = torch.normal(mean=0, std=1,
-                                 size=list(f_traj.shape[:-1]) + [self.d_id])
-                f_z = self.ie(z.to(obs.device))
+            # Assign random ids and embedding -> (batch, steps, d)
+            z = torch.normal(mean=0, std=1,
+                             size=list(f_traj.shape[:-1]) + [self.d_id])
+            f_z = self.ie(z.to(obs.device))
 
-                # (batch, steps, 2*d)
-                f_final = torch.concat([f_traj, f_z], dim=-1)
-
-            else:
-                f_final = f_traj
+            # (batch, steps, 2*d)
+            f_final = torch.concat([f_traj, f_z], dim=-1)
 
             # Transformer outputs' shape is (batch, steps, d)
             f_tran, _ = self.T(inputs=f_final,

@@ -27,7 +27,7 @@ class TransformerSPCModel(BaseSocialCircleModel):
     PhysicalCircle to model interactions among agents and scene objects
     (physical interactions).
     Set the arg `--adaptive_fusion` when training this model to activate
-    the adaptive fusion stragety to fuse SocialCircle and PhysicalCircle.
+    the adaptive fusion strategy to fuse SocialCircle and PhysicalCircle.
 
     NOTE:
     - It has no keypoints-interpolation two-stage subnetworks;

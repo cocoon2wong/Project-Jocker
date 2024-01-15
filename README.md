@@ -2,7 +2,7 @@
  * @Author: Conghao Wong
  * @Date: 2022-07-07 21:43:30
  * @LastEditors: Conghao Wong
- * @LastEditTime: 2023-09-07 09:21:22
+ * @LastEditTime: 2024-01-15 19:50:25
  * @Description: file content
  * @Github: https://github.com/cocoon2wong
  * Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -128,9 +128,6 @@ About the `argtype`:
 - `--obs_frames` (short for `-obs`): type=`int`, argtype=`static`.
   Observation frames for prediction. 
   The default value is `8`.
-- `--only_process_trajectory`: type=`int`, argtype=`static`.
-  (Pre/post-process Arg) Controls whether to process non-trajectory model inputs or not. 
-  The default value is `0`.
 - `--pmove`: type=`int`, argtype=`static`.
   (Pre/post-process Arg) Index of the reference point when moving trajectories. 
   The default value is `-1`.
@@ -179,9 +176,6 @@ About the `argtype`:
 - `--depth`: type=`int`, argtype=`static`.
   Depth of the random noise vector. 
   The default value is `16`.
-- `--deterministic`: type=`int`, argtype=`static`.
-  Controls if predict trajectories in the deterministic way. 
-  The default value is `0`.
 - `--feature_dim`: type=`int`, argtype=`static`.
   Feature dimensions that are used in most layers. 
   The default value is `128`.
@@ -263,11 +257,14 @@ About the `argtype`:
 
 ### PhysicalCircle Args
 
+- `--adaptive_fusion`: type=`int`, argtype=`static`.
+  Choose whether to use the adaptive fusion strategy to fuse SocialCircles and PhysicalCircles into InteractionCircles. 
+  The default value is `0`.
 - `--use_empty_seg_maps`: type=`int`, argtype=`temporary`.
   Choose whether to use empty segmentation maps when computing the PhysicalCircle. The empty segmentation map means that EVERYWHERE in the scene is available for walking. This arg is only used when running ablation studies. 
   The default value is `0`.
-- `--vision_radius`: type=`str`, argtype=`static`.
-  The radius of the target agent's vision field when constructing the PhysicalCircle. Radiuses are based on the length that the agent moves during the observation period. It accepts multiple inputs that split with `'_'`, like `'0.5_1.0_1.5'`. 
+- `--vision_radius`: type=`float`, argtype=`static`.
+  The radius of the target agent's vision field when constructing the PhysicalCircle. Radiuses are based on the length that the agent moves during the observation period. 
   The default value is `2.0`.
 
 ### Visualization Args

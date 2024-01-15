@@ -353,7 +353,7 @@ class CircleFusionLayer(torch.nn.Module):
         :param sclayer: The `SocialCircleLayer` object. It is used as a \
             reference for SocialCircle and PhysicalCircle settings.
         :param adaptive_fusion: Choose whether to activate the adaptive \
-            fusion stragety when fusing meta components from two circles.
+            fusion strategy when fusing meta components from two circles.
         :param feature_dimension: Feature dimension of the encoded circle \
             meta components. It only works when `adaptive_fusion == True`.
         """

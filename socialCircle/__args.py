@@ -94,7 +94,7 @@ class PhysicalCircleArgs(EmptyArgs):
     @property
     def adaptive_fusion(self) -> int:
         """
-        Choose whether to use the adaptive fusion stragety to fuse SocialCircles
+        Choose whether to use the adaptive fusion strategy to fuse SocialCircles
         and PhysicalCircles into InteractionCircles.
         """
         return self._arg('adaptive_fusion', 0, argtype=STATIC)

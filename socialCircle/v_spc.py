@@ -29,7 +29,7 @@ class VSPCModel(BaseSocialCircleModel):
     Its original interaction-modeling part has been removed, and layers
     related to SocialCircle and PhysicalCircle are plugged in.
     Set the arg `--adaptive_fusion` when training this model to activate
-    the adaptive fusion stragety to fuse SocialCircle and PhysicalCircle.
+    the adaptive fusion strategy to fuse SocialCircle and PhysicalCircle.
     """
 
     include_socialCircle = True
