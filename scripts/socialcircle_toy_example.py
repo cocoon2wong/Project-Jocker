@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-28 15:31:15
+@LastEditTime: 2024-01-23 09:46:04
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -334,10 +334,10 @@ class SocialCircleToy():
             import cv2
             f = cv2.imread(image_save_path)
             h, w = f.shape[:2]
-            if ((h > MAX_HEIGHT) and (h/w >= MAX_HEIGHT/MAX_WIDTH)):
+            if ((h >= MAX_HEIGHT) and (h/w >= MAX_HEIGHT/MAX_WIDTH)):
                 self.image_scale = h / MAX_HEIGHT
                 self.image_margin = [0, (MAX_WIDTH - w/self.image_scale)//2]
-            elif ((w > MAX_WIDTH) and (h/w <= MAX_HEIGHT/MAX_WIDTH)):
+            elif ((w >= MAX_WIDTH) and (h/w <= MAX_HEIGHT/MAX_WIDTH)):
                 self.image_scale = w / MAX_WIDTH
                 self.image_margin = [(MAX_HEIGHT - h/self.image_scale)//2, 0]
             else:
