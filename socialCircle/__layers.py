@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 14:55:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-01-23 11:20:15
+@LastEditTime: 2024-01-24 17:08:05
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -29,7 +29,8 @@ class SocialCircleLayer(torch.nn.Module):
     - Velocity;
     - Distance;
     - Direction;
-    - Movement Direction (Optional).
+    - Movement Direction (Optional);
+    - Acceleration (Optional).
     """
 
     def __init__(self, partitions: int,
@@ -38,6 +39,7 @@ class SocialCircleLayer(torch.nn.Module):
                  use_distance: bool | int = True,
                  use_direction: bool | int = True,
                  use_move_direction: bool | int = False,
+                 use_acc: bool | int = False,
                  mu=0.0001,
                  relative_velocity: bool | int = False,
                  *args, **kwargs):
@@ -66,8 +68,10 @@ class SocialCircleLayer(torch.nn.Module):
         self.use_distance = use_distance
         self.use_direction = use_direction
 
-        self.rel_velocity = relative_velocity
         self.use_move_direction = use_move_direction
+        self.use_acc = use_acc
+
+        self.rel_velocity = relative_velocity
         self.mu = mu
 
     @property
@@ -76,7 +80,8 @@ class SocialCircleLayer(torch.nn.Module):
         The number of SocialCircle factors.
         """
         return int(self.use_velocity) + int(self.use_distance) + \
-            int(self.use_direction) + int(self.use_move_direction)
+            int(self.use_direction) + int(self.use_move_direction) + \
+            int(self.use_acc)
 
     def forward(self, trajs, nei_trajs, *args, **kwargs):
         # Move vectors -> (batch, ..., 2)
@@ -84,6 +89,13 @@ class SocialCircleLayer(torch.nn.Module):
         obs_vector = trajs[..., -1:, :] - trajs[..., 0:1, :]
         nei_vector = nei_trajs[..., -1, :] - nei_trajs[..., 0, :]
         nei_posion_vector = nei_trajs[..., -1, :]
+
+        # Init factors
+        f_velocity = None
+        f_distance = None
+        f_direction = None
+        f_move_direction = None
+        f_acc = None
 
         # Velocity factor
         if self.use_velocity:
@@ -109,6 +121,11 @@ class SocialCircleLayer(torch.nn.Module):
                                              nei_vector[..., 1])
             delta_move_direction = nei_move_direction - obs_move_direction
             f_move_direction = delta_move_direction % (2*np.pi)
+
+        # Acceleration factor
+        if self.use_acc:
+            vel_vector = nei_trajs[..., -1, :] - nei_trajs[..., -2, :]
+            f_acc = torch.norm(vel_vector, dim=-1) * self.max_partitions
 
         # Direction factor
         f_direction = torch.atan2(nei_posion_vector[..., 0],
@@ -147,6 +164,10 @@ class SocialCircleLayer(torch.nn.Module):
             if self.use_move_direction:
                 _move_d = torch.sum(f_move_direction * _mask, dim=-1) / n
                 social_circle[-1].append(_move_d)
+
+            if self.use_acc:
+                _acc = torch.max(f_acc * _mask, dim=-1)[0]
+                social_circle[-1].append(_acc)
 
         # Shape of the final SocialCircle: (batch, p, 3)
         social_circle = [torch.stack(i) for i in social_circle]

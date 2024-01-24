@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:19:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-27 15:05:35
+@LastEditTime: 2024-01-24 14:44:38
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -69,6 +69,13 @@ class SocialCircleArgs(EmptyArgs):
         Choose whether to use the move direction factor in the SocialCircle.
         """
         return self._arg('use_move_direction', 0, argtype=STATIC)
+    
+    @property
+    def use_acc(self) -> int:
+        """
+        Choose whether to use the acceleration factor in the SocialCircle.
+        """
+        return self._arg('use_acc', 0, argtype=STATIC)
 
     def _init_all_args(self):
         super()._init_all_args()
