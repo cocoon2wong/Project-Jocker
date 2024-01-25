@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-01-23 09:46:04
+@LastEditTime: 2024-01-25 09:59:00
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -103,7 +103,7 @@ class SocialCircleToy():
         if self.t:
             agents = self.t.agent_manager.agents
             if len(agents):
-                self._agents = agents
+                pass
             elif len(self._agents):
                 agents = self._agents
             else:
@@ -133,6 +133,7 @@ class SocialCircleToy():
                 (self.input_types != old_input_types)):
             self.t.log('Reloading dataset files...')
             ds = self.t.agent_manager.clean().make(self.t.args.force_clip, training=False)
+            self._agents = self.t.agent_manager.agents
             self.input_and_gt = list(ds)[0]
 
         # Create vis manager
