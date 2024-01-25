@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 14:55:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-01-23 11:20:15
+@LastEditTime: 2024-01-25 10:03:04
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -152,13 +152,20 @@ class SocialCircleLayer(torch.nn.Module):
         social_circle = [torch.stack(i) for i in social_circle]
         social_circle = torch.stack(social_circle)
         social_circle = torch.permute(social_circle, [2, 0, 1])
-
-        if (((m := self.max_partitions) is not None) and
-                (m > (n := self.partitions))):
-            paddings = [0, 0, 0, m - n, 0, 0]
-            social_circle = torch.nn.functional.pad(social_circle, paddings)
-
+        social_circle = self.pad(social_circle)
         return social_circle, f_direction
+
+    def pad(self, input: torch.Tensor):
+        """
+        Zero-padding the input tensor (whose shape must be `(batch, steps, dim)`).
+        """
+        current_steps = input.shape[-2]
+        target_steps = max(self.max_partitions, self.partitions)
+        if ((p := target_steps - current_steps) > 0):
+            paddings = [0, 0, 0, p, 0, 0]
+            return torch.nn.functional.pad(input, paddings)
+        else:
+            return input
 
 
 class PhysicalCircleLayer(torch.nn.Module):

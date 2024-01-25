@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:26:35
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-28 10:44:37
+@LastEditTime: 2024-01-25 10:03:34
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -69,6 +69,7 @@ class EVSCModel(BaseSocialCircleModel):
         # Shapes
         self.Tsteps_en, self.Tchannels_en = self.t1.Tshape
         self.Tsteps_de, self.Tchannels_de = self.it1.Tshape
+        self.Tsteps_en = max(self.Tsteps_en, self.sc_args.partitions)
 
         # Bilinear structure (outer product + pooling + fc)
         # For trajectories
@@ -129,6 +130,7 @@ class EVSCModel(BaseSocialCircleModel):
         f_traj = self.outer_fc(f)       # (batch, steps, d/2)
 
         # Feature fusion
+        f_traj = self.sc.pad(f_traj)
         f_behavior = torch.concat([f_traj, f_social], dim=-1)
         f_behavior = self.concat_fc(f_behavior)
 
@@ -137,6 +139,7 @@ class EVSCModel(BaseSocialCircleModel):
         repeats = self.args.K_train if training else self.args.K
 
         traj_targets = self.t1(obs)
+        traj_targets = self.sc.pad(traj_targets)
 
         for _ in range(repeats):
             # Assign random ids and embedding -> (batch, steps, d)
