@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-01-25 09:59:00
+@LastEditTime: 2024-01-26 17:34:23
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -56,6 +56,8 @@ MARKER_CIRCLE_RADIUS = 3
 MARKER_RADIUS = 5
 MARKER_TAG = 'indicator'
 
+THREE_POINTS_FALG = '--threepoints'
+
 dir_check(os.path.dirname(LOG_PATH))
 
 
@@ -88,11 +90,16 @@ class SocialCircleToy():
         # Try to load models from the init args
         self.load_model(args)
 
+        # The maximum number of manual agents
+        self.mpoints = 3 if THREE_POINTS_FALG in sys.argv else 2
+        self.interp_model = None
+
         # TK variables
         self.tk_vars: dict[str, tk.StringVar] = {}
         self.tk_vars['agent_id'] = tk.StringVar(value='0')
-        for i in ['px0', 'py0', 'px1', 'py1']:
-            self.tk_vars[i] = tk.StringVar()
+        for p in range(self.mpoints):
+            for i in ['x', 'y']:
+                self.tk_vars[f'p{i}{p}'] = tk.StringVar()
 
     @property
     def draw_mode(self) -> str:
@@ -223,12 +230,32 @@ class SocialCircleToy():
         nei = copy(nei.numpy())
         steps = nei.shape[-2]
 
-        xp = np.array([0, steps-1])
-        fp = np.array(position)
-        x = np.arange(steps)
+        if len(position) == 2:
+            xp = np.array([0, steps-1])
+            fp = np.array(position)
+            x = np.arange(steps)
+            traj = np.column_stack([np.interp(x, xp, fp[:, 0]),
+                                    np.interp(x, xp, fp[:, 1])])
 
-        traj = np.column_stack([np.interp(x, xp, fp[:, 0]),
-                                np.interp(x, xp, fp[:, 1])])
+        elif len(position) == 3:
+            xp = np.array([0, steps//2, steps-1])
+            fp = np.array(position)
+            x = np.arange(steps)
+
+            from qpid.model.layers.interpolation import \
+                LinearSpeedInterpolation
+            if self.interp_model is None:
+                self.interp_model = LinearSpeedInterpolation()
+
+            traj = self.interp_model.forward(
+                index=torch.tensor(xp),
+                value=torch.tensor(fp),
+                init_speed=torch.tensor((fp[2:] - fp[:1])/steps)
+            ).numpy()
+            traj = np.concatenate([fp[:1], traj], axis=0)
+
+        else:
+            raise ValueError(len(position))
 
         nei_count = self.get_neighbor_count(nei)
         nei[0, nei_count] = traj - obs.numpy()[0, -1:, :]
@@ -403,8 +430,12 @@ class SocialCircleToy():
                 pass
 
         elif self.click_count == 1:
-            draw_indicator(canvas, x, y, 'blue', text='END')
-            self.click_count = 0
+            if self.mpoints == 3 and self.draw_mode == DRAW_MODE_QPID:
+                draw_indicator(canvas, x, y, 'orange', text='MIDDLE')
+                self.click_count = 2
+            else:
+                draw_indicator(canvas, x, y, 'blue', text='END')
+                self.click_count = 0
 
             if self.draw_mode == DRAW_MODE_QPID:
                 self.tk_vars['px1'].set(str(x_ir))
@@ -417,6 +448,13 @@ class SocialCircleToy():
 
             else:
                 pass
+
+        elif self.click_count == 2:
+            draw_indicator(canvas, x, y, 'blue', text='END')
+            self.click_count = 0
+
+            self.tk_vars['px2'].set(str(x_ir))
+            self.tk_vars['py2'].set(str(y_ir))
 
         else:
             raise ValueError
@@ -452,9 +490,13 @@ class SocialCircleToy():
             and len(y0 := self.tk_vars['py0'].get())
             and len(x1 := self.tk_vars['px1'].get())
                 and len(y1 := self.tk_vars['py1'].get())):
-
             extra_neighbor = [[float(x0), float(y0)],
                               [float(x1), float(y1)]]
+
+            if (len(x2 := self.tk_vars['px2'].get())
+                    and len(y2 := self.tk_vars['py2'].get())):
+                extra_neighbor += [[float(x2), float(y2)]]
+
             self.t.log('Start running with an addition neighbor' +
                        f'from {extra_neighbor[0]} to {extra_neighbor[1]}...')
 
