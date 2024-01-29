@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-07-12 17:38:42
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-01-26 17:34:23
+@LastEditTime: 2024-01-29 14:37:44
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -493,7 +493,8 @@ class SocialCircleToy():
             extra_neighbor = [[float(x0), float(y0)],
                               [float(x1), float(y1)]]
 
-            if (len(x2 := self.tk_vars['px2'].get())
+            if (('px2' in self.tk_vars.keys())
+                    and len(x2 := self.tk_vars['px2'].get())
                     and len(y2 := self.tk_vars['py2'].get())):
                 extra_neighbor += [[float(x2), float(y2)]]
 
