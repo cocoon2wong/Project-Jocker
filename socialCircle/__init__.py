@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 15:52:46
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-01-02 16:22:45
+@LastEditTime: 2024-01-29 15:27:16
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -12,6 +12,7 @@ import qpid as __qpid
 
 from . import original_models
 from .__args import PhysicalCircleArgs, SocialCircleArgs
+from .ev_dsc import EVDSCModel, EVDSCStructure
 from .ev_sc import EVSCModel, EVSCStructure
 from .ev_spc import EVSPCModel, EVSPCStructure
 from .msn_sc import MSNSCModel, MSNSCStructure
@@ -30,6 +31,7 @@ __qpid.args.add_arg_alias(['--sc', '-sc', '--socialCircle'],
 __qpid.silverballers.register(
     # SocialCircle Models
     evsc=[EVSCStructure, EVSCModel],
+    evdsc=[EVDSCStructure, EVDSCModel],
     vsc=[VSCStructure, VSCModel],
     msnsc=[MSNSCStructure, MSNSCModel],
     transsc=[TransformerSCStructure, TransformerSCModel],
