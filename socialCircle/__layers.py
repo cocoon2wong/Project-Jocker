@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 14:55:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-01-25 10:03:04
+@LastEditTime: 2024-03-07 15:22:09
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -254,19 +254,10 @@ class PhysicalCircleLayer(torch.nn.Module):
         # Compute pixel positions on seg maps
         W = seg_map_paras[..., :2][..., None, :]
         b = seg_map_paras[..., 2:4][..., None, :]
-        order = seg_map_paras[..., 4:6]         # (batch, 2)
 
         # Compute angles and distances
         self.map_pos_pixel = self.map_pos_pixel.to(W.device)
         map_pos = (self.map_pos_pixel - b) / W  # (batch, a*a, 2)
-
-        # Fix the x-y order
-        # It is a temporary fix, and will be removed soon
-        if order[:, 0].max() == 1:
-            for _index in torch.where(order[:, 0] == 1)[0]:
-                _map_pos = map_pos[_index]
-                map_pos[_index] = torch.concat([_map_pos[..., 1:],
-                                                _map_pos[..., :1]], dim=-1)
 
         # Compute distances and angles of all pixels
         direction_vectors = map_pos - current_pos           # (batch, a*a, 2)
