@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 14:55:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-01-23 11:20:15
+@LastEditTime: 2024-03-07 15:22:09
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -152,13 +152,20 @@ class SocialCircleLayer(torch.nn.Module):
         social_circle = [torch.stack(i) for i in social_circle]
         social_circle = torch.stack(social_circle)
         social_circle = torch.permute(social_circle, [2, 0, 1])
-
-        if (((m := self.max_partitions) is not None) and
-                (m > (n := self.partitions))):
-            paddings = [0, 0, 0, m - n, 0, 0]
-            social_circle = torch.nn.functional.pad(social_circle, paddings)
-
+        social_circle = self.pad(social_circle)
         return social_circle, f_direction
+
+    def pad(self, input: torch.Tensor):
+        """
+        Zero-padding the input tensor (whose shape must be `(batch, steps, dim)`).
+        """
+        current_steps = input.shape[-2]
+        target_steps = max(self.max_partitions, self.partitions)
+        if ((p := target_steps - current_steps) > 0):
+            paddings = [0, 0, 0, p, 0, 0]
+            return torch.nn.functional.pad(input, paddings)
+        else:
+            return input
 
 
 class PhysicalCircleLayer(torch.nn.Module):
@@ -247,19 +254,10 @@ class PhysicalCircleLayer(torch.nn.Module):
         # Compute pixel positions on seg maps
         W = seg_map_paras[..., :2][..., None, :]
         b = seg_map_paras[..., 2:4][..., None, :]
-        order = seg_map_paras[..., 4:6]         # (batch, 2)
 
         # Compute angles and distances
         self.map_pos_pixel = self.map_pos_pixel.to(W.device)
         map_pos = (self.map_pos_pixel - b) / W  # (batch, a*a, 2)
-
-        # Fix the x-y order
-        # It is a temporary fix, and will be removed soon
-        if order[:, 0].max() == 1:
-            for _index in torch.where(order[:, 0] == 1)[0]:
-                _map_pos = map_pos[_index]
-                map_pos[_index] = torch.concat([_map_pos[..., 1:],
-                                                _map_pos[..., :1]], dim=-1)
 
         # Compute distances and angles of all pixels
         direction_vectors = map_pos - current_pos           # (batch, a*a, 2)
