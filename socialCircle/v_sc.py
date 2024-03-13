@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-15 19:08:05
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-28 10:46:17
+@LastEditTime: 2024-03-13 10:50:44
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -118,6 +118,7 @@ class VSCModel(BaseSocialCircleModel):
         f_traj = self.te(obs)
 
         # Feature fusion
+        f_traj = self.sc.pad(f_traj)
         f_behavior = torch.concat([f_traj, f_social], dim=-1)
         f_behavior = self.concat_fc(f_behavior)
 

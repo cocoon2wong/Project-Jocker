@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-15 20:30:51
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-01-04 09:23:31
+@LastEditTime: 2024-03-13 10:50:22
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -170,6 +170,7 @@ class TransformerSPCModel(BaseSocialCircleModel):
         f_traj = self.te(obs)
 
         # Feature fusion
+        f_traj = self.sc.pad(f_traj)
         f_behavior = torch.concat([f_traj, f_social], dim=-1)
         f_behavior = self.concat_fc(f_behavior)
 

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-21 19:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-11-02 19:35:10
+@LastEditTime: 2024-03-13 10:49:52
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -116,6 +116,7 @@ class MSNSCModel(BaseSocialCircleModel):
         f_traj = self.pos_embedding(obs)
 
         # Feature fusion
+        f_traj = self.sc.pad(f_traj)
         f_behavior = torch.concat([f_traj, f_social], dim=-1)
         f_behavior = self.concat_fc(f_behavior)
 

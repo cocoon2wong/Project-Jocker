@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 14:55:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-03-07 15:22:09
+@LastEditTime: 2024-03-13 10:43:10
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -158,6 +158,9 @@ class SocialCircleLayer(torch.nn.Module):
     def pad(self, input: torch.Tensor):
         """
         Zero-padding the input tensor (whose shape must be `(batch, steps, dim)`).
+        It will pad the input tensor on the `steps` axis if `steps < max_partitions`,
+        where the `max_partitions` is usually the maximum one of either the number of
+        observation steps or the number of SocialCircle partitions.
         """
         current_steps = input.shape[-2]
         target_steps = max(self.max_partitions, self.partitions)
