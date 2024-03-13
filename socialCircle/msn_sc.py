@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-21 19:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-03-13 10:49:52
+@LastEditTime: 2024-03-13 10:59:45
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -76,6 +76,9 @@ class MSNSCModel(BaseSocialCircleModel):
         self.ts = tslayer((self.args.obs_frames, self.sc.dim))
         self.tse = layers.TrajEncoding(self.sc.dim, 64, torch.nn.ReLU,
                                        transform_layer=self.ts)
+        
+        # Shapes
+        self.Tsteps_en = max(self.args.obs_frames, self.sc_args.partitions)
 
         # Concat and fuse SC
         self.concat_fc = layers.Dense(128, 64, torch.nn.Tanh)
@@ -88,8 +91,8 @@ class MSNSCModel(BaseSocialCircleModel):
             dff=512,
             input_vocab_size=2,
             target_vocab_size=2,
-            pe_input=Args.obs_frames,
-            pe_target=Args.obs_frames,
+            pe_input=self.Tsteps_en,
+            pe_target=self.Tsteps_en,
             include_top=False
         )
 

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-15 20:30:51
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-03-13 10:50:03
+@LastEditTime: 2024-03-13 11:01:18
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -75,6 +75,7 @@ class TransformerSCModel(BaseSocialCircleModel):
         # Steps and shapes after applying transforms
         self.Tsteps_en, self.Tchannels_en = self.t1.Tshape
         self.Tsteps_de, self.Tchannels_de = self.it1.Tshape
+        self.Tsteps_en = max(self.Tsteps_en, self.sc_args.partitions)
 
         # Transformer is used as a feature extractor
         self.T = transformer.Transformer(

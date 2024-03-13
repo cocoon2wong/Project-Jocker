@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-11-07 16:51:07
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-03-13 10:49:38
+@LastEditTime: 2024-03-13 10:58:05
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -86,6 +86,7 @@ class EVSPCModel(BaseSocialCircleModel):
         # Steps and channels after applying transforms
         self.Tsteps_en, self.Tchannels_en = self.t1.Tshape
         self.Tsteps_de, self.Tchannels_de = self.it1.Tshape
+        self.Tsteps_en = max(self.Tsteps_en, self.sc_args.partitions)
 
         # Bilinear structure (outer product + pooling + fc)
         # For trajectories
