@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-21 19:47:50
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-03-13 10:59:45
+@LastEditTime: 2024-03-13 11:19:33
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -140,7 +140,7 @@ class MSNSCModel(BaseSocialCircleModel):
 
         # Transformer output shape is (batch, obs, 128)
         f_tran, _ = self.T1(inputs=concat_feature,
-                            targets=obs,
+                            targets=self.sc.pad(obs),
                             training=training)
 
         # Multiple generations

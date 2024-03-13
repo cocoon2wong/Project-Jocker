@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-15 20:30:51
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-03-13 11:01:18
+@LastEditTime: 2024-03-13 11:19:43
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -127,6 +127,7 @@ class TransformerSCModel(BaseSocialCircleModel):
         repeats = 1
 
         traj_targets = self.t1(obs)
+        traj_targets = self.sc.pad(traj_targets)
 
         for _ in range(repeats):
             # Assign random ids and embedding -> (batch, steps, d/2)

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-11-07 16:51:07
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-03-13 10:58:05
+@LastEditTime: 2024-03-13 11:19:18
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -186,6 +186,8 @@ class EVSPCModel(BaseSocialCircleModel):
         repeats = self.args.K_train if training else self.args.K
 
         traj_targets = self.t1(obs)
+        traj_targets = self.sc.pad(traj_targets)
+        
         for _ in range(repeats):
             # Assign random ids and embedding -> (batch, steps, d)
             z = torch.normal(mean=0, std=1,

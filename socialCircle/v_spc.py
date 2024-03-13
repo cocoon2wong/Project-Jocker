@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-15 19:08:05
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-03-13 11:02:13
+@LastEditTime: 2024-03-13 11:19:58
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -175,6 +175,7 @@ class VSPCModel(BaseSocialCircleModel):
         repeats = self.args.K_train if training else self.args.K
 
         traj_targets = self.t1(obs)
+        traj_targets = self.sc.pad(traj_targets)
 
         for _ in range(repeats):
             # Assign random ids and embedding -> (batch, steps, d/2)

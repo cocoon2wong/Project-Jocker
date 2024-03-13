@@ -180,6 +180,7 @@ class TransformerSPCModel(BaseSocialCircleModel):
         repeats = 1
 
         traj_targets = self.t1(obs)
+        traj_targets = self.sc.pad(traj_targets)
 
         for _ in range(repeats):
             # Assign random ids and embedding -> (batch, steps, d/2)
