@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-06-20 15:28:14
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-12-19 16:57:38
+@LastEditTime: 2024-03-18 16:04:40
 @Description: file content
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -38,6 +38,8 @@ def main(args: list[str], run_train_or_test=True):
     model = min_args.model
     if model == 'linear':
         s = qpid.applications.Linear
+    elif model == 'static':
+        s = qpid.applications.Static
     else:
         s = qpid.silverballers.SILVERBALLERS_DICT.get_structure(model)
 
