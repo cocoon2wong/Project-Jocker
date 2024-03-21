@@ -80,6 +80,9 @@ About the `argtype`:
 - `--experimental`: type=`bool`, argtype=`temporary`.
   NOTE: It is only used for code test. 
   The default value is `False`.
+- `--feature_dim`: type=`int`, argtype=`static`.
+  Feature dimensions that are used in most layers. 
+  The default value is `128`.
 - `--force_anntype`: type=`str`, argtype=`temporary`.
   Assign the prediction type. It is now only used for silverballers models that are trained with annotation type `coordinate` but want to test on datasets with annotation type `boundingbox`. 
   The default value is `null`.
@@ -97,6 +100,9 @@ About the `argtype`:
   The default value is `0`.
 - `--help` (short for `-h`): type=`str`, argtype=`temporary`.
   Print help information on the screen. 
+  The default value is `null`.
+- `--input_pred_steps`: type=`str`, argtype=`static`.
+  Indices of future time steps that used as extra model inputs. It accepts a string that contains several integer numbers separated with `'_'`. For example, `'3_6_9'`. It will take the corresponding ground truth points as the input when training the model, and take the first output of the former network as this input when testing the model. Set it to `'null'` to disable this extra model inputs. 
   The default value is `null`.
 - `--interval`: type=`float`, argtype=`static`.
   Time interval of each sampled trajectory point. 
@@ -125,15 +131,24 @@ About the `argtype`:
 - `--model`: type=`str`, argtype=`static`.
   The model type used to train or test. 
   The default value is `none`.
+- `--noise_depth`: type=`int`, argtype=`static`.
+  Depth of the random noise vector. 
+  The default value is `16`.
 - `--obs_frames` (short for `-obs`): type=`int`, argtype=`static`.
   Observation frames for prediction. 
   The default value is `8`.
+- `--output_pred_steps`: type=`str`, argtype=`static`.
+  Indices of future time steps to be predicted. It accepts a string that contains several integer numbers separated with `'_'`. For example, `'3_6_9'`. Set it to `'all'` to predict points among all future steps. 
+  The default value is `all`.
 - `--pmove`: type=`int`, argtype=`static`.
   (Pre/post-process Arg) Index of the reference point when moving trajectories. 
   The default value is `-1`.
 - `--pred_frames` (short for `-pred`): type=`int`, argtype=`static`.
   Prediction frames. 
   The default value is `12`.
+- `--preprocess`: type=`str`, argtype=`static`.
+  Controls whether to run any pre-process before the model inference. It accepts a 3-bit-like string value (like `'111'`): - The first bit: `MOVE` trajectories to (0, 0); - The second bit: re-`SCALE` trajectories; - The third bit: `ROTATE` trajectories. 
+  The default value is `100`.
 - `--restore_args`: type=`str`, argtype=`temporary`.
   Path to restore the reference args before training. It will not restore any args if `args.restore_args == 'null'`. 
   The default value is `null`.
@@ -165,7 +180,7 @@ About the `argtype`:
   Controls if print verbose logs and outputs to the terminal. 
   The default value is `0`.
 
-### First-stage Silverballers Args
+### V^2-Net Args
 
 - `--Kc`: type=`int`, argtype=`static`.
   The number of style channels in `Agent` model. 
@@ -173,63 +188,6 @@ About the `argtype`:
 - `--T` (short for `-T`): type=`str`, argtype=`static`.
   Type of transformations used when encoding or decoding trajectories. It could be: - `none`: no transformations - `fft`: fast Fourier transform - `fft2d`: 2D fast Fourier transform - `haar`: haar wavelet transform - `db2`: DB2 wavelet transform 
   The default value is `fft`.
-- `--depth`: type=`int`, argtype=`static`.
-  Depth of the random noise vector. 
-  The default value is `16`.
-- `--feature_dim`: type=`int`, argtype=`static`.
-  Feature dimensions that are used in most layers. 
-  The default value is `128`.
-- `--key_points`: type=`str`, argtype=`static`.
-  A list of key time steps to be predicted in the agent model. For example, `'0_6_11'`. 
-  The default value is `0_6_11`.
-- `--loss`: type=`str`, argtype=`dynamic`.
-  Loss used to train agent models. Canbe `'avgkey'` or `'keyl2'` (default). 
-  The default value is `keyl2`.
-- `--preprocess`: type=`str`, argtype=`static`.
-  Controls whether to run any pre-process before the model inference. It accepts a 3-bit-like string value (like `'111'`): - The first bit: `MOVE` trajectories to (0, 0); - The second bit: re-`SCALE` trajectories; - The third bit: `ROTATE` trajectories. 
-  The default value is `100`.
-
-### Second-stage Silverballers Args
-
-- `--Kc`: type=`int`, argtype=`static`.
-  The number of style channels in `Agent` model. 
-  The default value is `20`.
-- `--T` (short for `-T`): type=`str`, argtype=`static`.
-  Type of transformations used when encoding or decoding trajectories. It could be: - `none`: no transformations - `fft`: fast Fourier transform - `fft2d`: 2D fast Fourier transform - `haar`: haar wavelet transform - `db2`: DB2 wavelet transform 
-  The default value is `fft`.
-- `--depth`: type=`int`, argtype=`static`.
-  Depth of the random noise vector. 
-  The default value is `16`.
-- `--feature_dim`: type=`int`, argtype=`static`.
-  Feature dimensions that are used in most layers. 
-  The default value is `128`.
-- `--key_points`: type=`str`, argtype=`static`.
-  A list of key time steps to be predicted in the agent model. For example, `'0_6_11'`. 
-  The default value is `0_6_11`.
-- `--points`: type=`int`, argtype=`static`.
-  The number of keypoints accepted in the handler model. 
-  The default value is `1`.
-- `--preprocess`: type=`str`, argtype=`static`.
-  Controls whether to run any pre-process before the model inference. It accepts a 3-bit-like string value (like `'111'`): - The first bit: `MOVE` trajectories to (0, 0); - The second bit: re-`SCALE` trajectories; - The third bit: `ROTATE` trajectories. 
-  The default value is `100`.
-
-### Silverballers Args
-
-- `--channel` (short for `-c`): type=`int`, argtype=`temporary`.
-  Specify the k-th channel of the model output. If `channel == -1`, it outputs all channels' predictions. 
-  The default value is `-1`.
-- `--down_sampling_rate`: type=`float`, argtype=`temporary`.
-  Down sampling rate to sample trajectories from all N = K*Kc trajectories. 
-  The default value is `1.0`.
-- `--loada` (short for `-la`): type=`str`, argtype=`temporary`.
-  Path to load the first-stage agent model. 
-  The default value is `null`.
-- `--loadb` (short for `-lb`): type=`str`, argtype=`temporary`.
-  Path to load the second-stage handler model. 
-  The default value is `null`.
-- `--pick_trajectories` (short for `-p`): type=`float`, argtype=`temporary`.
-  Calculates the sum of the context map values of the predicted trajectories and picks the top n (percentage) best predictions. This parameter is only valid when the model's input contains `MAPS` and `MAP_PARAS`. 
-  The default value is `1.0`.
 
 ### SocialCircle Args
 

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-15 20:30:51
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-03-13 11:01:39
+@LastEditTime: 2024-03-20 21:19:12
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -10,15 +10,18 @@
 
 import torch
 
+from qpid.args import Args
 from qpid.constant import INPUT_TYPES, PROCESS_TYPES
-from qpid.model import layers, process, transformer
-from qpid.silverballers import AgentArgs
+from qpid.model import Model, layers, process, transformer
+from qpid.training import Structure
 
-from .__base import BaseSocialCircleModel, BaseSocialCircleStructure
+from .__args import PhysicalCircleArgs, SocialCircleArgs
+from .__base import BaseSocialCircleModel
 from .__layers import CircleFusionLayer, PhysicalCircleLayer, SocialCircleLayer
+from .original_models import VArgs
 
 
-class TransformerSPCModel(BaseSocialCircleModel):
+class TransformerSPCModel(Model, BaseSocialCircleModel):
     """
     Transformer-SPC
     ---
@@ -35,19 +38,26 @@ class TransformerSPCModel(BaseSocialCircleModel):
     - It considers nothing about agents' multimodality.
     """
 
-    include_socialCircle = True
-    include_physicalCircle = True
+    def __init__(self, Args: Args, structure=None, *args, **kwargs):
+        super().__init__(Args, structure, *args, **kwargs)
 
-    def __init__(self, Args: AgentArgs, as_single_model: bool = True,
-                 structure=None, *args, **kwargs):
-
-        super().__init__(Args, as_single_model, structure, *args, **kwargs)
+        # Init args
+        self.v_args = self.args.register_subargs(VArgs, 'v_args')
+        self.v_args._set_default('T', 'none')
+        self.sc_args = self.args.register_subargs(SocialCircleArgs, 'sc')
+        self.pc_args = self.args.register_subargs(PhysicalCircleArgs, 'pc')
 
         # Preprocess
         self.set_preprocess(**{PROCESS_TYPES.MOVE: 0})
 
+        # Set model inputs
+        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
+                        INPUT_TYPES.NEIGHBOR_TRAJ,
+                        INPUT_TYPES.SEG_MAP,
+                        INPUT_TYPES.SEG_MAP_PARAS)
+
         # Layers
-        tlayer, itlayer = layers.get_transform_layers(self.args.T)
+        tlayer, itlayer = layers.get_transform_layers(self.v_args.T)
 
         # Transform layers
         self.t1 = tlayer((self.args.obs_frames, self.dim))
@@ -210,13 +220,5 @@ class TransformerSPCModel(BaseSocialCircleModel):
         return torch.concat(all_predictions, dim=-3)   # (batch, 1, pred, dim)
 
 
-class TransformerSPCStructure(BaseSocialCircleStructure):
+class TransformerSPCStructure(Structure):
     MODEL_TYPE = TransformerSPCModel
-
-    def __init__(self, terminal_args, manager=None):
-        super().__init__(terminal_args, manager)
-
-        # Force args
-        self.args._set_default('T', 'none')
-        self.args._set('key_points', '_'.join(
-            [str(i) for i in range(self.args.pred_frames)]))

@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2022-07-05 16:00:26
 @LastEditors: Conghao Wong
-@LastEditTime: 2023-10-17 18:59:01
+@LastEditTime: 2024-03-21 09:50:57
 @Description: First stage V^2-Net model.
 @Github: https://github.com/cocoon2wong
 @Copyright 2022 Conghao Wong, All Rights Reserved.
@@ -10,15 +10,16 @@
 
 import torch
 
-from qpid.constant import ANN_TYPES
-from qpid.model import layers, transformer
+from qpid.args import Args
+from qpid.constant import ANN_TYPES, INPUT_TYPES
+from qpid.model import Model, layers, transformer
 from qpid.model.transformer import Transformer
-from qpid.silverballers import (AgentArgs, BaseAgentModel, BaseAgentStructure,
-                                BaseHandlerModel, BaseHandlerStructure,
-                                HandlerArgs)
+from qpid.training import Structure
+
+from .__args import VArgs
 
 
-class VAModel(BaseAgentModel):
+class VAModel(Model):
     """
     Keypoints Estimation Sub-network
     ---
@@ -31,18 +32,24 @@ class VAModel(BaseAgentModel):
     FFTs are applied before and after the model implementing.
     """
 
-    def __init__(self, Args: AgentArgs,
-                 as_single_model: bool = True,
-                 structure=None, *args, **kwargs):
+    def __init__(self, Args: Args, structure=None, *args, **kwargs):
+        super().__init__(Args, structure, *args, **kwargs)
 
-        super().__init__(Args, as_single_model, structure, *args, **kwargs)
+        # Init args
+        self.args._set_default('K', 1)
+        self.args._set_default('K_train', 1)
+        self.v_args = self.args.register_subargs(VArgs, 'v_args')
+
+        # Assign input and label types
+        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ)
+        self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
 
         # Layers
-        tlayer, itlayer = layers.get_transform_layers(self.args.T)
+        tlayer, itlayer = layers.get_transform_layers(self.v_args.T)
 
         # Transform layers
         self.t1 = tlayer((self.args.obs_frames, self.dim))
-        self.it1 = itlayer((self.n_key, self.dim))
+        self.it1 = itlayer((len(self.output_pred_steps), self.dim))
 
         # Trajectory encoding
         self.te = layers.TrajEncoding(self.dim, self.d//2,
@@ -72,7 +79,7 @@ class VAModel(BaseAgentModel):
         # Trainable adj matrix and gcn layer
         # See our previous work "MSN: Multi-Style Network for Trajectory Prediction" for detail
         # It is used to generate multiple predictions within one model implementation
-        self.ms_fc = layers.Dense(self.d, self.args.Kc, torch.nn.Tanh)
+        self.ms_fc = layers.Dense(self.d, self.v_args.Kc, torch.nn.Tanh)
         self.ms_conv = layers.GraphConv(self.d, self.d)
 
         # Decoder layers
@@ -80,7 +87,7 @@ class VAModel(BaseAgentModel):
         self.decoder_fc2 = layers.Dense(self.d,
                                         self.Tsteps_de * self.Tchannels_de)
 
-    def forward(self, inputs: list[torch.Tensor], training=None, *args, **kwargs):
+    def forward(self, inputs, training=None, mask=None, *args, **kwargs):
         # Unpack inputs
         obs = inputs[0]     # (batch, obs, dim)
 
@@ -124,7 +131,7 @@ class VAModel(BaseAgentModel):
         return torch.concat(all_predictions, dim=-3)   # (batch, K, n_key, dim)
 
 
-class VBModel(BaseHandlerModel):
+class VBModel(Model):
     """
     Spectrum Interpolation Sub-network
     ---
@@ -136,24 +143,38 @@ class VBModel(BaseHandlerModel):
     their trajectories.
     """
 
-    def __init__(self, Args: HandlerArgs,
-                 as_single_model: bool = True,
-                 structure=None, *args, **kwargs):
+    def __init__(self, Args: Args, structure=None, *args, **kwargs):
 
-        super().__init__(Args, as_single_model, structure, *args, **kwargs)
+        super().__init__(Args, structure, *args, **kwargs)
 
         from qpid.mods.contextMaps import ContextEncoding
 
-        self.accept_batchK_inputs = True
-
         if self.args.model_type == 'frame-based':
             raise ValueError(self.args.model_type)
+
+        if self.input_pred_steps is None:
+            raise ValueError
+
+        self.input_pred_steps: torch.Tensor
+
+        # Configs
+        # GT in the inputs is only used when training
+        self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ,
+                        INPUT_TYPES.MAP,
+                        INPUT_TYPES.MAP_PARAS,
+                        INPUT_TYPES.GROUNDTRUTH_TRAJ)
+        self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
+
+        # Init args
+        self.args._set_default('K', 1)
+        self.args._set_default('K_train', 1)
+        self.v_args = self.args.register_subargs(VArgs, 'v_args')
 
         # Transform layers
         input_steps = self.args.obs_frames
         output_steps = self.args.obs_frames + self.args.pred_frames
 
-        Tlayer, ITlayer = layers.get_transform_layers(self.args.T)
+        Tlayer, ITlayer = layers.get_transform_layers(self.v_args.T)
         self.t_layer = Tlayer((input_steps, self.dim))
         self.it_layer = ITlayer((output_steps, 2))
 
@@ -185,14 +206,11 @@ class VBModel(BaseHandlerModel):
                                        pe_target=output_Tsteps,
                                        include_top=True)
 
-    def forward(self, inputs: list[torch.Tensor],
-                keypoints: torch.Tensor,
-                keypoints_index: torch.Tensor,
-                training=None, mask=None,
-                *args, **kwargs):
+    def forward(self, inputs, training=None, mask=None, *args, **kwargs):
 
         # unpack inputs
         trajs_md, maps = inputs[:2]
+        keypoints = self.get_input(inputs, INPUT_TYPES.GROUNDTRUTH_KEYPOINTS)
 
         # Reshape keypoints to (..., K, steps, dim)
         if keypoints.ndim == trajs_md.ndim:
@@ -218,7 +236,8 @@ class VBModel(BaseHandlerModel):
         t_inputs = torch.concat([traj_feature, context_feature], dim=-1)
 
         # transformer target shape = (batch, output_Tsteps, Tchannels)
-        keypoints_index = torch.concat([torch.tensor([-1]), keypoints_index])
+        keypoints_index = torch.concat([torch.tensor([-1], device=keypoints.device),
+                                        self.input_pred_steps.to(keypoints.device)])
         keypoints = torch.concat([trajs[..., -1:, :], keypoints], dim=-2)
 
         # Add the last obs point to finish linear interpolation
@@ -266,14 +285,14 @@ class VBModel(BaseHandlerModel):
         return y_md
 
 
-class VA(BaseAgentStructure):
+class VA(Structure):
     """
     Training structure for the first stage sub-network
     """
     MODEL_TYPE = VAModel
 
 
-class VB(BaseHandlerStructure):
+class VB(Structure):
     """
     Training structure for the second stage sub-network
     """

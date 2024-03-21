@@ -2,7 +2,7 @@
 @Author: Beihao Xia
 @Date: 2023-03-20 16:15:25
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-01-04 16:55:28
+@LastEditTime: 2024-03-21 09:46:56
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Beihao Xia, All Rights Reserved.
@@ -10,15 +10,18 @@
 
 import torch
 
+from qpid.args import Args
 from qpid.constant import INPUT_TYPES, PROCESS_TYPES
 from qpid.model import Model, layers, transformer
-from qpid.silverballers import AgentArgs
 from qpid.training import Structure
+
+from .__args import VArgs
 
 
 class MinimalVModel(Model):
     """
     The `minimal` vertical model.
+    It only includes the Transformer backbone when `args.T` is set to `none`.
 
     - considers nothing about interactions;
     - no keypoints-interpolation two-stage subnetworks;
@@ -26,13 +29,12 @@ class MinimalVModel(Model):
     - considers nothing about agents' multimodality.
     """
 
-    def __init__(self, Args: AgentArgs,
-                 feature_dim: int = 128,
-                 id_depth: int = 16,
-                 structure=None,
-                 *args, **kwargs):
-
+    def __init__(self, Args: Args, structure=None, *args, **kwargs):
         super().__init__(Args, structure, *args, **kwargs)
+
+        # Init args
+        self.v_args = self.args.register_subargs(VArgs, 'v_args')
+        self.v_args._set_default('T', 'none')
 
         # Preprocess
         self.set_preprocess(**{PROCESS_TYPES.MOVE: 0})
@@ -41,15 +43,8 @@ class MinimalVModel(Model):
         self.set_inputs(INPUT_TYPES.OBSERVED_TRAJ)
         self.set_labels(INPUT_TYPES.GROUNDTRUTH_TRAJ)
 
-        # Parameters
-        self.args: AgentArgs
-        self.structure: Structure
-        self.d = feature_dim
-        self.d_id = id_depth
-        self.dim: int = self.structure.ann_manager.dim
-
         # Layers
-        tlayer, itlayer = layers.get_transform_layers(self.args.T)
+        tlayer, itlayer = layers.get_transform_layers(self.v_args.T)
 
         # Transform layers
         self.t1 = tlayer((self.args.obs_frames, self.dim))
@@ -90,7 +85,7 @@ class MinimalVModel(Model):
         self.decoder_fc1 = layers.Dense(self.d, 2*self.d, torch.nn.Tanh)
         self.decoder_fc2 = layers.Dense(2*self.d, self.Tchannels_de)
 
-    def forward(self, inputs: list[torch.Tensor], training=None, *args, **kwargs):
+    def forward(self, inputs, training=None, mask=None, *args, **kwargs):
         # Unpack inputs
         obs = inputs[0]
 
@@ -135,17 +130,4 @@ class MinimalV(Structure):
     """
     Training structure for the `minimal` vertical model.
     """
-
-    def __init__(self, terminal_args: list[str]):
-        super().__init__(AgentArgs(terminal_args))
-        self.args: AgentArgs
-
-        # Force args
-        self.args._set_default('T', 'none')
-
-    def create_model(self, *args, **kwargs):
-        self.model = MinimalVModel(self.args,
-                                   feature_dim=self.args.feature_dim,
-                                   id_depth=self.args.depth,
-                                   structure=self,
-                                   *args, **kwargs)
+    MODEL_TYPE = MinimalVModel
