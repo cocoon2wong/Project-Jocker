@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2023-08-08 14:55:56
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-03-13 10:43:10
+@LastEditTime: 2024-05-13 10:02:21
 @Description: file content
 @Github: https://cocoon2wong.github.io
 @Copyright 2023 Conghao Wong, All Rights Reserved.
@@ -38,6 +38,7 @@ class SocialCircleLayer(torch.nn.Module):
                  use_distance: bool | int = True,
                  use_direction: bool | int = True,
                  use_move_direction: bool | int = False,
+                 use_gcn: bool | int = False,
                  mu=0.0001,
                  relative_velocity: bool | int = False,
                  *args, **kwargs):
@@ -65,10 +66,15 @@ class SocialCircleLayer(torch.nn.Module):
         self.use_velocity = use_velocity
         self.use_distance = use_distance
         self.use_direction = use_direction
+        self.use_gcn = use_gcn
 
         self.rel_velocity = relative_velocity
         self.use_move_direction = use_move_direction
         self.mu = mu
+
+        if self.use_gcn and self.use_distance and self.use_velocity:
+            self.adj_fc = layers.Dense(1, self.partitions, torch.nn.Tanh)
+            self.gcn = layers.GraphConv(1, 1, torch.nn.Sigmoid)
 
     @property
     def dim(self) -> int:
@@ -76,7 +82,8 @@ class SocialCircleLayer(torch.nn.Module):
         The number of SocialCircle factors.
         """
         return int(self.use_velocity) + int(self.use_distance) + \
-            int(self.use_direction) + int(self.use_move_direction)
+            int(self.use_direction) + int(self.use_move_direction) + \
+            int(self.use_gcn)
 
     def forward(self, trajs, nei_trajs, *args, **kwargs):
         # Move vectors -> (batch, ..., 2)
@@ -152,6 +159,14 @@ class SocialCircleLayer(torch.nn.Module):
         social_circle = [torch.stack(i) for i in social_circle]
         social_circle = torch.stack(social_circle)
         social_circle = torch.permute(social_circle, [2, 0, 1])
+
+        if self.use_gcn and self.use_distance and self.use_velocity:
+            _f_dis = social_circle[..., 1:2]
+            adj = self.adj_fc(_f_dis)
+            f_adj = self.gcn.forward(_f_dis, adj)
+            f_adj = f_adj * _f_dis
+            social_circle = torch.concat([social_circle, f_adj], dim=-1)
+
         social_circle = self.pad(social_circle)
         return social_circle, f_direction
 
