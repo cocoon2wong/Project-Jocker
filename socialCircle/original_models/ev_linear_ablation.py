@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-07-26 10:36:17
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-07-26 15:20:42
+@LastEditTime: 2024-07-26 17:01:47
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -19,8 +19,8 @@ class Linear1Model(Model):
     def __init__(self, structure=None, *args, **kwargs):
         super().__init__(structure, *args, **kwargs)
 
-        self.fc_x = layers.Dense(2*self.args.obs_frames, 2)
-        self.fc_y = layers.Dense(2*self.args.obs_frames, 2)
+        self.fc_x = layers.Dense(3*self.args.obs_frames, 2)
+        self.fc_y = layers.Dense(3*self.args.obs_frames, 2)
 
     def forward(self, inputs, training=None, mask=None, *args, **kwargs):
 
@@ -30,8 +30,8 @@ class Linear1Model(Model):
         y = obs[..., 1:2]
 
         _ones = torch.ones_like(x)
-        Ax = torch.concat([_ones, x], dim=-1)
-        Ay = torch.concat([_ones, y], dim=-1)
+        Ax = torch.concat([_ones, x, _ones], dim=-1)
+        Ay = torch.concat([_ones, y, _ones], dim=-1)
 
         Ax = torch.flatten(Ax, start_dim=-2, end_dim=-1)
         Ay = torch.flatten(Ay, start_dim=-2, end_dim=-1)
