@@ -2,7 +2,7 @@
 @Author: Conghao Wong
 @Date: 2024-07-26 09:49:29
 @LastEditors: Conghao Wong
-@LastEditTime: 2024-07-30 09:41:09
+@LastEditTime: 2024-07-30 16:58:07
 @Github: https://cocoon2wong.github.io
 @Copyright 2024 Conghao Wong, All Rights Reserved.
 """
@@ -34,7 +34,18 @@ class VASModel(Model):
         tlayer, itlayer = layers.get_transform_layers(self.v_args.T)
 
         # Transform layers
-        dim = 1 if not self.args.anntype == ANN_TYPES.SKE_3D_17 else 3
+        if self.args.anntype in [ANN_TYPES.CO_2D,
+                                 ANN_TYPES.CO_3D]:
+            dim = 1
+        elif self.args.anntype in [ANN_TYPES.BB_2D]:
+            dim = 2
+        elif self.args.anntype in [ANN_TYPES.BB_3D,
+                                   ANN_TYPES.SKE_3D_17]:
+            dim = 3
+        else:
+            self.log(f'Prediction type `{self.args.anntype}` not supported!',
+                     level='error', raiseError=ValueError)
+
         self.t1 = tlayer((self.args.obs_frames, dim))
         self.it1 = itlayer((len(self.output_pred_steps), dim))
 
@@ -81,7 +92,9 @@ class VASModel(Model):
         # (batch, obs, 2)
         obs = self.get_input(inputs, INPUT_TYPES.OBSERVED_TRAJ)
 
-        if self.args.anntype == ANN_TYPES.SKE_3D_17:
+        if self.args.anntype in [ANN_TYPES.BB_2D,
+                                 ANN_TYPES.BB_3D,
+                                 ANN_TYPES.SKE_3D_17]:
             obs = torch.stack(self.picker.get_coordinate_series(obs), dim=-3)
         else:
             obs = torch.transpose(obs, -2, -1)[..., None]
@@ -125,6 +138,7 @@ class VASModel(Model):
 
         pred_x = torch.concat(all_predictions_x, dim=-3)    # K
 
+        # Concat separate predictions
         pred_x = torch.transpose(pred_x, -2, -4)
         pred_x = torch.transpose(pred_x, -3, -4)
         pred_x = torch.flatten(pred_x, -2, -1)
